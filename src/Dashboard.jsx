@@ -339,7 +339,7 @@ const InstitutionSelector = ({ view, onChange, institutionViews }) => (
 // ============================================================
 // TOP STATS STRIP
 // ============================================================
-const StatBlock = ({ label, value, sublabel, accent = PALETTE.ink }) => (
+const StatBlock = ({ label, value, sublabel, benchmark, accent = PALETTE.ink }) => (
   <div className="flex flex-col gap-1 px-5 py-4">
     <div
       className="uppercase"
@@ -375,13 +375,38 @@ const StatBlock = ({ label, value, sublabel, accent = PALETTE.ink }) => (
         {sublabel}
       </div>
     )}
+    {benchmark && (
+      <div
+        className="mt-1"
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: 10,
+          color: PALETTE.charcoal,
+          paddingTop: 4,
+          borderTop: `1px dashed ${PALETTE.rule}`,
+          letterSpacing: '0.02em',
+        }}
+      >
+        {benchmark}
+      </div>
+    )}
   </div>
 );
 
 const TopStats = ({ summary, view, viewLabel }) => {
   if (!summary) return null;
   const s = summary[view];
+  const t = summary.all_thailand;
   if (!s) return null;
+  const isFiltered = view !== 'all_thailand';
+
+  // Benchmarks comparing the selected institution against all_thailand.
+  // Only shown when the view is not all_thailand itself.
+  const shareOf = (mine, total) =>
+    `${((mine / total) * 100).toFixed(1)}% of TH (${fmt(total)})`;
+  const vsAvg = (thAvg) => `TH avg: ${fmtDecimal(thAvg)}`;
+  const vsPct = (thPct) => `TH: ${fmtPct(thPct)}`;
+
   return (
     <Card className="p-0">
       <div
@@ -393,6 +418,7 @@ const TopStats = ({ summary, view, viewLabel }) => {
             label="Citing publications"
             value={fmt(s.n_seeds)}
             sublabel={`${fmtFull(s.n_seeds)} papers`}
+            benchmark={isFiltered ? shareOf(s.n_seeds, t.n_seeds) : null}
             accent={PALETTE.navy}
           />
         </div>
@@ -401,6 +427,7 @@ const TopStats = ({ summary, view, viewLabel }) => {
             label="Total citations"
             value={fmt(s.n_total_edges)}
             sublabel={fmtFull(s.n_total_edges)}
+            benchmark={isFiltered ? shareOf(s.n_total_edges, t.n_total_edges) : null}
             accent={PALETTE.burgundy}
           />
         </div>
@@ -409,6 +436,7 @@ const TopStats = ({ summary, view, viewLabel }) => {
             label="Avg citations / paper"
             value={fmtDecimal(s.avg_per_paper)}
             sublabel="across all cited types"
+            benchmark={isFiltered ? vsAvg(t.avg_per_paper) : null}
             accent={PALETTE.gold}
           />
         </div>
@@ -417,6 +445,7 @@ const TopStats = ({ summary, view, viewLabel }) => {
             label="Unique cited works"
             value={fmt(s.n_unique_cited)}
             sublabel={`${((s.n_unique_cited / s.n_total_edges) * 100).toFixed(1)}% of citations`}
+            benchmark={isFiltered ? shareOf(s.n_unique_cited, t.n_unique_cited) : null}
             accent={PALETTE.teal}
           />
         </div>
@@ -425,6 +454,7 @@ const TopStats = ({ summary, view, viewLabel }) => {
             label="Books / Chapters"
             value={fmtPct(s.pct_books)}
             sublabel={`${fmtFull(s.n_books_chapters)} citations`}
+            benchmark={isFiltered ? vsPct(t.pct_books) : null}
             accent={PALETTE.forest}
           />
         </div>
@@ -989,8 +1019,11 @@ const ByYearPanel = ({ byYear, view }) => {
   const [mode, setMode] = useState('chart');
   if (!byYear || !byYear[view]) return null;
   const raw = byYear[view] || [];
+  const thailand = byYear.all_thailand || [];
+  const isFiltered = view !== 'all_thailand';
 
   const { data, total, peak, fullData } = useMemo(() => {
+    // Bucket pre-1990 for the institution view
     const recent = raw.filter((r) => r.year >= 1990).sort((a, b) => a.year - b.year);
     const old = raw.filter((r) => r.year < 1990);
     const oldBucket = old.length
@@ -1001,12 +1034,34 @@ const ByYearPanel = ({ byYear, view }) => {
           isBucket: true,
         }
       : null;
-    const data = oldBucket ? [oldBucket, ...recent] : recent;
-    const total = data.reduce((s, r) => s + r.edges, 0);
+    const baseData = oldBucket ? [oldBucket, ...recent] : recent;
+    const total = baseData.reduce((s, r) => s + r.edges, 0);
+
+    // Bucket Thailand the same way and compute the comparison percentages
+    const thRecent = thailand.filter((r) => r.year >= 1990);
+    const thOld = thailand.filter((r) => r.year < 1990);
+    const thOldBucketEdges = thOld.reduce((s, r) => s + r.edges, 0);
+    const thMap = new Map();
+    if (thOld.length) thMap.set('<1990', thOldBucketEdges);
+    for (const r of thRecent) thMap.set(r.year, r.edges);
+    const thTotal = thailand.reduce((s, r) => s + r.edges, 0);
+
+    // Each row gets both an institution percentage and a Thailand percentage,
+    // so the area chart can render the institution on top of a translucent
+    // Thailand underlay. Both sum to ~100% across the visible window.
+    const data = baseData.map((r) => ({
+      year: r.year,
+      edges: r.edges,
+      unique: r.unique,
+      pct: total ? (r.edges / total) * 100 : 0,
+      th_edges: thMap.get(r.year) || 0,
+      th_pct: thTotal ? ((thMap.get(r.year) || 0) / thTotal) * 100 : 0,
+    }));
+
     const peak = data.reduce((m, r) => (r.edges > (m?.edges || 0) ? r : m), null);
     const fullData = [...raw].sort((a, b) => b.year - a.year);
     return { data, total, peak, fullData };
-  }, [raw]);
+  }, [raw, thailand]);
 
   return (
     <Card className="p-5">
@@ -1015,7 +1070,11 @@ const ByYearPanel = ({ byYear, view }) => {
           icon={Calendar}
           kicker="Time horizon"
           title="When are the cited works from"
-          hint={`Distribution of ${fmtFull(total)} citations by the publication year of the cited work. Pre-1990 collapsed in the chart for readability; the table view shows every year.`}
+          hint={
+            isFiltered
+              ? `Each year as a percentage of total citations, so this institution and All Thailand are directly comparable. The Thailand area sits behind in muted gold; the selected institution sits on top in burgundy.`
+              : `Distribution of ${fmtFull(total)} citations by the publication year of the cited work. Pre-1990 collapsed in the chart; the table view shows every year.`
+          }
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
@@ -1030,8 +1089,12 @@ const ByYearPanel = ({ byYear, view }) => {
               >
                 <defs>
                   <linearGradient id="yearArea" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={PALETTE.burgundy} stopOpacity={0.7} />
+                    <stop offset="0%" stopColor={PALETTE.burgundy} stopOpacity={0.75} />
                     <stop offset="100%" stopColor={PALETTE.burgundy} stopOpacity={0.05} />
+                  </linearGradient>
+                  <linearGradient id="yearAreaTh" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={PALETTE.gold} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={PALETTE.gold} stopOpacity={0.05} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke={PALETTE.rule} vertical={false} />
@@ -1043,7 +1106,7 @@ const ByYearPanel = ({ byYear, view }) => {
                   minTickGap={20}
                 />
                 <YAxis
-                  tickFormatter={fmt}
+                  tickFormatter={(v) => isFiltered ? `${v.toFixed(0)}%` : fmt(v)}
                   tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
                   stroke={PALETTE.rule}
                 />
@@ -1056,14 +1119,30 @@ const ByYearPanel = ({ byYear, view }) => {
                     borderRadius: 0,
                   }}
                   labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
-                  formatter={(value, name) => [
-                    fmtFull(value),
-                    name === 'edges' ? 'Citations' : 'Unique',
-                  ]}
+                  formatter={(value, name) => {
+                    if (isFiltered) {
+                      if (name === 'pct') return [`${value.toFixed(2)}%`, 'This institution'];
+                      if (name === 'th_pct') return [`${value.toFixed(2)}%`, 'All Thailand'];
+                    }
+                    if (name === 'edges') return [fmtFull(value), 'Citations'];
+                    return [fmtFull(value), name];
+                  }}
                 />
+                {/* Thailand underlay (only when filtered) */}
+                {isFiltered && (
+                  <Area
+                    type="monotone"
+                    dataKey="th_pct"
+                    stroke={PALETTE.gold}
+                    strokeWidth={1}
+                    strokeDasharray="3 3"
+                    fill="url(#yearAreaTh)"
+                  />
+                )}
+                {/* Institution overlay (in percentage mode) or raw counts (in all_thailand) */}
                 <Area
                   type="monotone"
-                  dataKey="edges"
+                  dataKey={isFiltered ? 'pct' : 'edges'}
                   stroke={PALETTE.burgundy}
                   strokeWidth={1.5}
                   fill="url(#yearArea)"
@@ -1071,20 +1150,49 @@ const ByYearPanel = ({ byYear, view }) => {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          {peak && (
-            <div
-              className="mt-2"
-              style={{
-                fontFamily: FONT_MONO,
-                fontSize: 10,
-                letterSpacing: '0.12em',
-                color: PALETTE.muted,
-                textTransform: 'uppercase',
-              }}
-            >
-              Peak year · {peak.year} · {fmtFull(peak.edges)} citations
-            </div>
-          )}
+          <div className="mt-2 flex items-center justify-between gap-3 flex-wrap">
+            {peak && (
+              <div
+                style={{
+                  fontFamily: FONT_MONO,
+                  fontSize: 10,
+                  letterSpacing: '0.12em',
+                  color: PALETTE.muted,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Peak year · {peak.year} · {fmtFull(peak.edges)} citations
+              </div>
+            )}
+            {isFiltered && (
+              <div
+                className="flex items-center gap-4 flex-wrap"
+                style={{
+                  fontFamily: FONT_MONO,
+                  fontSize: 9,
+                  letterSpacing: '0.1em',
+                  color: PALETTE.muted,
+                  textTransform: 'uppercase',
+                }}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <span style={{
+                    display: 'inline-block', width: 14, height: 9,
+                    background: PALETTE.burgundy,
+                  }} />
+                  This institution
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span style={{
+                    display: 'inline-block', width: 14, height: 9,
+                    background: PALETTE.gold,
+                    opacity: 0.5,
+                  }} />
+                  All Thailand
+                </span>
+              </div>
+            )}
+          </div>
         </>
       ) : (
         <DataTable
@@ -1334,13 +1442,31 @@ const INST_TYPE_COLORS = {
   archive: PALETTE.sage,
 };
 
+const INST_TYPE_FILTER_ORDER = [
+  'education', 'healthcare', 'government', 'facility',
+  'nonprofit', 'funder', 'company', 'archive', 'other',
+];
+
 const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }) => {
   const [mode, setMode] = useState('chart');
   const [showCount, setShowCount] = useState(20);
+  const [typeFilter, setTypeFilter] = useState('all');
   if (!institutions) return null;
 
+  const availableTypes = useMemo(() => {
+    const seen = new Set();
+    for (const r of institutions) seen.add(r.type || 'other');
+    return INST_TYPE_FILTER_ORDER.filter((t) => seen.has(t));
+  }, [institutions]);
+
+  const filtered = useMemo(() => {
+    return typeFilter === 'all'
+      ? institutions
+      : institutions.filter((r) => (r.type || 'other') === typeFilter);
+  }, [institutions, typeFilter]);
+
   const chartData = useMemo(
-    () => institutions.slice(0, showCount).map((r) => ({
+    () => filtered.slice(0, showCount).map((r) => ({
       id: (r.id || '').replace('https://openalex.org/', ''),
       name: r.name
         .replace(/^King Mongkut's /, "KMUT-")
@@ -1349,41 +1475,98 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }
       edges: r.n_edges,
       seeds: r.n_seeds,
     })),
-    [institutions, showCount],
+    [filtered, showCount],
   );
+
+  const handleClick = (e) => {
+    if (e && e.activePayload && e.activePayload[0]) {
+      const id = e.activePayload[0].payload.id;
+      if (id && onSelectInstitution) onSelectInstitution(id);
+    }
+  };
 
   return (
     <Card className="p-5">
-      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+      <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
         <SectionTitle
           icon={Building2}
           kicker="Institutional landscape"
-          title="Which Thai institutions cite the most"
-          hint="All Thai institutions ranked by their 2025 outgoing citations. Click a bar (in chart mode) or row (in table mode) to filter the dashboard to that institution. Co-affiliations are counted once for each institution."
+          title="Which Thai institutions produce the most cited research"
+          hint="Each institution's 2025 publications (navy, top axis) and the citations those publications make (burgundy, bottom axis), shown on independent scales. Click any bar or row to filter the panels below."
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
 
+      {/* Type filter row */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            letterSpacing: '0.16em',
+            color: PALETTE.muted,
+            textTransform: 'uppercase',
+            marginRight: 6,
+          }}
+        >
+          Filter by type
+        </span>
+        <FilterPill
+          label="All"
+          active={typeFilter === 'all'}
+          onClick={() => setTypeFilter('all')}
+        />
+        {availableTypes.map((t) => (
+          <FilterPill
+            key={t}
+            label={t.charAt(0).toUpperCase() + t.slice(1)}
+            active={typeFilter === t}
+            color={INST_TYPE_COLORS[t]}
+            onClick={() => setTypeFilter(t)}
+          />
+        ))}
+      </div>
+
       {mode === 'chart' ? (
+        chartData.length === 0 ? (
+          <div
+            className="p-6 text-center"
+            style={{
+              fontFamily: FONT_BODY,
+              fontSize: 13,
+              color: PALETTE.muted,
+              background: PALETTE.cream,
+              border: `1px dashed ${PALETTE.rule}`,
+            }}
+          >
+            No institutions match this type filter. Try a different type.
+          </div>
+        ) : (
         <>
-          <div style={{ width: '100%', height: chartData.length * 24 + 40 }}>
+          <div style={{ width: '100%', height: chartData.length * 32 + 80 }}>
             <ResponsiveContainer>
               <BarChart
                 data={chartData}
                 layout="vertical"
-                margin={{ top: 4, right: 60, bottom: 4, left: 220 }}
-                onClick={(e) => {
-                  if (e && e.activePayload && e.activePayload[0]) {
-                    const id = e.activePayload[0].payload.id;
-                    if (id && onSelectInstitution) onSelectInstitution(id);
-                  }
-                }}
+                margin={{ top: 30, right: 60, bottom: 30, left: 220 }}
+                onClick={handleClick}
+                barGap={2}
               >
                 <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
                 <XAxis
                   type="number"
+                  xAxisId="seeds"
+                  orientation="top"
                   tickFormatter={fmt}
-                  tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+                  tick={{ fontSize: 10, fill: PALETTE.navy, fontFamily: FONT_MONO }}
+                  stroke={PALETTE.rule}
+                />
+                <XAxis
+                  type="number"
+                  xAxisId="edges"
+                  orientation="bottom"
+                  tickFormatter={fmt}
+                  tick={{ fontSize: 10, fill: PALETTE.burgundy, fontFamily: FONT_MONO }}
                   stroke={PALETTE.rule}
                 />
                 <YAxis
@@ -1402,24 +1585,41 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }
                     borderRadius: 0,
                   }}
                   labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
-                  formatter={(v) => [fmtFull(v), 'Citations']}
+                  formatter={(v, name) => [
+                    fmtFull(v),
+                    name === 'seeds' ? 'Publications' : 'Citations',
+                  ]}
                 />
-                <Bar dataKey="edges" cursor="pointer">
+                <Bar dataKey="seeds" xAxisId="seeds" cursor="pointer" name="seeds">
                   {chartData.map((d, i) => {
-                    const baseColor = INST_TYPE_COLORS[d.type] || PALETTE.muted;
                     const isFiltered = currentView && currentView !== 'all_thailand';
                     const isSelected = currentView === d.id;
-                    // When filtered, the selected bar stays full color and gains
-                    // a stroke; everything else fades to ~25% opacity.
                     const fill = isFiltered && !isSelected
-                      ? baseColor + '40'  // hex alpha 40 = ~25%
-                      : baseColor;
+                      ? PALETTE.navy + '40'
+                      : PALETTE.navy;
                     return (
                       <Cell
-                        key={i}
+                        key={`s-${i}`}
                         fill={fill}
                         stroke={isSelected ? PALETTE.ink : 'none'}
-                        strokeWidth={isSelected ? 2 : 0}
+                        strokeWidth={isSelected ? 1.5 : 0}
+                      />
+                    );
+                  })}
+                </Bar>
+                <Bar dataKey="edges" xAxisId="edges" cursor="pointer" name="edges">
+                  {chartData.map((d, i) => {
+                    const isFiltered = currentView && currentView !== 'all_thailand';
+                    const isSelected = currentView === d.id;
+                    const fill = isFiltered && !isSelected
+                      ? PALETTE.burgundy + '40'
+                      : PALETTE.burgundy;
+                    return (
+                      <Cell
+                        key={`e-${i}`}
+                        fill={fill}
+                        stroke={isSelected ? PALETTE.ink : 'none'}
+                        strokeWidth={isSelected ? 1.5 : 0}
                       />
                     );
                   })}
@@ -1428,38 +1628,39 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }
             </ResponsiveContainer>
           </div>
           <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex flex-wrap gap-3">
-              {Object.entries(INST_TYPE_COLORS)
-                .filter(([t]) => chartData.some((d) => d.type === t))
-                .map(([t, color]) => (
-                  <span
-                    key={t}
-                    className="inline-flex items-center gap-1.5"
-                    style={{
-                      fontFamily: FONT_MONO,
-                      fontSize: 9,
-                      letterSpacing: '0.1em',
-                      color: PALETTE.muted,
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        width: 9,
-                        height: 9,
-                        background: color,
-                      }}
-                    />
-                    {t}
-                  </span>
-                ))}
+            <div
+              className="flex items-center gap-4 flex-wrap"
+              style={{
+                fontFamily: FONT_MONO,
+                fontSize: 9,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+              }}
+            >
+              <span className="inline-flex items-center gap-1.5" style={{ color: PALETTE.navy }}>
+                <span
+                  style={{
+                    display: 'inline-block', width: 14, height: 9,
+                    background: PALETTE.navy,
+                  }}
+                />
+                Publications (top axis)
+              </span>
+              <span className="inline-flex items-center gap-1.5" style={{ color: PALETTE.burgundy }}>
+                <span
+                  style={{
+                    display: 'inline-block', width: 14, height: 9,
+                    background: PALETTE.burgundy,
+                  }}
+                />
+                Citations (bottom axis)
+              </span>
             </div>
             <div className="flex gap-1">
               {[10, 20, 30, 50].map((n) => (
                 <button
                   key={n}
-                  onClick={() => setShowCount(Math.min(n, institutions.length))}
+                  onClick={() => setShowCount(Math.min(n, filtered.length || institutions.length))}
                   className="px-2 py-1 transition-colors"
                   style={{
                     fontFamily: FONT_MONO,
@@ -1478,9 +1679,10 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }
             </div>
           </div>
         </>
+        )
       ) : (
         <DataTable
-          rows={institutions.map((r) => ({
+          rows={filtered.map((r) => ({
             ...r,
             short_id: (r.id || '').replace('https://openalex.org/', ''),
           }))}
@@ -1511,10 +1713,13 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }
               ),
             },
             { key: 'type', label: 'Type', align: 'left' },
-            { key: 'n_seeds', label: 'Citing papers', align: 'right', mono: true,
+            { key: 'n_seeds', label: 'Publications', align: 'right', mono: true,
               format: (v) => fmtFull(v) },
             { key: 'n_edges', label: 'Citations', align: 'right', mono: true,
               format: (v) => fmtFull(v) },
+            { key: '_avg', label: 'Per paper', align: 'right', mono: true,
+              format: (_, r) =>
+                r.n_seeds ? (r.n_edges / r.n_seeds).toFixed(1) : '—' },
           ]}
         />
       )}
@@ -1768,52 +1973,82 @@ const Header = ({ generatedAt }) => (
 // ============================================================
 // FILTER BAR  (its own section between panoramic and filtered panels)
 // ============================================================
-const FilterBar = ({ view, onViewChange, institutionViews, viewLabel }) => (
-  <div
-    className="border-y my-2"
-    style={{
-      background: PALETTE.paper,
-      borderColor: PALETTE.ink,
-    }}
-  >
-    <div className="px-5 py-4 flex flex-wrap items-end gap-5">
-      <div className="flex-1" style={{ minWidth: 300 }}>
+const FilterBar = ({ view, onViewChange, viewLabel }) => {
+  const isFiltered = view !== 'all_thailand';
+  return (
+    <div
+      className="border-y my-2"
+      style={{ background: PALETTE.paper, borderColor: PALETTE.ink }}
+    >
+      <div className="px-5 py-4 flex flex-wrap items-center gap-4">
         <div
-          className="mb-1.5 uppercase"
+          className="uppercase"
           style={{
             fontFamily: FONT_MONO,
-            fontSize: 9,
+            fontSize: 10,
             letterSpacing: '0.18em',
             color: PALETTE.muted,
+            whiteSpace: 'nowrap',
           }}
         >
-          The panels below are filtered by:
+          Filtered to
         </div>
-        <InstitutionSelector
-          view={view}
-          onChange={onViewChange}
-          institutionViews={institutionViews}
-        />
-      </div>
-      <div
-        style={{
-          fontFamily: FONT_BODY,
-          fontSize: 13,
-          color: PALETTE.charcoal,
-          lineHeight: 1.4,
-          maxWidth: 480,
-          paddingBottom: 6,
-        }}
-      >
-        Currently showing:{' '}
-        <strong style={{ color: PALETTE.burgundy }}>{viewLabel}</strong>.
-        Switch to any other institution to update the panels below. The two
-        panels above this bar (overlap and institutional landscape) do not
-        change with this filter.
+        <div
+          style={{
+            fontFamily: FONT_DISPLAY,
+            fontSize: 22,
+            fontWeight: 500,
+            color: isFiltered ? PALETTE.burgundy : PALETTE.ink,
+            letterSpacing: '-0.01em',
+            lineHeight: 1.1,
+          }}
+        >
+          {viewLabel}
+        </div>
+        {isFiltered && (
+          <button
+            onClick={() => onViewChange('all_thailand')}
+            className="px-3 py-1.5 transition-colors"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 10,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              background: 'transparent',
+              color: PALETTE.muted,
+              border: `1px solid ${PALETTE.rule}`,
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = PALETTE.ink;
+              e.currentTarget.style.color = PALETTE.ink;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = PALETTE.rule;
+              e.currentTarget.style.color = PALETTE.muted;
+            }}
+          >
+            Reset to All Thailand
+          </button>
+        )}
+        <div
+          className="flex-1 text-right"
+          style={{
+            fontFamily: FONT_BODY,
+            fontSize: 12,
+            color: PALETTE.muted,
+            lineHeight: 1.4,
+            minWidth: 200,
+          }}
+        >
+          {isFiltered
+            ? 'Click any other institution above to switch.'
+            : 'Click an institution in the chart above to filter.'}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Footer = () => (
   <footer
@@ -1966,11 +2201,10 @@ export default function Dashboard() {
             currentView={effectiveView}
           />
 
-          {/* Filter bar: dropdown + active-filter readout */}
+          {/* Filter bar: readout + reset button */}
           <FilterBar
             view={effectiveView}
             onViewChange={setView}
-            institutionViews={institutionViews}
             viewLabel={viewLabel}
           />
 
