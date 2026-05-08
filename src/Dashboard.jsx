@@ -477,71 +477,100 @@ const TYPE_LABELS = {
   full_text: 'Full text',
 };
 
-const CoverageBar = ({ value, color, thBenchmark }) => (
-  <div
-    className="relative"
-    style={{
-      width: '100%',
-      height: 18,
-      background: PALETTE.cream,
-    }}
-  >
+const CoverageBar = ({ value, color, thBenchmark }) => {
+  // Decide where to place the percentage label so it's always visible:
+  // - if the bar is wide enough (>= 80%), put the label INSIDE the bar
+  //   at its right edge, in cream text on the colored fill
+  // - otherwise, put it just OUTSIDE the bar end, in dark text on the
+  //   cream container background
+  const showInside = value >= 80;
+  return (
     <div
+      className="relative"
       style={{
-        width: `${Math.min(value, 100)}%`,
-        height: '100%',
-        background: color,
-        transition: 'width 400ms ease',
-      }}
-    />
-    {/* Thailand benchmark marker (vertical line + small triangle) */}
-    {thBenchmark != null && (
-      <>
-        <div
-          style={{
-            position: 'absolute',
-            left: `${Math.min(thBenchmark, 100)}%`,
-            top: -3,
-            bottom: -3,
-            width: 2,
-            background: PALETTE.gold,
-            transform: 'translateX(-1px)',
-            zIndex: 1,
-          }}
-          title={`Thailand baseline: ${thBenchmark.toFixed(1)}%`}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            left: `${Math.min(thBenchmark, 100)}%`,
-            top: -7,
-            transform: 'translateX(-3px)',
-            width: 0,
-            height: 0,
-            borderLeft: '3px solid transparent',
-            borderRight: '3px solid transparent',
-            borderTop: `4px solid ${PALETTE.gold}`,
-            zIndex: 1,
-          }}
-        />
-      </>
-    )}
-    <span
-      className="absolute"
-      style={{
-        right: 6,
-        top: '50%',
-        transform: 'translateY(-50%)',
-        fontFamily: FONT_MONO,
-        fontSize: 10,
-        color: value > 30 ? PALETTE.paper : PALETTE.charcoal,
-        letterSpacing: '0.05em',
+        width: '100%',
+        height: 18,
+        background: PALETTE.cream,
       }}
     >
-      {value.toFixed(1)}%
-    </span>
-  </div>
-);
+      <div
+        style={{
+          width: `${Math.min(value, 100)}%`,
+          height: '100%',
+          background: color,
+          transition: 'width 400ms ease',
+        }}
+      />
+      {/* Thailand baseline marker: vertical line + small "TH" label.
+          The label makes the marker self-documenting; native title
+          attribute provides an exact hover readout. */}
+      {thBenchmark != null && (
+        <>
+          <div
+            title={`All Thailand baseline: ${thBenchmark.toFixed(1)}%`}
+            style={{
+              position: 'absolute',
+              left: `${Math.min(thBenchmark, 100)}%`,
+              top: -4,
+              bottom: -4,
+              width: 2,
+              background: PALETTE.gold,
+              transform: 'translateX(-1px)',
+              cursor: 'help',
+              zIndex: 2,
+            }}
+          />
+          <div
+            title={`All Thailand baseline: ${thBenchmark.toFixed(1)}%`}
+            style={{
+              position: 'absolute',
+              // Position label above the bar; nudge left so the "TH"
+              // sits centered above the line.
+              left: `${Math.min(thBenchmark, 100)}%`,
+              top: -14,
+              transform: 'translateX(-50%)',
+              fontFamily: FONT_MONO,
+              fontSize: 8,
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              color: PALETTE.gold,
+              cursor: 'help',
+              whiteSpace: 'nowrap',
+              zIndex: 2,
+            }}
+          >
+            TH
+          </div>
+        </>
+      )}
+      <span
+        className="absolute"
+        style={{
+          ...(showInside
+            ? { right: 6, color: PALETTE.paper }
+            : {
+                left: `calc(${Math.min(value, 100)}% + 5px)`,
+                color: PALETTE.charcoal,
+              }),
+          top: '50%',
+          transform: 'translateY(-50%)',
+          fontFamily: FONT_MONO,
+          fontSize: 10,
+          letterSpacing: '0.05em',
+          whiteSpace: 'nowrap',
+          // Slight halo so the percentage stays readable if it lands
+          // visually close to the gold marker
+          textShadow: showInside
+            ? 'none'
+            : '0 0 2px rgba(251,248,241,0.9)',
+          zIndex: 1,
+        }}
+      >
+        {value.toFixed(1)}%
+      </span>
+    </div>
+  );
+};
 
 const FilterPill = ({ label, active, onClick, color }) => (
   <button
@@ -654,7 +683,12 @@ const CoverageTable = ({ coverage, view }) => {
                 Citation coverage
               </th>
               {isFiltered && (
-                <th style={{ ...cellHead, width: 80, textAlign: 'right' }}>vs TH</th>
+                <th
+                  style={{ ...cellHead, width: 90, textAlign: 'right' }}
+                  title="Difference between this institution's coverage and the All Thailand baseline. Positive values mean this institution leans more on this database than Thailand as a whole."
+                >
+                  Diff vs TH
+                </th>
               )}
               <th style={{ ...cellHead, width: 110, textAlign: 'right' }}>Unique</th>
             </tr>
@@ -687,7 +721,7 @@ const CoverageTable = ({ coverage, view }) => {
                   <td style={{ ...cellBody, textAlign: 'right', fontFamily: FONT_MONO }}>
                     {fmtFull(d.edges)}
                   </td>
-                  <td style={cellBody}>
+                  <td style={{ ...cellBody, paddingTop: isFiltered ? 18 : 10 }}>
                     <CoverageBar
                       value={d.edges_pct}
                       color={TYPE_COLORS[d.type]}
@@ -702,6 +736,11 @@ const CoverageTable = ({ coverage, view }) => {
                         fontFamily: FONT_MONO,
                         fontSize: 11,
                       }}
+                      title={
+                        diff != null
+                          ? `This institution: ${d.edges_pct.toFixed(1)}%  ·  All Thailand: ${(thPct ?? 0).toFixed(1)}%`
+                          : 'No All Thailand baseline available for this database'
+                      }
                     >
                       {diff != null ? (
                         <span
@@ -712,10 +751,16 @@ const CoverageTable = ({ coverage, view }) => {
                                 : diff > 0
                                 ? PALETTE.forest
                                 : PALETTE.rust,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3,
+                            justifyContent: 'flex-end',
                           }}
                         >
-                          {diff > 0 ? '+' : ''}
-                          {diff.toFixed(1)} pp
+                          <span style={{ fontSize: 10 }}>
+                            {Math.abs(diff) < 0.5 ? '≈' : diff > 0 ? '↑' : '↓'}
+                          </span>
+                          <span>{Math.abs(diff).toFixed(1)}%</span>
                         </span>
                       ) : (
                         <span style={{ color: PALETTE.muted }}>—</span>
@@ -749,7 +794,21 @@ const CoverageTable = ({ coverage, view }) => {
         }}
       >
         {isFiltered && (
-          <span className="inline-flex items-center gap-1.5">
+          <span
+            className="inline-flex items-center gap-2"
+            style={{ textTransform: 'none' }}
+          >
+            <span
+              style={{
+                fontFamily: FONT_MONO,
+                fontSize: 8,
+                fontWeight: 700,
+                color: PALETTE.gold,
+                letterSpacing: '0.06em',
+              }}
+            >
+              TH
+            </span>
             <span
               style={{
                 display: 'inline-block',
@@ -758,7 +817,9 @@ const CoverageTable = ({ coverage, view }) => {
                 background: PALETTE.gold,
               }}
             />
-            All Thailand baseline marker · pp = percentage points difference
+            <span style={{ textTransform: 'uppercase' }}>
+              The "TH" marker on each bar is the All Thailand baseline. Hover for the exact percentage.
+            </span>
           </span>
         )}
         <span>
@@ -795,7 +856,9 @@ const OverlapHeatmap = ({ overlap, meta }) => {
   if (!overlap || !overlap.all_thailand) return null;
   const o = overlap.all_thailand;
 
-  // Filter by database type using meta.databases lookup
+  // Filter by database type using meta.databases lookup. When showing
+  // all types, group databases by type (open access → index → full text)
+  // so visually similar databases sit next to each other in the matrix.
   const { labels, matrix, dbKeys } = useMemo(() => {
     const typeByKey = {};
     if (meta && meta.databases) {
@@ -806,6 +869,15 @@ const OverlapHeatmap = ({ overlap, meta }) => {
       indices = o.databases
         .map((k, i) => (typeByKey[k] === typeFilter ? i : -1))
         .filter((i) => i !== -1);
+    } else {
+      // Sort by type group, then by label within each group
+      const TYPE_ORDER = { open_access: 0, abstract_index: 1, full_text: 2 };
+      indices = [...indices].sort((a, b) => {
+        const ta = TYPE_ORDER[typeByKey[o.databases[a]]] ?? 99;
+        const tb = TYPE_ORDER[typeByKey[o.databases[b]]] ?? 99;
+        if (ta !== tb) return ta - tb;
+        return o.labels[a].localeCompare(o.labels[b]);
+      });
     }
     return {
       labels: indices.map((i) => o.labels[i]),
@@ -1489,7 +1561,7 @@ const TopPublishersPanel = ({ byPublisher, summary, view }) => {
           title="Which publishers' journals get cited most"
           hint={
             isFiltered
-              ? "Each publisher's share of this institution's citations (burgundy) compared with its share of all-Thailand citations (gold). Helps you see whether this institution leans more or less than the country average on a given publisher."
+              ? "Each publisher's share of this institution's citations (burgundy, primary) compared with its share of all-Thailand citations (muted gold, reference). Helps you see whether this institution leans more or less than the country average on a given publisher."
               : "Top publishers by citation count. Heavy concentration in a few names tells you where subscription money has the most leverage."
           }
         />
@@ -1538,8 +1610,16 @@ const TopPublishersPanel = ({ byPublisher, summary, view }) => {
                 />
                 {isFiltered ? (
                   <>
+                    {/* Thailand reference bar drawn first so it sits behind
+                        in z-order at the same x-axis position; muted
+                        opacity keeps it visible without competing. */}
+                    <Bar
+                      dataKey="th_pct"
+                      fill={PALETTE.gold}
+                      fillOpacity={0.45}
+                      name="th_pct"
+                    />
                     <Bar dataKey="pct" fill={PALETTE.burgundy} name="pct" />
-                    <Bar dataKey="th_pct" fill={PALETTE.gold} name="th_pct" />
                   </>
                 ) : (
                   <Bar dataKey="edges" fill={PALETTE.teal} name="edges" />
@@ -1570,8 +1650,9 @@ const TopPublishersPanel = ({ byPublisher, summary, view }) => {
                     <span style={{
                       display: 'inline-block', width: 14, height: 9,
                       background: PALETTE.gold,
+                      opacity: 0.45,
                     }} />
-                    All Thailand (% of citations)
+                    All Thailand reference (muted)
                   </span>
                 </>
               ) : (
@@ -1716,6 +1797,41 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
     [filtered, showCount],
   );
 
+  // Lookup so the custom Y-axis tick can find each institution's type
+  // and color the label accordingly.
+  const tickInfoByName = useMemo(() => {
+    const m = {};
+    for (const d of chartData) m[d.name] = d;
+    return m;
+  }, [chartData]);
+
+  // Custom tick component: colors each institution name by its type.
+  // Recharts passes x, y, payload (the tick value) into the renderer.
+  const ColoredYTick = ({ x, y, payload }) => {
+    const info = tickInfoByName[payload.value];
+    const isFiltered = currentView && currentView !== 'all_thailand';
+    const isSelected = info && currentView === info.id;
+    const baseColor = info
+      ? INST_TYPE_COLORS[info.type] || PALETTE.charcoal
+      : PALETTE.charcoal;
+    // Fade non-selected labels to match the bar shading behavior
+    const color = isFiltered && !isSelected ? baseColor + '90' : baseColor;
+    return (
+      <text
+        x={x}
+        y={y}
+        dy={3}
+        textAnchor="end"
+        fill={color}
+        fontSize={10}
+        fontFamily={FONT_BODY}
+        fontWeight={isSelected ? 600 : 400}
+      >
+        {payload.value}
+      </text>
+    );
+  };
+
   const handleClick = (e) => {
     if (e && e.activePayload && e.activePayload[0]) {
       const id = e.activePayload[0].payload.id;
@@ -1745,7 +1861,7 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
           icon={Building2}
           kicker="Institutional landscape"
           title="Which Thai institutions produce the most cited research"
-          hint="Each institution's 2025 publications (navy, top axis) and the citations those publications make (burgundy, bottom axis), shown on independent scales. Click a type pill to filter to the type-aggregate; click a single bar or row to filter to that institution."
+          hint="Each institution's 2025 publications (navy, primary, top axis) and the citations those publications make (muted burgundy, bottom axis), shown on independent scales. Institution names are colored by type. Click a type pill to filter to the type-aggregate; click a single bar or row to filter to that institution."
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
@@ -1825,7 +1941,7 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
                 <YAxis
                   type="category"
                   dataKey="name"
-                  tick={{ fontSize: 10, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
+                  tick={ColoredYTick}
                   stroke={PALETTE.rule}
                   width={220}
                 />
@@ -1860,7 +1976,17 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
                     );
                   })}
                 </Bar>
-                <Bar dataKey="edges" xAxisId="edges" cursor="pointer" name="edges">
+                {/* Citation bar uses lower opacity so the publication
+                    (navy) bar is visually dominant. The chart's primary
+                    metric is research production; citations are
+                    supporting context. */}
+                <Bar
+                  dataKey="edges"
+                  xAxisId="edges"
+                  cursor="pointer"
+                  name="edges"
+                  fillOpacity={0.5}
+                >
                   {chartData.map((d, i) => {
                     const isFiltered = currentView && currentView !== 'all_thailand';
                     const isSelected = currentView === d.id;
