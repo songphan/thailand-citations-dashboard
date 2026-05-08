@@ -1464,6 +1464,30 @@ const Header = ({ view, onViewChange, generatedAt }) => (
 
       <div className="mt-6 flex flex-wrap items-center gap-4">
         <ViewToggle view={view} onChange={onViewChange} />
+        <a
+          href="#/explore"
+          className="inline-flex items-center gap-1.5 px-3 py-2 transition-colors"
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 11,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            background: 'transparent',
+            color: PALETTE.burgundy,
+            border: `1px solid ${PALETTE.burgundy}`,
+            textDecoration: 'none',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = PALETTE.burgundy;
+            e.currentTarget.style.color = PALETTE.paper;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = PALETTE.burgundy;
+          }}
+        >
+          Explore in SQL →
+        </a>
         <div
           style={{
             fontFamily: FONT_MONO,
