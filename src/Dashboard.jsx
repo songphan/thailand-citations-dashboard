@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Database, Layers, Network, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  Database, Layers, Network, AlertCircle, Loader2,
+  Calendar, FileText, Building2, BookOpen, Tag, GitCompare,
+} from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  AreaChart, Area, Cell, PieChart, Pie,
+} from 'recharts';
 
 // ============================================================
 // DESIGN TOKENS  (matches the Thailand research dashboard)
@@ -61,11 +68,20 @@ function useDataFiles() {
     summary: null,
     coverage: null,
     overlap: null,
+    by_year: null,
+    by_type: null,
+    by_publisher: null,
+    institutions: null,
+    institution_types: null,
   });
 
   useEffect(() => {
     const base = `${import.meta.env.BASE_URL}data/`;
-    const files = ['meta', 'summary', 'coverage', 'overlap'];
+    const files = [
+      'meta', 'summary', 'coverage', 'overlap',
+      'by_year', 'by_type', 'by_publisher',
+      'institutions', 'institution_types',
+    ];
     Promise.all(
       files.map((f) =>
         fetch(`${base}${f}.json`).then((r) => {
@@ -690,6 +706,690 @@ const OverlapHeatmap = ({ overlap, view }) => {
 };
 
 // ============================================================
+// CITATIONS BY YEAR  (area chart, with pre-1990 bucketed)
+// ============================================================
+const ByYearPanel = ({ byYear, view }) => {
+  if (!byYear) return null;
+  const raw = byYear[view] || [];
+  // Bucket pre-1990 to keep the recent-decades trend visible.
+  const data = useMemo(() => {
+    const recent = raw.filter((r) => r.year >= 1990).sort((a, b) => a.year - b.year);
+    const old = raw.filter((r) => r.year < 1990);
+    const oldBucket = old.length
+      ? {
+          year: '<1990',
+          edges: old.reduce((s, r) => s + r.edges, 0),
+          unique: old.reduce((s, r) => s + r.unique, 0),
+          isBucket: true,
+        }
+      : null;
+    return oldBucket ? [oldBucket, ...recent] : recent;
+  }, [raw]);
+
+  const total = useMemo(
+    () => data.reduce((s, r) => s + r.edges, 0),
+    [data],
+  );
+
+  // Find the year with peak citations for annotation
+  const peak = useMemo(
+    () => data.reduce((m, r) => (r.edges > (m?.edges || 0) ? r : m), null),
+    [data],
+  );
+
+  return (
+    <Card className="p-5">
+      <SectionTitle
+        icon={Calendar}
+        kicker="Time horizon"
+        title="When are the cited works from"
+        hint={`Distribution of ${fmtFull(total)} citations by the publication year of the cited work. Pre-1990 collapsed into a single bucket.`}
+      />
+      <div style={{ width: '100%', height: 320 }}>
+        <ResponsiveContainer>
+          <AreaChart
+            data={data}
+            margin={{ top: 12, right: 16, bottom: 8, left: 8 }}
+          >
+            <defs>
+              <linearGradient id="yearArea" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={PALETTE.burgundy} stopOpacity={0.7} />
+                <stop offset="100%" stopColor={PALETTE.burgundy} stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke={PALETTE.rule} vertical={false} />
+            <XAxis
+              dataKey="year"
+              tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+              stroke={PALETTE.rule}
+              interval="preserveStartEnd"
+              minTickGap={20}
+            />
+            <YAxis
+              tickFormatter={fmt}
+              tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+              stroke={PALETTE.rule}
+            />
+            <Tooltip
+              contentStyle={{
+                background: PALETTE.paper,
+                border: `1px solid ${PALETTE.ink}`,
+                fontFamily: FONT_BODY,
+                fontSize: 12,
+                borderRadius: 0,
+              }}
+              labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
+              formatter={(value, name) => [fmtFull(value), name === 'edges' ? 'Citations' : 'Unique']}
+            />
+            <Area
+              type="monotone"
+              dataKey="edges"
+              stroke={PALETTE.burgundy}
+              strokeWidth={1.5}
+              fill="url(#yearArea)"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+      {peak && (
+        <div
+          className="mt-2"
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 10,
+            letterSpacing: '0.12em',
+            color: PALETTE.muted,
+            textTransform: 'uppercase',
+          }}
+        >
+          Peak year · {peak.year} · {fmtFull(peak.edges)} citations
+        </div>
+      )}
+    </Card>
+  );
+};
+
+// ============================================================
+// CITATIONS BY TYPE  (horizontal bar with subscription overlay)
+// ============================================================
+const ByTypePanel = ({ byType, view }) => {
+  if (!byType) return null;
+  const data = useMemo(() => {
+    const items = byType[view] || [];
+    return items
+      .filter((r) => r.edges >= 100)
+      .map((r) => ({
+        type: r.type,
+        edges: r.edges,
+        unique: r.unique,
+      }));
+  }, [byType, view]);
+  const total = useMemo(() => data.reduce((s, r) => s + r.edges, 0), [data]);
+
+  return (
+    <Card className="p-5">
+      <SectionTitle
+        icon={FileText}
+        kicker="Material types"
+        title="What kinds of works are being cited"
+        hint="OpenAlex work-type classification. Articles dominate, but reviews, books, and chapters represent specific subscription needs. Types with fewer than 100 citations are omitted."
+      />
+      <div style={{ width: '100%', height: Math.max(220, data.length * 30) }}>
+        <ResponsiveContainer>
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{ top: 4, right: 50, bottom: 4, left: 110 }}
+          >
+            <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
+            <XAxis
+              type="number"
+              tickFormatter={fmt}
+              tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+              stroke={PALETTE.rule}
+            />
+            <YAxis
+              type="category"
+              dataKey="type"
+              tick={{ fontSize: 11, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
+              stroke={PALETTE.rule}
+              width={110}
+            />
+            <Tooltip
+              contentStyle={{
+                background: PALETTE.paper,
+                border: `1px solid ${PALETTE.ink}`,
+                fontFamily: FONT_BODY,
+                fontSize: 12,
+                borderRadius: 0,
+              }}
+              labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
+              formatter={(value) => [fmtFull(value), 'Citations']}
+            />
+            <Bar dataKey="edges" fill={PALETTE.navy}>
+              {data.map((d, i) => (
+                <Cell key={i} fill={i === 0 ? PALETTE.burgundy : PALETTE.navy} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div
+        className="mt-3"
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: 10,
+          letterSpacing: '0.12em',
+          color: PALETTE.muted,
+          textTransform: 'uppercase',
+        }}
+      >
+        Total · {fmtFull(total)} citations across {data.length} types
+      </div>
+    </Card>
+  );
+};
+
+// ============================================================
+// TOP PUBLISHERS
+// ============================================================
+const TopPublishersPanel = ({ byPublisher, view }) => {
+  if (!byPublisher) return null;
+  const [showCount, setShowCount] = useState(15);
+  const allData = byPublisher[view] || [];
+  const data = useMemo(
+    () => allData.slice(0, showCount).map((r) => ({
+      publisher: r.publisher,
+      edges: r.edges,
+    })),
+    [allData, showCount],
+  );
+
+  return (
+    <Card className="p-5">
+      <SectionTitle
+        icon={BookOpen}
+        kicker="Publisher concentration"
+        title="Which publishers' journals get cited most"
+        hint="Top publishers by citation count. Heavy concentration in a few names tells you where subscription money has the most impact."
+      />
+      <div style={{ width: '100%', height: data.length * 26 + 40 }}>
+        <ResponsiveContainer>
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{ top: 4, right: 60, bottom: 4, left: 200 }}
+          >
+            <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
+            <XAxis
+              type="number"
+              tickFormatter={fmt}
+              tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+              stroke={PALETTE.rule}
+            />
+            <YAxis
+              type="category"
+              dataKey="publisher"
+              tick={{ fontSize: 10.5, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
+              stroke={PALETTE.rule}
+              width={200}
+            />
+            <Tooltip
+              contentStyle={{
+                background: PALETTE.paper,
+                border: `1px solid ${PALETTE.ink}`,
+                fontFamily: FONT_BODY,
+                fontSize: 12,
+                borderRadius: 0,
+              }}
+              labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
+              formatter={(v) => [fmtFull(v), 'Citations']}
+            />
+            <Bar dataKey="edges" fill={PALETTE.teal} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+        <div
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 10,
+            letterSpacing: '0.12em',
+            color: PALETTE.muted,
+            textTransform: 'uppercase',
+          }}
+        >
+          Showing top {showCount} of {allData.length}
+        </div>
+        <div className="flex gap-1">
+          {[10, 15, 25, 50, 100].map((n) => (
+            <button
+              key={n}
+              onClick={() => setShowCount(n)}
+              className="px-2 py-1 transition-colors"
+              style={{
+                fontFamily: FONT_MONO,
+                fontSize: 10,
+                letterSpacing: '0.06em',
+                background: showCount === n ? PALETTE.ink : 'transparent',
+                color: showCount === n ? PALETTE.paper : PALETTE.muted,
+                border: `1px solid ${showCount === n ? PALETTE.ink : PALETTE.rule}`,
+                cursor: showCount === n ? 'default' : 'pointer',
+                minWidth: 36,
+              }}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+// ============================================================
+// TOP CITING THAI INSTITUTIONS
+// ============================================================
+const INST_TYPE_COLORS = {
+  education: PALETTE.navy,
+  healthcare: PALETTE.burgundy,
+  government: PALETTE.gold,
+  facility: PALETTE.teal,
+  nonprofit: PALETTE.forest,
+  funder: PALETTE.rust,
+  company: PALETTE.plum,
+  other: PALETTE.muted,
+  archive: PALETTE.sage,
+};
+
+const TopInstitutionsPanel = ({ institutions, view }) => {
+  if (!institutions) return null;
+  // Note: this is a flat list (not view-keyed) because under the
+  // Chulalongkorn view, "top citing institutions" would be just CU.
+  // We always show the all-Thailand institutional landscape.
+  const [showCount, setShowCount] = useState(20);
+  const data = useMemo(
+    () => institutions.slice(0, showCount).map((r) => ({
+      name: r.name.replace(/^King Mongkut's /, "KMUT-").replace(/^King Mongkut /, "KMUT-"),
+      type: r.type || 'other',
+      edges: r.n_edges,
+      seeds: r.n_seeds,
+    })),
+    [institutions, showCount],
+  );
+
+  return (
+    <Card className="p-5">
+      <SectionTitle
+        icon={Building2}
+        kicker="Institutional landscape"
+        title="Which Thai institutions cite the most"
+        hint={
+          view === 'chulalongkorn'
+            ? "All Thai institutions ranked by their 2025 outgoing citations. Shown in both views since the institutional landscape is constant."
+            : "All Thai institutions with 2025 publications, ranked by total outgoing citations. A paper with co-authors at multiple institutions counts once for each."
+        }
+      />
+      <div style={{ width: '100%', height: data.length * 24 + 40 }}>
+        <ResponsiveContainer>
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{ top: 4, right: 60, bottom: 4, left: 220 }}
+          >
+            <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
+            <XAxis
+              type="number"
+              tickFormatter={fmt}
+              tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+              stroke={PALETTE.rule}
+            />
+            <YAxis
+              type="category"
+              dataKey="name"
+              tick={{ fontSize: 10, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
+              stroke={PALETTE.rule}
+              width={220}
+            />
+            <Tooltip
+              contentStyle={{
+                background: PALETTE.paper,
+                border: `1px solid ${PALETTE.ink}`,
+                fontFamily: FONT_BODY,
+                fontSize: 12,
+                borderRadius: 0,
+              }}
+              labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
+              formatter={(v, name, p) => {
+                if (name === 'edges') return [fmtFull(v), 'Citations'];
+                return [v, name];
+              }}
+            />
+            <Bar dataKey="edges">
+              {data.map((d, i) => (
+                <Cell key={i} fill={INST_TYPE_COLORS[d.type] || PALETTE.muted} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex flex-wrap gap-3">
+          {Object.entries(INST_TYPE_COLORS)
+            .filter(([t]) => data.some((d) => d.type === t))
+            .map(([t, color]) => (
+              <span
+                key={t}
+                className="inline-flex items-center gap-1.5"
+                style={{
+                  fontFamily: FONT_MONO,
+                  fontSize: 9,
+                  letterSpacing: '0.1em',
+                  color: PALETTE.muted,
+                  textTransform: 'uppercase',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: 9,
+                    height: 9,
+                    background: color,
+                  }}
+                />
+                {t}
+              </span>
+            ))}
+        </div>
+        <div className="flex gap-1">
+          {[10, 20, 30, 50].map((n) => (
+            <button
+              key={n}
+              onClick={() => setShowCount(n)}
+              className="px-2 py-1 transition-colors"
+              style={{
+                fontFamily: FONT_MONO,
+                fontSize: 10,
+                letterSpacing: '0.06em',
+                background: showCount === n ? PALETTE.ink : 'transparent',
+                color: showCount === n ? PALETTE.paper : PALETTE.muted,
+                border: `1px solid ${showCount === n ? PALETTE.ink : PALETTE.rule}`,
+                cursor: showCount === n ? 'default' : 'pointer',
+                minWidth: 36,
+              }}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+// ============================================================
+// INSTITUTION TYPE BREAKDOWN  (small donut)
+// ============================================================
+const InstitutionTypesPanel = ({ institutionTypes }) => {
+  if (!institutionTypes) return null;
+  const data = useMemo(
+    () => institutionTypes
+      .map((r) => ({
+        type: r.type,
+        n_edges: r.n_edges,
+        n_seeds: r.n_seeds,
+        n_institutions: r.n_institutions,
+      }))
+      .sort((a, b) => b.n_edges - a.n_edges),
+    [institutionTypes],
+  );
+  const totalEdges = useMemo(
+    () => data.reduce((s, r) => s + r.n_edges, 0),
+    [data],
+  );
+
+  return (
+    <Card className="p-5">
+      <SectionTitle
+        icon={Tag}
+        kicker="Sector mix"
+        title="Citations by institution type"
+        hint="OpenAlex institutional classification. Citations counted across all author affiliations."
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div style={{ width: '100%', height: 240 }}>
+          <ResponsiveContainer>
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="n_edges"
+                nameKey="type"
+                innerRadius={50}
+                outerRadius={90}
+                paddingAngle={2}
+              >
+                {data.map((d, i) => (
+                  <Cell
+                    key={i}
+                    fill={INST_TYPE_COLORS[d.type] || PALETTE.muted}
+                  />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{
+                  background: PALETTE.paper,
+                  border: `1px solid ${PALETTE.ink}`,
+                  fontFamily: FONT_BODY,
+                  fontSize: 12,
+                  borderRadius: 0,
+                }}
+                formatter={(v) => fmtFull(v) + ' citations'}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="flex flex-col gap-2 self-center">
+          {data.map((r) => {
+            const p = (r.n_edges / totalEdges) * 100;
+            return (
+              <div
+                key={r.type}
+                className="flex items-center justify-between gap-3"
+                style={{ fontFamily: FONT_BODY, fontSize: 12 }}
+              >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: 10,
+                      height: 10,
+                      background: INST_TYPE_COLORS[r.type] || PALETTE.muted,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span style={{ color: PALETTE.ink, textTransform: 'capitalize' }}>
+                    {r.type}
+                  </span>
+                  <span style={{ color: PALETTE.muted, fontSize: 10 }}>
+                    ({r.n_institutions})
+                  </span>
+                </div>
+                <div
+                  style={{
+                    fontFamily: FONT_MONO,
+                    fontSize: 11,
+                    color: PALETTE.charcoal,
+                    minWidth: 90,
+                    textAlign: 'right',
+                  }}
+                >
+                  {fmt(r.n_edges)}
+                  <span style={{ color: PALETTE.muted, marginLeft: 6 }}>
+                    {p.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+// ============================================================
+// SCIENCEDIRECT  CU vs STANDARD COMPARISON
+// ============================================================
+const ScienceDirectComparison = ({ coverage, view }) => {
+  if (!coverage) return null;
+  const data = coverage[view];
+  const cu = data.databases.find((d) => d.key === 'sciencedirect_cu');
+  const std = data.databases.find((d) => d.key === 'sciencedirect_std');
+  if (!cu || !std) return null;
+
+  const gain_edges = std.edges - cu.edges;
+  const gain_unique = std.unique - cu.unique;
+  const gain_pct = std.edges_pct - cu.edges_pct;
+
+  return (
+    <Card className="p-5">
+      <SectionTitle
+        icon={GitCompare}
+        kicker="Subscription scenario"
+        title="ScienceDirect: current CU subscription vs full Standard list"
+        hint="What would upgrading from the CU-subscribed ScienceDirect titles to Elsevier's full Standard product gain in coverage."
+      />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div
+          className="p-4"
+          style={{
+            background: PALETTE.cream,
+            border: `1px solid ${PALETTE.rule}`,
+          }}
+        >
+          <div
+            className="uppercase mb-2"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 9,
+              letterSpacing: '0.18em',
+              color: PALETTE.muted,
+            }}
+          >
+            Current CU Subscription
+          </div>
+          <div
+            style={{
+              fontFamily: FONT_DISPLAY,
+              fontSize: 28,
+              fontWeight: 500,
+              color: PALETTE.burgundy,
+              lineHeight: 1,
+            }}
+          >
+            {fmtPct(cu.edges_pct)}
+          </div>
+          <div
+            className="mt-1"
+            style={{ fontFamily: FONT_BODY, fontSize: 11, color: PALETTE.muted }}
+          >
+            {fmtFull(cu.edges)} citations covered
+          </div>
+        </div>
+        <div
+          className="p-4"
+          style={{
+            background: PALETTE.cream,
+            border: `1px solid ${PALETTE.rule}`,
+          }}
+        >
+          <div
+            className="uppercase mb-2"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 9,
+              letterSpacing: '0.18em',
+              color: PALETTE.muted,
+            }}
+          >
+            Full Standard Product
+          </div>
+          <div
+            style={{
+              fontFamily: FONT_DISPLAY,
+              fontSize: 28,
+              fontWeight: 500,
+              color: PALETTE.navy,
+              lineHeight: 1,
+            }}
+          >
+            {fmtPct(std.edges_pct)}
+          </div>
+          <div
+            className="mt-1"
+            style={{ fontFamily: FONT_BODY, fontSize: 11, color: PALETTE.muted }}
+          >
+            {fmtFull(std.edges)} citations covered
+          </div>
+        </div>
+        <div
+          className="p-4"
+          style={{
+            background: PALETTE.paper,
+            border: `2px solid ${PALETTE.ink}`,
+          }}
+        >
+          <div
+            className="uppercase mb-2"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 9,
+              letterSpacing: '0.18em',
+              color: PALETTE.muted,
+            }}
+          >
+            Marginal Gain
+          </div>
+          <div
+            style={{
+              fontFamily: FONT_DISPLAY,
+              fontSize: 28,
+              fontWeight: 600,
+              color: PALETTE.ink,
+              lineHeight: 1,
+            }}
+          >
+            +{gain_pct.toFixed(2)} pts
+          </div>
+          <div
+            className="mt-1"
+            style={{ fontFamily: FONT_BODY, fontSize: 11, color: PALETTE.charcoal }}
+          >
+            +{fmtFull(gain_edges)} citations · +{fmtFull(gain_unique)} unique works
+          </div>
+        </div>
+      </div>
+      <p
+        className="mt-4"
+        style={{
+          fontFamily: FONT_BODY,
+          fontSize: 12,
+          color: PALETTE.muted,
+          lineHeight: 1.5,
+          maxWidth: 720,
+        }}
+      >
+        Interpretation: Elsevier's full Standard list is broader than what
+        OAR currently subscribes to via the Chula package, but the marginal
+        gain in citation coverage is modest. Whether the upgrade is worthwhile
+        depends on the cost differential and whether the additional titles
+        align with disciplines that are underserved by current subscriptions.
+      </p>
+    </Card>
+  );
+};
+
+// ============================================================
 // HEADER, FOOTER
 // ============================================================
 const Header = ({ view, onViewChange, generatedAt }) => (
@@ -929,29 +1629,21 @@ export default function Dashboard() {
         <div className="space-y-6">
           <TopStats summary={data.summary} coverage={data.coverage} view={view} />
           <CoverageTable coverage={data.coverage} view={view} />
+
+          <ScienceDirectComparison coverage={data.coverage} view={view} />
+
           <OverlapHeatmap overlap={data.overlap} view={view} />
 
-          {/* Placeholder section for the remaining panels coming in Turn 2 */}
-          <Card className="p-5" style={{ borderStyle: 'dashed' }}>
-            <SectionTitle
-              icon={Layers}
-              kicker="Coming next"
-              title="More panels in Turn 2"
-              hint="Citations by year · Citations by type · Top publishers · Top citing institutions · Institution types · ScienceDirect CU vs Standard comparison"
-            />
-            <p
-              style={{
-                fontFamily: FONT_BODY,
-                fontSize: 13,
-                color: PALETTE.muted,
-                lineHeight: 1.55,
-              }}
-            >
-              The three panels above are the foundation. Once you've reviewed
-              the design and approved the direction, the remaining six panels
-              will fill the rest of the page.
-            </p>
-          </Card>
+          <ByYearPanel byYear={data.by_year} view={view} />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ByTypePanel byType={data.by_type} view={view} />
+            <InstitutionTypesPanel institutionTypes={data.institution_types} />
+          </div>
+
+          <TopPublishersPanel byPublisher={data.by_publisher} view={view} />
+
+          <TopInstitutionsPanel institutions={data.institutions} view={view} />
         </div>
       </main>
       <Footer />
