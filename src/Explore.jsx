@@ -48,7 +48,7 @@ const useFonts = () => {
 // local URL when self-hosting. The explore page expects one parquet
 // file per logical table (matches what export_parquet.py produces).
 const PARQUET_BASE = import.meta.env.VITE_PARQUET_BASE
-  || 'https://huggingface.co/datasets/CHANGE_ME/th-citations-2025/resolve/main';
+  || 'https://huggingface.co/datasets/Songphan/th-citations-2025/resolve/main';
 
 const PARQUET_TABLES = [
   // Citation graph
