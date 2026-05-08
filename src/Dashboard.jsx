@@ -228,12 +228,10 @@ const StatBlock = ({ label, value, sublabel, accent = PALETTE.ink }) => (
 const TopStats = ({ summary, coverage, view }) => {
   if (!summary || !coverage) return null;
   const s = summary[view];
-  const c = coverage[view];
-  const any = c.any_subscribed;
   return (
     <Card className="p-0">
       <div
-        className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5"
+        className="grid grid-cols-2 md:grid-cols-4"
         style={{ borderColor: PALETTE.rule }}
       >
         <div style={{ borderRight: `1px solid ${PALETTE.rule}` }}>
@@ -246,7 +244,7 @@ const TopStats = ({ summary, coverage, view }) => {
         </div>
         <div style={{ borderRight: `1px solid ${PALETTE.rule}` }}>
           <StatBlock
-            label="Outgoing citations"
+            label="Total citations"
             value={fmt(s.n_total_edges)}
             sublabel={fmtFull(s.n_total_edges)}
             accent={PALETTE.burgundy}
@@ -256,27 +254,16 @@ const TopStats = ({ summary, coverage, view }) => {
           <StatBlock
             label="Unique cited works"
             value={fmt(s.n_unique_cited)}
-            sublabel={`${((s.n_unique_cited / s.n_total_edges) * 100).toFixed(1)}% of edges`}
+            sublabel={`${((s.n_unique_cited / s.n_total_edges) * 100).toFixed(1)}% of citations`}
             accent={PALETTE.teal}
           />
         </div>
-        <div
-          className="md:border-r"
-          style={{ borderRight: `1px solid ${PALETTE.rule}` }}
-        >
+        <div>
           <StatBlock
             label="Books / Chapters"
             value={fmtPct(s.pct_books)}
-            sublabel={`${fmtFull(s.n_books_chapters)} edges`}
+            sublabel={`${fmtFull(s.n_books_chapters)} citations`}
             accent={PALETTE.gold}
-          />
-        </div>
-        <div className="col-span-2 md:col-span-4 lg:col-span-1">
-          <StatBlock
-            label="Reachable via subscriptions"
-            value={fmtPct(any?.edges_pct)}
-            sublabel={`${fmtFull(any?.edges)} edges in any subscribed DB`}
-            accent={PALETTE.forest}
           />
         </div>
       </div>
@@ -372,10 +359,10 @@ const CoverageTable = ({ coverage, view }) => {
             >
               <th style={cellHead}>Database</th>
               <th style={{ ...cellHead, width: 80 }}>Type</th>
-              <th style={{ ...cellHead, width: 90, textAlign: 'right' }}>
-                Edges
+              <th style={{ ...cellHead, width: 100, textAlign: 'right' }}>
+                Citations
               </th>
-              <th style={{ ...cellHead, width: '32%' }}>Edge coverage</th>
+              <th style={{ ...cellHead, width: '32%' }}>Citation coverage</th>
               <th style={{ ...cellHead, width: 90, textAlign: 'right' }}>
                 Unique
               </th>
@@ -757,7 +744,7 @@ const Header = ({ view, onViewChange, generatedAt }) => (
           maxWidth: 900,
         }}
       >
-        How well do our subscriptions match what Thai researchers actually cite?
+        Thailand Citations and Databases Dashboard
       </h1>
 
       <p
@@ -769,11 +756,10 @@ const Header = ({ view, onViewChange, generatedAt }) => (
           lineHeight: 1.55,
         }}
       >
-        A data-driven view of the 1.37 million outgoing citations made by
-        Thailand-affiliated researchers in their 2025 publications, mapped
-        against the journal title lists of the databases OAR currently
-        subscribes to. Use this to ask which subscriptions earn their place,
-        which ones overlap, and where coverage gaps live.
+        Where Thai researchers' 2025 citations actually land across the
+        databases OAR subscribes to. Use this to see which subscriptions
+        carry the most weight, where coverage overlaps, and where the
+        gaps are.
       </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-4">
