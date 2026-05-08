@@ -477,7 +477,7 @@ const TYPE_LABELS = {
   full_text: 'Full text',
 };
 
-const CoverageBar = ({ value, color }) => (
+const CoverageBar = ({ value, color, thBenchmark }) => (
   <div
     className="relative"
     style={{
@@ -494,6 +494,38 @@ const CoverageBar = ({ value, color }) => (
         transition: 'width 400ms ease',
       }}
     />
+    {/* Thailand benchmark marker (vertical line + small triangle) */}
+    {thBenchmark != null && (
+      <>
+        <div
+          style={{
+            position: 'absolute',
+            left: `${Math.min(thBenchmark, 100)}%`,
+            top: -3,
+            bottom: -3,
+            width: 2,
+            background: PALETTE.gold,
+            transform: 'translateX(-1px)',
+            zIndex: 1,
+          }}
+          title={`Thailand baseline: ${thBenchmark.toFixed(1)}%`}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            left: `${Math.min(thBenchmark, 100)}%`,
+            top: -7,
+            transform: 'translateX(-3px)',
+            width: 0,
+            height: 0,
+            borderLeft: '3px solid transparent',
+            borderRight: '3px solid transparent',
+            borderTop: `4px solid ${PALETTE.gold}`,
+            zIndex: 1,
+          }}
+        />
+      </>
+    )}
     <span
       className="absolute"
       style={{
@@ -534,6 +566,17 @@ const CoverageTable = ({ coverage, view }) => {
   const [typeFilter, setTypeFilter] = useState('all');
   if (!coverage || !coverage[view]) return null;
   const data = coverage[view];
+  const isFiltered = view !== 'all_thailand';
+
+  // Build a lookup for Thailand baseline percentages so each row can show a marker
+  const thBaseline = useMemo(() => {
+    if (!isFiltered) return null;
+    const t = coverage.all_thailand;
+    if (!t) return null;
+    const map = {};
+    for (const d of t.databases) map[d.key] = d.edges_pct;
+    return map;
+  }, [coverage, isFiltered]);
 
   const dbs = useMemo(() => {
     const filtered = typeFilter === 'all'
@@ -553,7 +596,11 @@ const CoverageTable = ({ coverage, view }) => {
         icon={Database}
         kicker="Database coverage"
         title="What fraction of citations is reachable through each database"
-        hint="Matched on normalized ISSN against the public title list of each database. This shows the technical coverage potential of each database, not whether a particular library subscribes to it."
+        hint={
+          isFiltered
+            ? 'Matched on normalized ISSN against the public title list of each database. The gold marker on each bar shows the All Thailand baseline for that database, so you can see whether this institution leans on a database more or less than Thailand as a whole.'
+            : 'Matched on normalized ISSN against the public title list of each database. This shows the technical coverage potential of each database, not whether a particular library subscribes to it.'
+        }
       />
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span
@@ -603,55 +650,96 @@ const CoverageTable = ({ coverage, view }) => {
               <th style={cellHead}>Database</th>
               <th style={{ ...cellHead, width: 90 }}>Type</th>
               <th style={{ ...cellHead, width: 110, textAlign: 'right' }}>Citations</th>
-              <th style={{ ...cellHead, width: '36%' }}>Citation coverage</th>
+              <th style={{ ...cellHead, width: isFiltered ? '34%' : '36%' }}>
+                Citation coverage
+              </th>
+              {isFiltered && (
+                <th style={{ ...cellHead, width: 80, textAlign: 'right' }}>vs TH</th>
+              )}
               <th style={{ ...cellHead, width: 110, textAlign: 'right' }}>Unique</th>
             </tr>
           </thead>
           <tbody>
-            {dbs.map((d) => (
-              <tr key={d.key} style={{ borderTop: `1px solid ${PALETTE.rule}` }}>
-                <td style={cellBody}>
-                  <span style={{ color: PALETTE.ink, fontWeight: 500 }}>{d.label}</span>
-                </td>
-                <td style={cellBody}>
-                  <span
+            {dbs.map((d) => {
+              const thPct = thBaseline ? thBaseline[d.key] : null;
+              const diff = thPct != null ? d.edges_pct - thPct : null;
+              return (
+                <tr key={d.key} style={{ borderTop: `1px solid ${PALETTE.rule}` }}>
+                  <td style={cellBody}>
+                    <span style={{ color: PALETTE.ink, fontWeight: 500 }}>{d.label}</span>
+                  </td>
+                  <td style={cellBody}>
+                    <span
+                      style={{
+                        fontFamily: FONT_MONO,
+                        fontSize: 9,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        color: TYPE_COLORS[d.type],
+                        padding: '2px 6px',
+                        border: `1px solid ${TYPE_COLORS[d.type]}`,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {TYPE_LABELS[d.type]}
+                    </span>
+                  </td>
+                  <td style={{ ...cellBody, textAlign: 'right', fontFamily: FONT_MONO }}>
+                    {fmtFull(d.edges)}
+                  </td>
+                  <td style={cellBody}>
+                    <CoverageBar
+                      value={d.edges_pct}
+                      color={TYPE_COLORS[d.type]}
+                      thBenchmark={thPct}
+                    />
+                  </td>
+                  {isFiltered && (
+                    <td
+                      style={{
+                        ...cellBody,
+                        textAlign: 'right',
+                        fontFamily: FONT_MONO,
+                        fontSize: 11,
+                      }}
+                    >
+                      {diff != null ? (
+                        <span
+                          style={{
+                            color:
+                              Math.abs(diff) < 0.5
+                                ? PALETTE.muted
+                                : diff > 0
+                                ? PALETTE.forest
+                                : PALETTE.rust,
+                          }}
+                        >
+                          {diff > 0 ? '+' : ''}
+                          {diff.toFixed(1)} pp
+                        </span>
+                      ) : (
+                        <span style={{ color: PALETTE.muted }}>—</span>
+                      )}
+                    </td>
+                  )}
+                  <td
                     style={{
+                      ...cellBody,
+                      textAlign: 'right',
                       fontFamily: FONT_MONO,
-                      fontSize: 9,
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                      color: TYPE_COLORS[d.type],
-                      padding: '2px 6px',
-                      border: `1px solid ${TYPE_COLORS[d.type]}`,
-                      whiteSpace: 'nowrap',
+                      color: PALETTE.muted,
                     }}
                   >
-                    {TYPE_LABELS[d.type]}
-                  </span>
-                </td>
-                <td style={{ ...cellBody, textAlign: 'right', fontFamily: FONT_MONO }}>
-                  {fmtFull(d.edges)}
-                </td>
-                <td style={cellBody}>
-                  <CoverageBar value={d.edges_pct} color={TYPE_COLORS[d.type]} />
-                </td>
-                <td
-                  style={{
-                    ...cellBody,
-                    textAlign: 'right',
-                    fontFamily: FONT_MONO,
-                    color: PALETTE.muted,
-                  }}
-                >
-                  {fmtFull(d.unique)}
-                </td>
-              </tr>
-            ))}
+                    {fmtFull(d.unique)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
       <div
-        className="mt-4"
+        className="mt-4 flex items-center gap-4 flex-wrap"
         style={{
           fontFamily: FONT_MONO,
           fontSize: 9,
@@ -660,7 +748,22 @@ const CoverageTable = ({ coverage, view }) => {
           textTransform: 'uppercase',
         }}
       >
-        Note · EBSCO ASC/ASP/ASU share the same indexing universe but differ in their full-text holdings
+        {isFiltered && (
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              style={{
+                display: 'inline-block',
+                width: 2,
+                height: 12,
+                background: PALETTE.gold,
+              }}
+            />
+            All Thailand baseline marker · pp = percentage points difference
+          </span>
+        )}
+        <span>
+          Note · EBSCO ASC/ASP/ASU share the same indexing universe but differ in their full-text holdings
+        </span>
       </div>
     </Card>
   );
@@ -1312,18 +1415,42 @@ const ByTypePanel = ({ byType, view }) => {
 // ============================================================
 // TOP PUBLISHERS
 // ============================================================
-const TopPublishersPanel = ({ byPublisher, view }) => {
+const TopPublishersPanel = ({ byPublisher, summary, view }) => {
   const [mode, setMode] = useState('chart');
   const [showCount, setShowCount] = useState(15);
   if (!byPublisher || !byPublisher[view]) return null;
   const allData = byPublisher[view] || [];
+  const isFiltered = view !== 'all_thailand';
+
+  // Build a Thailand-publisher lookup so we can compute the benchmark per row
+  const thLookup = useMemo(() => {
+    if (!isFiltered) return null;
+    const t = byPublisher.all_thailand || [];
+    const map = {};
+    for (const r of t) map[r.publisher] = r.edges;
+    return map;
+  }, [byPublisher, isFiltered]);
+
+  const totalView = summary && summary[view] ? summary[view].n_total_edges : 0;
+  const totalTH =
+    summary && summary.all_thailand ? summary.all_thailand.n_total_edges : 0;
+
   const data = useMemo(
-    () => allData.slice(0, showCount).map((r) => ({
-      publisher: r.publisher,
-      edges: r.edges,
-    })),
-    [allData, showCount],
+    () => allData.slice(0, showCount).map((r) => {
+      const th_edges = thLookup ? thLookup[r.publisher] || 0 : 0;
+      return {
+        publisher: r.publisher,
+        edges: r.edges,
+        pct: totalView ? (r.edges / totalView) * 100 : 0,
+        th_edges,
+        th_pct: totalTH ? (th_edges / totalTH) * 100 : 0,
+      };
+    }),
+    [allData, showCount, thLookup, totalView, totalTH],
   );
+
+  // Per-row height: bigger when we draw two grouped bars
+  const rowHeight = isFiltered ? 36 : 26;
 
   return (
     <Card className="p-5">
@@ -1332,24 +1459,29 @@ const TopPublishersPanel = ({ byPublisher, view }) => {
           icon={BookOpen}
           kicker="Publisher concentration"
           title="Which publishers' journals get cited most"
-          hint="Top publishers by citation count. Heavy concentration in a few names tells you where subscription money has the most leverage."
+          hint={
+            isFiltered
+              ? "Each publisher's share of this institution's citations (burgundy) compared with its share of all-Thailand citations (gold). Helps you see whether this institution leans more or less than the country average on a given publisher."
+              : "Top publishers by citation count. Heavy concentration in a few names tells you where subscription money has the most leverage."
+          }
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
 
       {mode === 'chart' ? (
         <>
-          <div style={{ width: '100%', height: data.length * 26 + 40 }}>
+          <div style={{ width: '100%', height: data.length * rowHeight + 50 }}>
             <ResponsiveContainer>
               <BarChart
                 data={data}
                 layout="vertical"
-                margin={{ top: 4, right: 60, bottom: 4, left: 200 }}
+                margin={{ top: 4, right: 60, bottom: 20, left: 200 }}
+                barGap={2}
               >
                 <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
                 <XAxis
                   type="number"
-                  tickFormatter={fmt}
+                  tickFormatter={isFiltered ? (v) => `${v.toFixed(0)}%` : fmt}
                   tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
                   stroke={PALETTE.rule}
                 />
@@ -1369,23 +1501,56 @@ const TopPublishersPanel = ({ byPublisher, view }) => {
                     borderRadius: 0,
                   }}
                   labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
-                  formatter={(v) => [fmtFull(v), 'Citations']}
+                  formatter={(v, name) => {
+                    if (name === 'pct') return [`${v.toFixed(2)}%`, 'This institution'];
+                    if (name === 'th_pct') return [`${v.toFixed(2)}%`, 'All Thailand'];
+                    if (name === 'edges') return [fmtFull(v), 'Citations'];
+                    return [v, name];
+                  }}
                 />
-                <Bar dataKey="edges" fill={PALETTE.teal} />
+                {isFiltered ? (
+                  <>
+                    <Bar dataKey="pct" fill={PALETTE.burgundy} name="pct" />
+                    <Bar dataKey="th_pct" fill={PALETTE.gold} name="th_pct" />
+                  </>
+                ) : (
+                  <Bar dataKey="edges" fill={PALETTE.teal} name="edges" />
+                )}
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
             <div
+              className="flex items-center gap-4 flex-wrap"
               style={{
                 fontFamily: FONT_MONO,
-                fontSize: 10,
-                letterSpacing: '0.12em',
-                color: PALETTE.muted,
+                fontSize: 9,
+                letterSpacing: '0.1em',
                 textTransform: 'uppercase',
               }}
             >
-              Showing top {showCount} of {allData.length}
+              {isFiltered ? (
+                <>
+                  <span className="inline-flex items-center gap-1.5" style={{ color: PALETTE.burgundy }}>
+                    <span style={{
+                      display: 'inline-block', width: 14, height: 9,
+                      background: PALETTE.burgundy,
+                    }} />
+                    This institution (% of citations)
+                  </span>
+                  <span className="inline-flex items-center gap-1.5" style={{ color: PALETTE.gold }}>
+                    <span style={{
+                      display: 'inline-block', width: 14, height: 9,
+                      background: PALETTE.gold,
+                    }} />
+                    All Thailand (% of citations)
+                  </span>
+                </>
+              ) : (
+                <span style={{ color: PALETTE.muted }}>
+                  Showing top {showCount} of {allData.length}
+                </span>
+              )}
             </div>
             <div className="flex gap-1">
               {[10, 15, 25, 50].map((n) => (
@@ -1412,10 +1577,32 @@ const TopPublishersPanel = ({ byPublisher, view }) => {
         </>
       ) : (
         <DataTable
-          rows={allData}
-          columns={[
-            { key: 'publisher', label: 'Publisher', align: 'left',
-              maxWidth: 360 },
+          rows={isFiltered
+            ? allData.map((r) => ({
+                ...r,
+                pct: totalView ? (r.edges / totalView) * 100 : 0,
+                th_edges: thLookup ? thLookup[r.publisher] || 0 : 0,
+                th_pct: totalTH && thLookup
+                  ? ((thLookup[r.publisher] || 0) / totalTH) * 100
+                  : 0,
+              }))
+            : allData}
+          columns={isFiltered ? [
+            { key: 'publisher', label: 'Publisher', align: 'left', maxWidth: 320 },
+            { key: 'edges', label: 'Citations', align: 'right', mono: true,
+              format: (v) => fmtFull(v) },
+            { key: 'pct', label: 'Share', align: 'right', mono: true,
+              format: (v) => `${v.toFixed(2)}%` },
+            { key: 'th_pct', label: 'TH share', align: 'right', mono: true,
+              format: (v) => `${v.toFixed(2)}%` },
+            { key: '_diff', label: 'Diff (pp)', align: 'right', mono: true,
+              format: (_, r) => {
+                const d = r.pct - r.th_pct;
+                const sign = d > 0 ? '+' : '';
+                return `${sign}${d.toFixed(2)}`;
+              } },
+          ] : [
+            { key: 'publisher', label: 'Publisher', align: 'left', maxWidth: 360 },
             { key: 'edges', label: 'Citations', align: 'right', mono: true,
               format: (v) => fmtFull(v) },
             { key: 'unique', label: 'Unique works', align: 'right', mono: true,
@@ -1868,7 +2055,7 @@ const Header = ({ generatedAt }) => (
     style={{ borderColor: PALETTE.ink, background: PALETTE.paper }}
   >
     <div className="border-b" style={{ borderColor: PALETTE.rule }}>
-      <div className="mx-auto max-w-[1400px] px-6 py-3">
+      <div className="mx-auto max-w-[1400px] px-6 py-3 flex items-center justify-between gap-4">
         <a
           href="https://www.car.chula.ac.th"
           target="_blank"
@@ -1882,6 +2069,38 @@ const Header = ({ generatedAt }) => (
             style={{ height: 44, width: 'auto', display: 'block' }}
             onError={(e) => { e.target.style.display = 'none'; }}
           />
+        </a>
+        <a
+          href="https://thailand-research-dashboard.vercel.app/"
+          target="_blank"
+          rel="noreferrer noopener"
+          className="inline-flex items-center gap-2 px-3 py-2 transition-colors"
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 10,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            background: PALETTE.cream,
+            color: PALETTE.charcoal,
+            border: `1px solid ${PALETTE.rule}`,
+            textDecoration: 'none',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = PALETTE.ink;
+            e.currentTarget.style.color = PALETTE.paper;
+            e.currentTarget.style.borderColor = PALETTE.ink;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = PALETTE.cream;
+            e.currentTarget.style.color = PALETTE.charcoal;
+            e.currentTarget.style.borderColor = PALETTE.rule;
+          }}
+          title="Open the Thailand Research Dashboard in a new tab"
+        >
+          <span className="hidden sm:inline">Thailand Research Dashboard</span>
+          <span className="inline sm:hidden">Research Dashboard</span>
+          <span style={{ fontSize: 12 }}>↗</span>
         </a>
       </div>
     </div>
@@ -1977,15 +2196,26 @@ const FilterBar = ({ view, onViewChange, viewLabel }) => {
   const isFiltered = view !== 'all_thailand';
   return (
     <div
-      className="border-y my-2"
-      style={{ background: PALETTE.paper, borderColor: PALETTE.ink }}
+      style={{
+        background: PALETTE.paper,
+        borderTop: `2px solid ${PALETTE.ink}`,
+        borderBottom: `2px solid ${PALETTE.ink}`,
+        position: 'sticky',
+        top: 0,
+        zIndex: 20,
+        marginTop: 8,
+        marginBottom: 8,
+        // Subtle shadow gives the impression of depth when sticky;
+        // looks fine when not stuck too.
+        boxShadow: '0 2px 6px rgba(26,22,18,0.05)',
+      }}
     >
-      <div className="px-5 py-4 flex flex-wrap items-center gap-4">
+      <div className="px-5 py-2.5 flex flex-wrap items-center gap-3">
         <div
           className="uppercase"
           style={{
             fontFamily: FONT_MONO,
-            fontSize: 10,
+            fontSize: 9,
             letterSpacing: '0.18em',
             color: PALETTE.muted,
             whiteSpace: 'nowrap',
@@ -1996,7 +2226,7 @@ const FilterBar = ({ view, onViewChange, viewLabel }) => {
         <div
           style={{
             fontFamily: FONT_DISPLAY,
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: 500,
             color: isFiltered ? PALETTE.burgundy : PALETTE.ink,
             letterSpacing: '-0.01em',
@@ -2008,7 +2238,7 @@ const FilterBar = ({ view, onViewChange, viewLabel }) => {
         {isFiltered && (
           <button
             onClick={() => onViewChange('all_thailand')}
-            className="px-3 py-1.5 transition-colors"
+            className="px-2.5 py-1 transition-colors"
             style={{
               fontFamily: FONT_MONO,
               fontSize: 10,
@@ -2018,6 +2248,7 @@ const FilterBar = ({ view, onViewChange, viewLabel }) => {
               color: PALETTE.muted,
               border: `1px solid ${PALETTE.rule}`,
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = PALETTE.ink;
@@ -2028,22 +2259,47 @@ const FilterBar = ({ view, onViewChange, viewLabel }) => {
               e.currentTarget.style.color = PALETTE.muted;
             }}
           >
-            Reset to All Thailand
+            Reset
           </button>
         )}
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="px-2.5 py-1 transition-colors"
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 10,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            background: 'transparent',
+            color: PALETTE.muted,
+            border: `1px solid ${PALETTE.rule}`,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = PALETTE.ink;
+            e.currentTarget.style.color = PALETTE.ink;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = PALETTE.rule;
+            e.currentTarget.style.color = PALETTE.muted;
+          }}
+        >
+          ↑ Top
+        </button>
         <div
-          className="flex-1 text-right"
+          className="flex-1 text-right hidden md:block"
           style={{
             fontFamily: FONT_BODY,
-            fontSize: 12,
+            fontSize: 11,
             color: PALETTE.muted,
             lineHeight: 1.4,
-            minWidth: 200,
+            minWidth: 180,
           }}
         >
           {isFiltered
-            ? 'Click any other institution above to switch.'
-            : 'Click an institution in the chart above to filter.'}
+            ? 'Scroll up to choose a different institution.'
+            : 'Click an institution in the landscape chart to filter.'}
         </div>
       </div>
     </div>
@@ -2240,7 +2496,11 @@ export default function Dashboard() {
             <InstitutionTypesPanel institutionTypes={data.institution_types} />
           </div>
 
-          <TopPublishersPanel byPublisher={data.by_publisher} view={effectiveView} />
+          <TopPublishersPanel
+            byPublisher={data.by_publisher}
+            summary={data.summary}
+            view={effectiveView}
+          />
           <CoverageTable coverage={data.coverage} view={effectiveView} />
         </div>
       </main>
