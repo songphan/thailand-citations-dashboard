@@ -1,0 +1,452 @@
+[
+  {
+    "id": "https://openalex.org/I158708052",
+    "name": "Chulalongkorn University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/028wp3y58",
+    "n_seeds": 4603,
+    "n_edges": 233961
+  },
+  {
+    "id": "https://openalex.org/I25399158",
+    "name": "Mahidol University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/01znkr924",
+    "n_seeds": 4237,
+    "n_edges": 190949
+  },
+  {
+    "id": "https://openalex.org/I48076826",
+    "name": "Chiang Mai University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/05m2fqn25",
+    "n_seeds": 3118,
+    "n_edges": 158779
+  },
+  {
+    "id": "https://openalex.org/I198105771",
+    "name": "Kasetsart University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/05gzceg21",
+    "n_seeds": 2039,
+    "n_edges": 96729
+  },
+  {
+    "id": "https://openalex.org/I131868736",
+    "name": "Prince of Songkla University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/0575ycz84",
+    "n_seeds": 1898,
+    "n_edges": 90285
+  },
+  {
+    "id": "https://openalex.org/I179193067",
+    "name": "Khon Kaen University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/03cq4gr50",
+    "n_seeds": 2022,
+    "n_edges": 86429
+  },
+  {
+    "id": "https://openalex.org/I108108428",
+    "name": "Thammasat University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/002yp7f20",
+    "n_seeds": 1618,
+    "n_edges": 69796
+  },
+  {
+    "id": "https://openalex.org/I1332387789",
+    "name": "Siriraj Hospital",
+    "country": "TH",
+    "type": "healthcare",
+    "ror": "https://ror.org/0331zs648",
+    "n_seeds": 1200,
+    "n_edges": 48688
+  },
+  {
+    "id": "https://openalex.org/I1332092204",
+    "name": "National Science and Technology Development Agency",
+    "country": "TH",
+    "type": "government",
+    "ror": "https://ror.org/04vy95b61",
+    "n_seeds": 927,
+    "n_edges": 47500
+  },
+  {
+    "id": "https://openalex.org/I4210123333",
+    "name": "Ministry of Education",
+    "country": "TH",
+    "type": "government",
+    "ror": "https://ror.org/036nq5137",
+    "n_seeds": 766,
+    "n_edges": 45528
+  },
+  {
+    "id": "https://openalex.org/I96916377",
+    "name": "Walailak University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/04b69g067",
+    "n_seeds": 819,
+    "n_edges": 44314
+  },
+  {
+    "id": "https://openalex.org/I82828225",
+    "name": "King Mongkut's University of Technology North Bangkok",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/04fy6jb97",
+    "n_seeds": 1205,
+    "n_edges": 43734
+  },
+  {
+    "id": "https://openalex.org/I91538806",
+    "name": "King Mongkut's Institute of Technology Ladkrabang",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/055mf0v62",
+    "n_seeds": 1112,
+    "n_edges": 42266
+  },
+  {
+    "id": "https://openalex.org/I60837268",
+    "name": "King Mongkut's University of Technology Thonburi",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/0057ax056",
+    "n_seeds": 992,
+    "n_edges": 41435
+  },
+  {
+    "id": "https://openalex.org/I82475049",
+    "name": "Suranaree University of Technology",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/05sgb8g78",
+    "n_seeds": 799,
+    "n_edges": 37984
+  },
+  {
+    "id": "https://openalex.org/I123096312",
+    "name": "Mahasarakham University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/0453j3c58",
+    "n_seeds": 861,
+    "n_edges": 34426
+  },
+  {
+    "id": "https://openalex.org/I86677382",
+    "name": "Silpakorn University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/02d0tyt78",
+    "n_seeds": 582,
+    "n_edges": 33901
+  },
+  {
+    "id": "https://openalex.org/I4210140007",
+    "name": "Ramathibodi Hospital",
+    "country": "TH",
+    "type": "healthcare",
+    "ror": "https://ror.org/04884sy85",
+    "n_seeds": 842,
+    "n_edges": 33638
+  },
+  {
+    "id": "https://openalex.org/I34002243",
+    "name": "Mae Fah Luang University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/00mwhaw71",
+    "n_seeds": 463,
+    "n_edges": 29200
+  },
+  {
+    "id": "https://openalex.org/I66200439",
+    "name": "Naresuan University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/03e2qe334",
+    "n_seeds": 608,
+    "n_edges": 26594
+  },
+  {
+    "id": "https://openalex.org/I2802209374",
+    "name": "King Chulalongkorn Memorial Hospital",
+    "country": "TH",
+    "type": "healthcare",
+    "ror": "https://ror.org/05jd2pj53",
+    "n_seeds": 616,
+    "n_edges": 25918
+  },
+  {
+    "id": "https://openalex.org/I4210126604",
+    "name": "Mahidol Oxford Tropical Medicine Research Unit",
+    "country": "TH",
+    "type": "facility",
+    "ror": "https://ror.org/03fs9z545",
+    "n_seeds": 588,
+    "n_edges": 25536
+  },
+  {
+    "id": "https://openalex.org/I129488602",
+    "name": "Burapha University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/01ff74m36",
+    "n_seeds": 560,
+    "n_edges": 22394
+  },
+  {
+    "id": "https://openalex.org/I76920116",
+    "name": "Srinakharinwirot University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/04718hx42",
+    "n_seeds": 563,
+    "n_edges": 22175
+  },
+  {
+    "id": "https://openalex.org/I38538140",
+    "name": "Asian Institute of Technology",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/0403qcr87",
+    "n_seeds": 418,
+    "n_edges": 21139
+  },
+  {
+    "id": "https://openalex.org/I1285782058",
+    "name": "Rajamangala University of Technology Isan",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/04a2rz655",
+    "n_seeds": 561,
+    "n_edges": 20378
+  },
+  {
+    "id": "https://openalex.org/I4210090662",
+    "name": "University of Phayao",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/00a5mh069",
+    "n_seeds": 496,
+    "n_edges": 20316
+  },
+  {
+    "id": "https://openalex.org/I902798049",
+    "name": "National Center for Genetic Engineering and Biotechnology",
+    "country": "TH",
+    "type": "facility",
+    "ror": "https://ror.org/047aswc67",
+    "n_seeds": 362,
+    "n_edges": 20152
+  },
+  {
+    "id": "https://openalex.org/I4210090246",
+    "name": "Synchrotron Light Research Institute",
+    "country": "TH",
+    "type": "facility",
+    "ror": "https://ror.org/00ckxt310",
+    "n_seeds": 355,
+    "n_edges": 18598
+  },
+  {
+    "id": "https://openalex.org/I10245363",
+    "name": "Rajamangala University of Technology",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/051qqcg15",
+    "n_seeds": 443,
+    "n_edges": 17903
+  },
+  {
+    "id": "https://openalex.org/I4210107674",
+    "name": "National Nanotechnology Center",
+    "country": "TH",
+    "type": "facility",
+    "ror": "https://ror.org/01neh8064",
+    "n_seeds": 285,
+    "n_edges": 16436
+  },
+  {
+    "id": "https://openalex.org/I89226531",
+    "name": "Rangsit University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/01cqcrc47",
+    "n_seeds": 415,
+    "n_edges": 16192
+  },
+  {
+    "id": "https://openalex.org/I181635417",
+    "name": "Shinawatra University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/02sr8jt85",
+    "n_seeds": 342,
+    "n_edges": 15591
+  },
+  {
+    "id": "https://openalex.org/I4210153049",
+    "name": "Vidyasirimedhi Institute of Science and Technology",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/053jehz60",
+    "n_seeds": 254,
+    "n_edges": 14914
+  },
+  {
+    "id": "https://openalex.org/I3132067926",
+    "name": "Krirk University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/04d8yqq70",
+    "n_seeds": 295,
+    "n_edges": 12744
+  },
+  {
+    "id": "https://openalex.org/I72091625",
+    "name": "Ubon Ratchathani University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/045nemn19",
+    "n_seeds": 274,
+    "n_edges": 12602
+  },
+  {
+    "id": "https://openalex.org/I4210132449",
+    "name": "The Royal College Of Anesthesiologists Of Thailand",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/03e4r0p06",
+    "n_seeds": 174,
+    "n_edges": 10790
+  },
+  {
+    "id": "https://openalex.org/I1297332423",
+    "name": "Thai Red Cross Society",
+    "country": "TH",
+    "type": "other",
+    "ror": "https://ror.org/02ggfyw45",
+    "n_seeds": 274,
+    "n_edges": 10672
+  },
+  {
+    "id": "https://openalex.org/I1315836254",
+    "name": "Ministry of Public Health",
+    "country": "TH",
+    "type": "funder",
+    "ror": "https://ror.org/03rn0z073",
+    "n_seeds": 293,
+    "n_edges": 10386
+  },
+  {
+    "id": "https://openalex.org/I190734841",
+    "name": "Maejo University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/03c7s1f64",
+    "n_seeds": 229,
+    "n_edges": 10162
+  },
+  {
+    "id": "https://openalex.org/I4210149736",
+    "name": "Food and Drug Administration",
+    "country": "TH",
+    "type": "government",
+    "ror": "https://ror.org/05hvrsg85",
+    "n_seeds": 212,
+    "n_edges": 9296
+  },
+  {
+    "id": "https://openalex.org/I4210106686",
+    "name": "Chulabhorn Hospital",
+    "country": "TH",
+    "type": "healthcare",
+    "ror": "https://ror.org/01qc5zk84",
+    "n_seeds": 230,
+    "n_edges": 9165
+  },
+  {
+    "id": "https://openalex.org/I4210159985",
+    "name": "Sakon Nakhon Rajabhat University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/05qeh2v62",
+    "n_seeds": 231,
+    "n_edges": 8581
+  },
+  {
+    "id": "https://openalex.org/I55913730",
+    "name": "Bangkok University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/002qeva03",
+    "n_seeds": 228,
+    "n_edges": 8326
+  },
+  {
+    "id": "https://openalex.org/I4210087968",
+    "name": "Phramongkutklao Hospital",
+    "country": "TH",
+    "type": "healthcare",
+    "ror": "https://ror.org/007h1qz76",
+    "n_seeds": 229,
+    "n_edges": 7422
+  },
+  {
+    "id": "https://openalex.org/I279583474",
+    "name": "Navamindradhiraj University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/01qkghv97",
+    "n_seeds": 227,
+    "n_edges": 7175
+  },
+  {
+    "id": "https://openalex.org/I159665162",
+    "name": "National Institute of Development Administration",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/010g30191",
+    "n_seeds": 161,
+    "n_edges": 6945
+  },
+  {
+    "id": "https://openalex.org/I79246082",
+    "name": "Thaksin University",
+    "country": "TH",
+    "type": "education",
+    "ror": "https://ror.org/00t2prd39",
+    "n_seeds": 171,
+    "n_edges": 6744
+  },
+  {
+    "id": "https://openalex.org/I85156444",
+    "name": "National Astronomical Research Institute of Thailand",
+    "country": "TH",
+    "type": "government",
+    "ror": "https://ror.org/027rw9342",
+    "n_seeds": 91,
+    "n_edges": 6684
+  },
+  {
+    "id": "https://openalex.org/I4210146814",
+    "name": "Petromat",
+    "country": "TH",
+    "type": "nonprofit",
+    "ror": "https://ror.org/04g4rsk10",
+    "n_seeds": 109,
+    "n_edges": 6395
+  }
+]

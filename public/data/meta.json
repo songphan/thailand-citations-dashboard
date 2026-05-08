@@ -1,0 +1,128 @@
+{
+  "generated_at": "2026-05-08T17:48:05",
+  "pipeline_version": "v1.0",
+  "views": [
+    "all_thailand",
+    "chulalongkorn"
+  ],
+  "chulalongkorn_id": "https://openalex.org/I158708052",
+  "databases": [
+    {
+      "key": "doaj",
+      "label": "DOAJ (open access)",
+      "type": "open_access",
+      "subscribed": true,
+      "available": true
+    },
+    {
+      "key": "scopus",
+      "label": "Scopus",
+      "type": "abstract_index",
+      "subscribed": true,
+      "available": true
+    },
+    {
+      "key": "wos_scie",
+      "label": "WoS SCIE",
+      "type": "abstract_index",
+      "subscribed": true,
+      "available": true
+    },
+    {
+      "key": "wos_ssci",
+      "label": "WoS SSCI",
+      "type": "abstract_index",
+      "subscribed": true,
+      "available": true
+    },
+    {
+      "key": "wos_ahci",
+      "label": "WoS AHCI",
+      "type": "abstract_index",
+      "subscribed": true,
+      "available": true
+    },
+    {
+      "key": "wos_esci",
+      "label": "WoS ESCI",
+      "type": "abstract_index",
+      "subscribed": true,
+      "available": true
+    },
+    {
+      "key": "sciencedirect_std",
+      "label": "ScienceDirect Standard",
+      "type": "full_text",
+      "subscribed": false,
+      "available": true
+    },
+    {
+      "key": "sciencedirect_cu",
+      "label": "ScienceDirect (CU)",
+      "type": "full_text",
+      "subscribed": true,
+      "available": true
+    },
+    {
+      "key": "wiley",
+      "label": "Wiley Journals",
+      "type": "full_text",
+      "subscribed": true,
+      "available": true
+    },
+    {
+      "key": "ebsco_asc_idx",
+      "label": "EBSCO ASC indexed",
+      "type": "abstract_index",
+      "subscribed": true,
+      "available": true
+    },
+    {
+      "key": "ebsco_asc_ft",
+      "label": "EBSCO ASC full text",
+      "type": "full_text",
+      "subscribed": true,
+      "available": true
+    },
+    {
+      "key": "ebsco_asp_idx",
+      "label": "EBSCO ASP indexed",
+      "type": "abstract_index",
+      "subscribed": true,
+      "available": true
+    },
+    {
+      "key": "ebsco_asp_ft",
+      "label": "EBSCO ASP full text",
+      "type": "full_text",
+      "subscribed": true,
+      "available": true
+    },
+    {
+      "key": "ebsco_asu_idx",
+      "label": "EBSCO ASU indexed",
+      "type": "abstract_index",
+      "subscribed": true,
+      "available": true
+    },
+    {
+      "key": "ebsco_asu_ft",
+      "label": "EBSCO ASU full text",
+      "type": "full_text",
+      "subscribed": true,
+      "available": true
+    }
+  ],
+  "subscribed_aggregate_keys": [
+    "scopus",
+    "wos_scie",
+    "wos_ssci",
+    "wos_ahci",
+    "wos_esci",
+    "sciencedirect_cu",
+    "wiley",
+    "ebsco_asc_ft",
+    "ebsco_asp_ft",
+    "ebsco_asu_ft"
+  ]
+}
