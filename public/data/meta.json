@@ -1,8 +1,17 @@
 {
-  "generated_at": "2026-05-09T01:04:16",
-  "pipeline_version": "v2.0",
+  "generated_at": "2026-05-09T02:20:31",
+  "pipeline_version": "v2.1",
   "views": [
     "all_thailand",
+    "type:education",
+    "type:healthcare",
+    "type:government",
+    "type:facility",
+    "type:nonprofit",
+    "type:other",
+    "type:funder",
+    "type:company",
+    "type:archive",
     "I158708052",
     "I25399158",
     "I48076826",
@@ -144,6 +153,62 @@
       "name": "Naresuan University",
       "type": "education",
       "n_edges": 26594
+    }
+  ],
+  "type_views": [
+    {
+      "id": "type:education",
+      "type": "education",
+      "n_institutions": 138,
+      "n_edges": 1718169
+    },
+    {
+      "id": "type:healthcare",
+      "type": "healthcare",
+      "n_institutions": 56,
+      "n_edges": 181139
+    },
+    {
+      "id": "type:government",
+      "type": "government",
+      "n_institutions": 27,
+      "n_edges": 144167
+    },
+    {
+      "id": "type:facility",
+      "type": "facility",
+      "n_institutions": 16,
+      "n_edges": 106426
+    },
+    {
+      "id": "type:nonprofit",
+      "type": "nonprofit",
+      "n_institutions": 10,
+      "n_edges": 17632
+    },
+    {
+      "id": "type:other",
+      "type": "other",
+      "n_institutions": 7,
+      "n_edges": 11117
+    },
+    {
+      "id": "type:funder",
+      "type": "funder",
+      "n_institutions": 1,
+      "n_edges": 10386
+    },
+    {
+      "id": "type:company",
+      "type": "company",
+      "n_institutions": 5,
+      "n_edges": 8069
+    },
+    {
+      "id": "type:archive",
+      "type": "archive",
+      "n_institutions": 1,
+      "n_edges": 1002
     }
   ],
   "databases": [
