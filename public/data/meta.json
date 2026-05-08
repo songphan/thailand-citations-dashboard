@@ -1,128 +1,241 @@
 {
-  "generated_at": "2026-05-08T17:48:05",
-  "pipeline_version": "v1.0",
+  "generated_at": "2026-05-09T01:04:16",
+  "pipeline_version": "v2.0",
   "views": [
     "all_thailand",
-    "chulalongkorn"
+    "I158708052",
+    "I25399158",
+    "I48076826",
+    "I198105771",
+    "I131868736",
+    "I179193067",
+    "I108108428",
+    "I1332387789",
+    "I1332092204",
+    "I4210123333",
+    "I96916377",
+    "I82828225",
+    "I91538806",
+    "I60837268",
+    "I82475049",
+    "I123096312",
+    "I86677382",
+    "I4210140007",
+    "I34002243",
+    "I66200439"
   ],
-  "chulalongkorn_id": "https://openalex.org/I158708052",
+  "institution_views": [
+    {
+      "id": "I158708052",
+      "name": "Chulalongkorn University",
+      "type": "education",
+      "n_edges": 233961
+    },
+    {
+      "id": "I25399158",
+      "name": "Mahidol University",
+      "type": "education",
+      "n_edges": 190949
+    },
+    {
+      "id": "I48076826",
+      "name": "Chiang Mai University",
+      "type": "education",
+      "n_edges": 158779
+    },
+    {
+      "id": "I198105771",
+      "name": "Kasetsart University",
+      "type": "education",
+      "n_edges": 96729
+    },
+    {
+      "id": "I131868736",
+      "name": "Prince of Songkla University",
+      "type": "education",
+      "n_edges": 90285
+    },
+    {
+      "id": "I179193067",
+      "name": "Khon Kaen University",
+      "type": "education",
+      "n_edges": 86429
+    },
+    {
+      "id": "I108108428",
+      "name": "Thammasat University",
+      "type": "education",
+      "n_edges": 69796
+    },
+    {
+      "id": "I1332387789",
+      "name": "Siriraj Hospital",
+      "type": "healthcare",
+      "n_edges": 48688
+    },
+    {
+      "id": "I1332092204",
+      "name": "National Science and Technology Development Agency",
+      "type": "government",
+      "n_edges": 47500
+    },
+    {
+      "id": "I4210123333",
+      "name": "Ministry of Education",
+      "type": "government",
+      "n_edges": 45528
+    },
+    {
+      "id": "I96916377",
+      "name": "Walailak University",
+      "type": "education",
+      "n_edges": 44314
+    },
+    {
+      "id": "I82828225",
+      "name": "King Mongkut's University of Technology North Bangkok",
+      "type": "education",
+      "n_edges": 43734
+    },
+    {
+      "id": "I91538806",
+      "name": "King Mongkut's Institute of Technology Ladkrabang",
+      "type": "education",
+      "n_edges": 42266
+    },
+    {
+      "id": "I60837268",
+      "name": "King Mongkut's University of Technology Thonburi",
+      "type": "education",
+      "n_edges": 41435
+    },
+    {
+      "id": "I82475049",
+      "name": "Suranaree University of Technology",
+      "type": "education",
+      "n_edges": 37984
+    },
+    {
+      "id": "I123096312",
+      "name": "Mahasarakham University",
+      "type": "education",
+      "n_edges": 34426
+    },
+    {
+      "id": "I86677382",
+      "name": "Silpakorn University",
+      "type": "education",
+      "n_edges": 33901
+    },
+    {
+      "id": "I4210140007",
+      "name": "Ramathibodi Hospital",
+      "type": "healthcare",
+      "n_edges": 33638
+    },
+    {
+      "id": "I34002243",
+      "name": "Mae Fah Luang University",
+      "type": "education",
+      "n_edges": 29200
+    },
+    {
+      "id": "I66200439",
+      "name": "Naresuan University",
+      "type": "education",
+      "n_edges": 26594
+    }
+  ],
   "databases": [
     {
       "key": "doaj",
       "label": "DOAJ (open access)",
       "type": "open_access",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     },
     {
       "key": "scopus",
       "label": "Scopus",
       "type": "abstract_index",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     },
     {
       "key": "wos_scie",
       "label": "WoS SCIE",
       "type": "abstract_index",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     },
     {
       "key": "wos_ssci",
       "label": "WoS SSCI",
       "type": "abstract_index",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     },
     {
       "key": "wos_ahci",
       "label": "WoS AHCI",
       "type": "abstract_index",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     },
     {
       "key": "wos_esci",
       "label": "WoS ESCI",
       "type": "abstract_index",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     },
     {
       "key": "sciencedirect_std",
       "label": "ScienceDirect Standard",
       "type": "full_text",
-      "subscribed": false,
-      "available": true
+      "subscribed": false
     },
     {
       "key": "sciencedirect_cu",
       "label": "ScienceDirect (CU)",
       "type": "full_text",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     },
     {
       "key": "wiley",
       "label": "Wiley Journals",
       "type": "full_text",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     },
     {
       "key": "ebsco_asc_idx",
       "label": "EBSCO ASC indexed",
       "type": "abstract_index",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     },
     {
       "key": "ebsco_asc_ft",
       "label": "EBSCO ASC full text",
       "type": "full_text",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     },
     {
       "key": "ebsco_asp_idx",
       "label": "EBSCO ASP indexed",
       "type": "abstract_index",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     },
     {
       "key": "ebsco_asp_ft",
       "label": "EBSCO ASP full text",
       "type": "full_text",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     },
     {
       "key": "ebsco_asu_idx",
       "label": "EBSCO ASU indexed",
       "type": "abstract_index",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     },
     {
       "key": "ebsco_asu_ft",
       "label": "EBSCO ASU full text",
       "type": "full_text",
-      "subscribed": true,
-      "available": true
+      "subscribed": true
     }
-  ],
-  "subscribed_aggregate_keys": [
-    "scopus",
-    "wos_scie",
-    "wos_ssci",
-    "wos_ahci",
-    "wos_esci",
-    "sciencedirect_cu",
-    "wiley",
-    "ebsco_asc_ft",
-    "ebsco_asp_ft",
-    "ebsco_asu_ft"
   ]
 }
