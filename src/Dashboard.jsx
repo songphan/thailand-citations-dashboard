@@ -650,14 +650,37 @@ const cellBody = {
 // ============================================================
 // OVERLAP HEATMAP  (full width, percentage-based, public data)
 // ============================================================
-const OverlapHeatmap = ({ overlap, view }) => {
-  if (!overlap || !overlap[view]) return null;
-  const o = overlap[view];
-  const labels = o.labels;
-  const matrix = o.matrix;
-  // Compute row-based percentages: cell[i][j] / cell[i][i] * 100
-  // Diagonal = 100%. Off-diagonal = "what % of database i's coverage
-  // is also in database j".
+const OverlapHeatmap = ({ overlap, meta }) => {
+  // This panel always uses the all_thailand data, regardless of the
+  // institution filter. Database overlap is a structural property of
+  // the databases themselves and shouldn't change when the user filters
+  // by citing institution. Placing this above the filter visually
+  // reinforces that.
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [selectedCell, setSelectedCell] = useState(null);
+
+  if (!overlap || !overlap.all_thailand) return null;
+  const o = overlap.all_thailand;
+
+  // Filter by database type using meta.databases lookup
+  const { labels, matrix, dbKeys } = useMemo(() => {
+    const typeByKey = {};
+    if (meta && meta.databases) {
+      for (const d of meta.databases) typeByKey[d.key] = d.type;
+    }
+    let indices = o.databases.map((_, i) => i);
+    if (typeFilter !== 'all') {
+      indices = o.databases
+        .map((k, i) => (typeByKey[k] === typeFilter ? i : -1))
+        .filter((i) => i !== -1);
+    }
+    return {
+      labels: indices.map((i) => o.labels[i]),
+      matrix: indices.map((i) => indices.map((j) => o.matrix[i][j])),
+      dbKeys: indices.map((i) => o.databases[i]),
+    };
+  }, [o, meta, typeFilter]);
+
   const pctMatrix = useMemo(() => {
     return matrix.map((row, i) => {
       const denom = matrix[i][i] || 1;
@@ -665,7 +688,13 @@ const OverlapHeatmap = ({ overlap, view }) => {
     });
   }, [matrix]);
 
-  const colorFor = (pct, isDiag) => {
+  // Reset selection when filter changes (it might no longer be valid)
+  useEffect(() => {
+    setSelectedCell(null);
+  }, [typeFilter]);
+
+  const colorFor = (pct, isDiag, isSelected) => {
+    if (isSelected) return PALETTE.ink;
     if (pct === 0) return PALETTE.cream;
     const ratio = Math.min(pct / 100, 1);
     const hue = isDiag ? PALETTE.gold : PALETTE.burgundy;
@@ -673,99 +702,248 @@ const OverlapHeatmap = ({ overlap, view }) => {
     return `${hue}${a.toString(16).padStart(2, '0')}`;
   };
 
+  const detail = selectedCell
+    ? {
+        rowLabel: labels[selectedCell.i],
+        colLabel: labels[selectedCell.j],
+        pct: pctMatrix[selectedCell.i][selectedCell.j],
+        raw: matrix[selectedCell.i][selectedCell.j],
+        rowTotal: matrix[selectedCell.i][selectedCell.i],
+      }
+    : null;
+
   return (
     <Card className="p-5">
       <SectionTitle
         icon={Network}
-        kicker="Database overlap"
+        kicker="Database overlap · All Thailand"
         title="How much do databases redundantly cover the same citations"
         hint={
           'Each cell shows what percentage of one database\'s coverage (the row) is also covered by another database (the column). ' +
           'Numbers are based on the public title lists of each database, not on any specific institution\'s subscriptions. ' +
-          'Hover for the underlying counts.'
+          'Click a cell to see the underlying counts. This panel reflects all-Thailand citations and does not change with the institution filter below.'
         }
       />
-      <div className="overflow-x-auto">
-        <table
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span
           style={{
-            borderCollapse: 'collapse',
             fontFamily: FONT_MONO,
-            fontSize: 10,
-            margin: '0 auto',
+            fontSize: 9,
+            letterSpacing: '0.16em',
+            color: PALETTE.muted,
+            textTransform: 'uppercase',
+            marginRight: 6,
           }}
         >
-          <thead>
-            <tr>
-              <th style={{ padding: 4 }}></th>
-              {labels.map((label, i) => (
-                <th
-                  key={i}
-                  style={{
-                    padding: '4px 2px',
-                    height: 140,
-                    verticalAlign: 'bottom',
-                    textAlign: 'left',
-                    color: PALETTE.charcoal,
-                    fontWeight: 400,
-                    minWidth: 36,
-                  }}
-                >
-                  <div
+          Filter
+        </span>
+        <FilterPill label="All" active={typeFilter === 'all'} onClick={() => setTypeFilter('all')} />
+        <FilterPill
+          label="Open access"
+          active={typeFilter === 'open_access'}
+          color={TYPE_COLORS.open_access}
+          onClick={() => setTypeFilter('open_access')}
+        />
+        <FilterPill
+          label="Index"
+          active={typeFilter === 'abstract_index'}
+          color={TYPE_COLORS.abstract_index}
+          onClick={() => setTypeFilter('abstract_index')}
+        />
+        <FilterPill
+          label="Full text"
+          active={typeFilter === 'full_text'}
+          color={TYPE_COLORS.full_text}
+          onClick={() => setTypeFilter('full_text')}
+        />
+      </div>
+
+      {labels.length < 2 ? (
+        <div
+          className="p-6 text-center"
+          style={{
+            fontFamily: FONT_BODY,
+            fontSize: 13,
+            color: PALETTE.muted,
+            background: PALETTE.cream,
+            border: `1px dashed ${PALETTE.rule}`,
+          }}
+        >
+          Only one database matches this filter, so there's no overlap to show.
+          Try a different filter or select All.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table
+            style={{
+              borderCollapse: 'collapse',
+              fontFamily: FONT_MONO,
+              fontSize: 10,
+              margin: '0 auto',
+            }}
+          >
+            <thead>
+              <tr>
+                <th style={{ padding: 4 }}></th>
+                {labels.map((label, i) => (
+                  <th
+                    key={i}
                     style={{
-                      writingMode: 'vertical-rl',
-                      transform: 'rotate(180deg)',
-                      whiteSpace: 'nowrap',
-                      letterSpacing: '0.04em',
+                      padding: '4px 2px',
+                      height: 140,
+                      verticalAlign: 'bottom',
+                      textAlign: 'left',
+                      color: PALETTE.charcoal,
+                      fontWeight: 400,
+                      minWidth: 36,
                     }}
                   >
-                    {label}
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {labels.map((rowLabel, i) => (
-              <tr key={i}>
-                <th
-                  style={{
-                    padding: '4px 8px',
-                    textAlign: 'right',
-                    fontWeight: 400,
-                    color: PALETTE.charcoal,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {rowLabel}
-                </th>
-                {labels.map((_, j) => {
-                  const pct = pctMatrix[i][j];
-                  const raw = matrix[i][j];
-                  const isDiag = i === j;
-                  return (
-                    <td
-                      key={j}
-                      title={`${labels[i]} → ${labels[j]}: ${pct.toFixed(1)}% (${fmtFull(raw)} works)`}
+                    <div
                       style={{
-                        width: 36,
-                        height: 30,
-                        textAlign: 'center',
-                        background: colorFor(pct, isDiag),
-                        color: pct > 50 ? PALETTE.paper : PALETTE.charcoal,
-                        border: `1px solid ${PALETTE.paper}`,
-                        cursor: 'help',
-                        fontSize: 9.5,
+                        writingMode: 'vertical-rl',
+                        transform: 'rotate(180deg)',
+                        whiteSpace: 'nowrap',
+                        letterSpacing: '0.04em',
                       }}
                     >
-                      {pct >= 1 ? Math.round(pct) : pct > 0 ? '<1' : ''}
-                    </td>
-                  );
-                })}
+                      {label}
+                    </div>
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {labels.map((rowLabel, i) => (
+                <tr key={i}>
+                  <th
+                    style={{
+                      padding: '4px 8px',
+                      textAlign: 'right',
+                      fontWeight: 400,
+                      color: PALETTE.charcoal,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {rowLabel}
+                  </th>
+                  {labels.map((_, j) => {
+                    const pct = pctMatrix[i][j];
+                    const isDiag = i === j;
+                    const isSelected = selectedCell &&
+                      selectedCell.i === i && selectedCell.j === j;
+                    return (
+                      <td
+                        key={j}
+                        onClick={() => {
+                          if (isSelected) setSelectedCell(null);
+                          else setSelectedCell({ i, j });
+                        }}
+                        style={{
+                          width: 36,
+                          height: 30,
+                          textAlign: 'center',
+                          background: colorFor(pct, isDiag, isSelected),
+                          color:
+                            isSelected
+                              ? PALETTE.paper
+                              : pct > 50
+                                ? PALETTE.paper
+                                : PALETTE.charcoal,
+                          border: isSelected
+                            ? `2px solid ${PALETTE.ink}`
+                            : `1px solid ${PALETTE.paper}`,
+                          cursor: 'pointer',
+                          fontSize: 9.5,
+                          fontWeight: isSelected ? 600 : 400,
+                        }}
+                      >
+                        {pct >= 1 ? Math.round(pct) : pct > 0 ? '<1' : ''}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Detail panel for the clicked cell */}
+      {detail && (
+        <div
+          className="mt-4 p-4"
+          style={{
+            background: PALETTE.cream,
+            border: `1px solid ${PALETTE.ink}`,
+          }}
+        >
+          <div
+            className="uppercase mb-2"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 9,
+              letterSpacing: '0.18em',
+              color: PALETTE.muted,
+            }}
+          >
+            Selected cell
+          </div>
+          <div
+            style={{
+              fontFamily: FONT_DISPLAY,
+              fontSize: 18,
+              fontWeight: 500,
+              color: PALETTE.ink,
+              lineHeight: 1.3,
+            }}
+          >
+            <span style={{ color: PALETTE.burgundy }}>{detail.rowLabel}</span>
+            <span style={{ color: PALETTE.muted, fontSize: 14 }}> → </span>
+            <span style={{ color: PALETTE.navy }}>{detail.colLabel}</span>
+          </div>
+          <div
+            className="mt-3 flex flex-wrap gap-x-6 gap-y-2"
+            style={{ fontFamily: FONT_BODY, fontSize: 13, color: PALETTE.charcoal }}
+          >
+            <div>
+              <span style={{ color: PALETTE.muted }}>Overlap: </span>
+              <strong style={{ fontFamily: FONT_MONO }}>
+                {detail.pct.toFixed(2)}%
+              </strong>
+            </div>
+            <div>
+              <span style={{ color: PALETTE.muted }}>Shared works: </span>
+              <strong style={{ fontFamily: FONT_MONO }}>{fmtFull(detail.raw)}</strong>
+            </div>
+            <div>
+              <span style={{ color: PALETTE.muted }}>Out of: </span>
+              <strong style={{ fontFamily: FONT_MONO }}>
+                {fmtFull(detail.rowTotal)}
+              </strong>
+              <span style={{ color: PALETTE.muted }}> in {detail.rowLabel}</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setSelectedCell(null)}
+            className="mt-3"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 10,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              background: 'transparent',
+              color: PALETTE.muted,
+              border: `1px solid ${PALETTE.rule}`,
+              padding: '4px 10px',
+              cursor: 'pointer',
+            }}
+          >
+            Clear selection
+          </button>
+        </div>
+      )}
+
       <div
         className="mt-4 flex items-center gap-4 flex-wrap"
         style={{
@@ -798,7 +976,7 @@ const OverlapHeatmap = ({ overlap, view }) => {
           />
           Pairwise overlap
         </span>
-        <span>Row → column · "% of A's coverage that is also in B"</span>
+        <span>Row → column · Click any cell for details</span>
       </div>
     </Card>
   );
@@ -1227,9 +1405,24 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }
                   formatter={(v) => [fmtFull(v), 'Citations']}
                 />
                 <Bar dataKey="edges" cursor="pointer">
-                  {chartData.map((d, i) => (
-                    <Cell key={i} fill={INST_TYPE_COLORS[d.type] || PALETTE.muted} />
-                  ))}
+                  {chartData.map((d, i) => {
+                    const baseColor = INST_TYPE_COLORS[d.type] || PALETTE.muted;
+                    const isFiltered = currentView && currentView !== 'all_thailand';
+                    const isSelected = currentView === d.id;
+                    // When filtered, the selected bar stays full color and gains
+                    // a stroke; everything else fades to ~25% opacity.
+                    const fill = isFiltered && !isSelected
+                      ? baseColor + '40'  // hex alpha 40 = ~25%
+                      : baseColor;
+                    return (
+                      <Cell
+                        key={i}
+                        fill={fill}
+                        stroke={isSelected ? PALETTE.ink : 'none'}
+                        strokeWidth={isSelected ? 2 : 0}
+                      />
+                    );
+                  })}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -1464,7 +1657,7 @@ const InstitutionTypesPanel = ({ institutionTypes }) => {
 // ============================================================
 // HEADER, FOOTER
 // ============================================================
-const Header = ({ view, onViewChange, institutionViews, generatedAt, viewLabel }) => (
+const Header = ({ generatedAt }) => (
   <header
     className="border-b"
     style={{ borderColor: PALETTE.ink, background: PALETTE.paper }}
@@ -1526,17 +1719,12 @@ const Header = ({ view, onViewChange, institutionViews, generatedAt, viewLabel }
       >
         Where Thai researchers' 2025 citations land across major academic
         databases. Use this to understand citation patterns, database coverage,
-        and overlaps for consortium-level decisions. Filter by citing
-        institution to see how patterns differ across the Thai academic
-        landscape.
+        and overlaps for consortium-level decisions. The first two panels
+        below show the consortium-wide picture; use the institution filter
+        further down to drill into a specific Thai institution.
       </p>
 
-      <div className="mt-6 flex flex-wrap items-end gap-4">
-        <InstitutionSelector
-          view={view}
-          onChange={onViewChange}
-          institutionViews={institutionViews}
-        />
+      <div className="mt-5 flex flex-wrap items-center gap-4">
         <a
           href="#/explore"
           className="inline-flex items-center gap-1.5 px-3 py-2 transition-colors"
@@ -1549,7 +1737,6 @@ const Header = ({ view, onViewChange, institutionViews, generatedAt, viewLabel }
             color: PALETTE.burgundy,
             border: `1px solid ${PALETTE.burgundy}`,
             textDecoration: 'none',
-            alignSelf: 'flex-end',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = PALETTE.burgundy;
@@ -1569,8 +1756,6 @@ const Header = ({ view, onViewChange, institutionViews, generatedAt, viewLabel }
             letterSpacing: '0.12em',
             color: PALETTE.muted,
             textTransform: 'uppercase',
-            alignSelf: 'flex-end',
-            paddingBottom: 8,
           }}
         >
           {generatedAt && `Data generated · ${generatedAt.slice(0, 10)}`}
@@ -1578,6 +1763,56 @@ const Header = ({ view, onViewChange, institutionViews, generatedAt, viewLabel }
       </div>
     </div>
   </header>
+);
+
+// ============================================================
+// FILTER BAR  (its own section between panoramic and filtered panels)
+// ============================================================
+const FilterBar = ({ view, onViewChange, institutionViews, viewLabel }) => (
+  <div
+    className="border-y my-2"
+    style={{
+      background: PALETTE.paper,
+      borderColor: PALETTE.ink,
+    }}
+  >
+    <div className="px-5 py-4 flex flex-wrap items-end gap-5">
+      <div className="flex-1" style={{ minWidth: 300 }}>
+        <div
+          className="mb-1.5 uppercase"
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            letterSpacing: '0.18em',
+            color: PALETTE.muted,
+          }}
+        >
+          The panels below are filtered by:
+        </div>
+        <InstitutionSelector
+          view={view}
+          onChange={onViewChange}
+          institutionViews={institutionViews}
+        />
+      </div>
+      <div
+        style={{
+          fontFamily: FONT_BODY,
+          fontSize: 13,
+          color: PALETTE.charcoal,
+          lineHeight: 1.4,
+          maxWidth: 480,
+          paddingBottom: 6,
+        }}
+      >
+        Currently showing:{' '}
+        <strong style={{ color: PALETTE.burgundy }}>{viewLabel}</strong>.
+        Switch to any other institution to update the panels below. The two
+        panels above this bar (overlap and institutional landscape) do not
+        change with this filter.
+      </div>
+    </div>
+  </div>
 );
 
 const Footer = () => (
@@ -1720,15 +1955,25 @@ export default function Dashboard() {
         color: PALETTE.ink,
       }}
     >
-      <Header
-        view={effectiveView}
-        onViewChange={setView}
-        institutionViews={institutionViews}
-        generatedAt={data.meta?.generated_at}
-        viewLabel={viewLabel}
-      />
+      <Header generatedAt={data.meta?.generated_at} />
       <main className="mx-auto max-w-[1400px] px-6 py-8">
         <div className="space-y-6">
+          {/* Panoramic panels: do NOT depend on the institution filter */}
+          <OverlapHeatmap overlap={data.overlap} meta={data.meta} />
+          <TopInstitutionsPanel
+            institutions={data.institutions}
+            onSelectInstitution={setView}
+            currentView={effectiveView}
+          />
+
+          {/* Filter bar: dropdown + active-filter readout */}
+          <FilterBar
+            view={effectiveView}
+            onViewChange={setView}
+            institutionViews={institutionViews}
+            viewLabel={viewLabel}
+          />
+
           {!viewExists && view !== 'all_thailand' && (
             <Card
               className="p-4"
@@ -1748,13 +1993,12 @@ export default function Dashboard() {
             </Card>
           )}
 
+          {/* Filter-dependent panels */}
           <TopStats
             summary={data.summary}
             view={effectiveView}
             viewLabel={viewLabel}
           />
-          <CoverageTable coverage={data.coverage} view={effectiveView} />
-          <OverlapHeatmap overlap={data.overlap} view={effectiveView} />
           <ByYearPanel byYear={data.by_year} view={effectiveView} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1763,11 +2007,7 @@ export default function Dashboard() {
           </div>
 
           <TopPublishersPanel byPublisher={data.by_publisher} view={effectiveView} />
-          <TopInstitutionsPanel
-            institutions={data.institutions}
-            onSelectInstitution={setView}
-            currentView={effectiveView}
-          />
+          <CoverageTable coverage={data.coverage} view={effectiveView} />
         </div>
       </main>
       <Footer />
