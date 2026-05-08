@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Database, Layers, Network, AlertCircle, Loader2,
-  Calendar, FileText, Building2, BookOpen, Tag, GitCompare,
+  Database, Network, AlertCircle, Loader2,
+  Calendar, FileText, Building2, BookOpen, Tag,
+  BarChart3, Table as TableIcon,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -33,7 +34,6 @@ const FONT_DISPLAY = "'Fraunces', 'Iowan Old Style', Georgia, serif";
 const FONT_BODY = "'IBM Plex Sans', system-ui, sans-serif";
 const FONT_MONO = "'IBM Plex Mono', ui-monospace, monospace";
 
-// Inject Google Fonts once at first mount
 const useFonts = () => {
   useEffect(() => {
     if (document.querySelector('link[data-oar-fonts]')) return;
@@ -56,6 +56,7 @@ const fmt = (n) => {
 };
 const fmtFull = (n) => (n ?? 0).toLocaleString();
 const fmtPct = (n) => (n ?? 0).toFixed(1) + '%';
+const fmtDecimal = (n) => (n ?? 0).toFixed(1);
 
 // ============================================================
 // DATA HOOK
@@ -119,7 +120,7 @@ const Card = ({ children, className = '', style = {} }) => (
 );
 
 const SectionTitle = ({ icon: Icon, kicker, title, hint }) => (
-  <header className="mb-4">
+  <header className="mb-3">
     <div
       className="mb-2 flex items-center gap-2 uppercase"
       style={{
@@ -135,7 +136,7 @@ const SectionTitle = ({ icon: Icon, kicker, title, hint }) => (
     <h2
       style={{
         fontFamily: FONT_DISPLAY,
-        fontSize: 28,
+        fontSize: 26,
         fontWeight: 500,
         lineHeight: 1.15,
         letterSpacing: '-0.01em',
@@ -146,12 +147,12 @@ const SectionTitle = ({ icon: Icon, kicker, title, hint }) => (
     </h2>
     {hint && (
       <p
-        className="mt-1"
+        className="mt-1.5"
         style={{
           fontFamily: FONT_BODY,
           fontSize: 13,
           color: PALETTE.muted,
-          lineHeight: 1.4,
+          lineHeight: 1.45,
         }}
       >
         {hint}
@@ -161,36 +162,37 @@ const SectionTitle = ({ icon: Icon, kicker, title, hint }) => (
 );
 
 // ============================================================
-// VIEW TOGGLE  (All Thailand vs Chulalongkorn)
+// CHART/TABLE TOGGLE  (used on most chart panels)
 // ============================================================
-const ViewToggle = ({ view, onChange }) => {
+const ChartTableToggle = ({ mode, onChange }) => {
   const opts = [
-    { key: 'all_thailand', label: 'All Thailand' },
-    { key: 'chulalongkorn', label: 'Chulalongkorn' },
+    { key: 'chart', icon: BarChart3, label: 'Chart' },
+    { key: 'table', icon: TableIcon, label: 'Table' },
   ];
   return (
-    <div
-      className="inline-flex border"
-      style={{ borderColor: PALETTE.ink, background: PALETTE.paper }}
-    >
+    <div className="inline-flex" style={{ border: `1px solid ${PALETTE.rule}` }}>
       {opts.map((o, i) => {
-        const active = view === o.key;
+        const active = mode === o.key;
+        const Icon = o.icon;
         return (
           <button
             key={o.key}
             onClick={() => onChange(o.key)}
-            className="px-4 py-2 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 transition-colors"
             style={{
               fontFamily: FONT_MONO,
-              fontSize: 11,
-              letterSpacing: '0.1em',
+              fontSize: 10,
+              letterSpacing: '0.06em',
               textTransform: 'uppercase',
               background: active ? PALETTE.ink : 'transparent',
-              color: active ? PALETTE.paper : PALETTE.ink,
-              borderLeft: i > 0 ? `1px solid ${PALETTE.ink}` : 'none',
+              color: active ? PALETTE.paper : PALETTE.muted,
+              border: 'none',
+              borderLeft: i > 0 ? `1px solid ${PALETTE.rule}` : 'none',
               cursor: active ? 'default' : 'pointer',
             }}
+            aria-pressed={active}
           >
+            <Icon size={11} />
             {o.label}
           </button>
         );
@@ -198,6 +200,141 @@ const ViewToggle = ({ view, onChange }) => {
     </div>
   );
 };
+
+// ============================================================
+// DATA TABLE  (used inside chart panels when toggled to table view)
+// ============================================================
+const DataTable = ({ rows, columns, maxHeight = 480 }) => (
+  <div style={{ overflowX: 'auto', maxHeight, border: `1px solid ${PALETTE.rule}` }}>
+    <table
+      style={{
+        width: '100%',
+        borderCollapse: 'collapse',
+        fontFamily: FONT_BODY,
+        fontSize: 12.5,
+      }}
+    >
+      <thead>
+        <tr
+          style={{
+            background: PALETTE.cream,
+            position: 'sticky',
+            top: 0,
+            zIndex: 1,
+            borderBottom: `2px solid ${PALETTE.ink}`,
+          }}
+        >
+          {columns.map((c) => (
+            <th
+              key={c.key}
+              style={{
+                textAlign: c.align || 'left',
+                padding: '8px 10px',
+                fontFamily: FONT_MONO,
+                fontSize: 10,
+                letterSpacing: '0.1em',
+                color: PALETTE.charcoal,
+                textTransform: 'uppercase',
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {c.label}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r, i) => (
+          <tr
+            key={i}
+            style={{
+              borderBottom: `1px solid ${PALETTE.rule}`,
+              background: i % 2 ? PALETTE.cream : PALETTE.paper,
+            }}
+          >
+            {columns.map((c) => {
+              const v = r[c.key];
+              const display = c.format ? c.format(v, r) : (v ?? '');
+              return (
+                <td
+                  key={c.key}
+                  style={{
+                    textAlign: c.align || 'left',
+                    padding: '6px 10px',
+                    color: PALETTE.charcoal,
+                    fontFamily: c.mono ? FONT_MONO : FONT_BODY,
+                    fontSize: c.mono ? 11.5 : 12.5,
+                    whiteSpace: c.wrap ? 'normal' : 'nowrap',
+                    maxWidth: c.maxWidth || undefined,
+                    overflow: c.maxWidth ? 'hidden' : undefined,
+                    textOverflow: c.maxWidth ? 'ellipsis' : undefined,
+                  }}
+                  title={typeof display === 'string' ? display : undefined}
+                >
+                  {display}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+// ============================================================
+// INSTITUTION SELECTOR  (replaces the old All-Thailand vs CU toggle)
+// ============================================================
+const InstitutionSelector = ({ view, onChange, institutionViews }) => (
+  <div className="flex flex-col gap-1.5">
+    <label
+      htmlFor="inst-select"
+      className="uppercase"
+      style={{
+        fontFamily: FONT_MONO,
+        fontSize: 9,
+        letterSpacing: '0.16em',
+        color: PALETTE.muted,
+      }}
+    >
+      Citing institution
+    </label>
+    <select
+      id="inst-select"
+      value={view}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        fontFamily: FONT_MONO,
+        fontSize: 12,
+        letterSpacing: '0.04em',
+        padding: '8px 28px 8px 12px',
+        background: PALETTE.paper,
+        color: PALETTE.ink,
+        border: `1px solid ${PALETTE.ink}`,
+        borderRadius: 0,
+        cursor: 'pointer',
+        appearance: 'none',
+        backgroundImage:
+          "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%231a1612' d='M0 0l5 6 5-6z'/></svg>\")",
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'right 10px center',
+        minWidth: 280,
+      }}
+    >
+      <option value="all_thailand">All Thailand</option>
+      {institutionViews && institutionViews.length > 0 && (
+        <optgroup label="Top citing institutions">
+          {institutionViews.map((iv) => (
+            <option key={iv.id} value={iv.id}>
+              {iv.name}
+            </option>
+          ))}
+        </optgroup>
+      )}
+    </select>
+  </div>
+);
 
 // ============================================================
 // TOP STATS STRIP
@@ -218,7 +355,7 @@ const StatBlock = ({ label, value, sublabel, accent = PALETTE.ink }) => (
     <div
       style={{
         fontFamily: FONT_DISPLAY,
-        fontSize: 32,
+        fontSize: 30,
         fontWeight: 500,
         lineHeight: 1,
         color: accent,
@@ -241,20 +378,21 @@ const StatBlock = ({ label, value, sublabel, accent = PALETTE.ink }) => (
   </div>
 );
 
-const TopStats = ({ summary, coverage, view }) => {
-  if (!summary || !coverage) return null;
+const TopStats = ({ summary, view, viewLabel }) => {
+  if (!summary) return null;
   const s = summary[view];
+  if (!s) return null;
   return (
     <Card className="p-0">
       <div
-        className="grid grid-cols-2 md:grid-cols-4"
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
         style={{ borderColor: PALETTE.rule }}
       >
         <div style={{ borderRight: `1px solid ${PALETTE.rule}` }}>
           <StatBlock
             label="Citing publications"
             value={fmt(s.n_seeds)}
-            sublabel={`${fmtFull(s.n_seeds)} ${view === 'chulalongkorn' ? 'CU papers' : 'Thai papers'}`}
+            sublabel={`${fmtFull(s.n_seeds)} papers`}
             accent={PALETTE.navy}
           />
         </div>
@@ -268,18 +406,26 @@ const TopStats = ({ summary, coverage, view }) => {
         </div>
         <div style={{ borderRight: `1px solid ${PALETTE.rule}` }}>
           <StatBlock
+            label="Avg citations / paper"
+            value={fmtDecimal(s.avg_per_paper)}
+            sublabel="across all cited types"
+            accent={PALETTE.gold}
+          />
+        </div>
+        <div style={{ borderRight: `1px solid ${PALETTE.rule}` }}>
+          <StatBlock
             label="Unique cited works"
             value={fmt(s.n_unique_cited)}
             sublabel={`${((s.n_unique_cited / s.n_total_edges) * 100).toFixed(1)}% of citations`}
             accent={PALETTE.teal}
           />
         </div>
-        <div>
+        <div className="col-span-2 md:col-span-3 lg:col-span-1">
           <StatBlock
             label="Books / Chapters"
             value={fmtPct(s.pct_books)}
             sublabel={`${fmtFull(s.n_books_chapters)} citations`}
-            accent={PALETTE.gold}
+            accent={PALETTE.forest}
           />
         </div>
       </div>
@@ -288,7 +434,7 @@ const TopStats = ({ summary, coverage, view }) => {
 };
 
 // ============================================================
-// COVERAGE TABLE
+// COVERAGE TABLE  (with type filter, no subscription column)
 // ============================================================
 const TYPE_COLORS = {
   open_access: PALETTE.forest,
@@ -308,7 +454,6 @@ const CoverageBar = ({ value, color }) => (
       width: '100%',
       height: 18,
       background: PALETTE.cream,
-      borderRadius: 0,
     }}
   >
     <div
@@ -336,32 +481,84 @@ const CoverageBar = ({ value, color }) => (
   </div>
 );
 
+const FilterPill = ({ label, active, onClick, color }) => (
+  <button
+    onClick={onClick}
+    className="px-3 py-1.5 transition-colors"
+    style={{
+      fontFamily: FONT_MONO,
+      fontSize: 10,
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      background: active ? (color || PALETTE.ink) : 'transparent',
+      color: active ? PALETTE.paper : PALETTE.charcoal,
+      border: `1px solid ${active ? (color || PALETTE.ink) : PALETTE.rule}`,
+      cursor: active ? 'default' : 'pointer',
+    }}
+  >
+    {label}
+  </button>
+);
+
 const CoverageTable = ({ coverage, view }) => {
-  if (!coverage) return null;
+  const [typeFilter, setTypeFilter] = useState('all');
+  if (!coverage || !coverage[view]) return null;
   const data = coverage[view];
-  // Sort by edges_pct desc; keep DOAJ at the top regardless because
-  // it represents a distinct (open access) regime.
+
   const dbs = useMemo(() => {
-    const sorted = [...data.databases].sort((a, b) => {
+    const filtered = typeFilter === 'all'
+      ? data.databases
+      : data.databases.filter((d) => d.type === typeFilter);
+    return [...filtered].sort((a, b) => {
+      // Open access sorts first within its type group; otherwise by edges_pct
       if (a.type === 'open_access' && b.type !== 'open_access') return -1;
       if (b.type === 'open_access' && a.type !== 'open_access') return 1;
       return b.edges_pct - a.edges_pct;
     });
-    return sorted;
-  }, [data]);
-  const any = data.any_subscribed;
+  }, [data, typeFilter]);
+
   return (
     <Card className="p-5">
       <SectionTitle
         icon={Database}
         kicker="Database coverage"
         title="What fraction of citations is reachable through each database"
-        hint={`Matched on normalized ISSN against ${view === 'chulalongkorn' ? "Chulalongkorn researchers'" : "all Thai researchers'"} 2025 outgoing citations. Index = bibliographic record only. Full text = subscribed reading access.`}
+        hint="Matched on normalized ISSN against the public title list of each database. This shows the technical coverage potential of each database, not whether a particular library subscribes to it."
       />
-      <div
-        className="overflow-x-auto"
-        style={{ fontFamily: FONT_BODY, fontSize: 13 }}
-      >
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            letterSpacing: '0.16em',
+            color: PALETTE.muted,
+            textTransform: 'uppercase',
+            marginRight: 6,
+          }}
+        >
+          Filter
+        </span>
+        <FilterPill label="All" active={typeFilter === 'all'} onClick={() => setTypeFilter('all')} />
+        <FilterPill
+          label="Open access"
+          active={typeFilter === 'open_access'}
+          color={TYPE_COLORS.open_access}
+          onClick={() => setTypeFilter('open_access')}
+        />
+        <FilterPill
+          label="Index"
+          active={typeFilter === 'abstract_index'}
+          color={TYPE_COLORS.abstract_index}
+          onClick={() => setTypeFilter('abstract_index')}
+        />
+        <FilterPill
+          label="Full text"
+          active={typeFilter === 'full_text'}
+          color={TYPE_COLORS.full_text}
+          onClick={() => setTypeFilter('full_text')}
+        />
+      </div>
+      <div className="overflow-x-auto" style={{ fontFamily: FONT_BODY, fontSize: 13 }}>
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr
@@ -374,29 +571,17 @@ const CoverageTable = ({ coverage, view }) => {
               }}
             >
               <th style={cellHead}>Database</th>
-              <th style={{ ...cellHead, width: 80 }}>Type</th>
-              <th style={{ ...cellHead, width: 100, textAlign: 'right' }}>
-                Citations
-              </th>
-              <th style={{ ...cellHead, width: '32%' }}>Citation coverage</th>
-              <th style={{ ...cellHead, width: 90, textAlign: 'right' }}>
-                Unique
-              </th>
-              <th style={{ ...cellHead, width: 70, textAlign: 'right' }}>
-                Sub.
-              </th>
+              <th style={{ ...cellHead, width: 90 }}>Type</th>
+              <th style={{ ...cellHead, width: 110, textAlign: 'right' }}>Citations</th>
+              <th style={{ ...cellHead, width: '36%' }}>Citation coverage</th>
+              <th style={{ ...cellHead, width: 110, textAlign: 'right' }}>Unique</th>
             </tr>
           </thead>
           <tbody>
             {dbs.map((d) => (
-              <tr
-                key={d.key}
-                style={{ borderTop: `1px solid ${PALETTE.rule}` }}
-              >
+              <tr key={d.key} style={{ borderTop: `1px solid ${PALETTE.rule}` }}>
                 <td style={cellBody}>
-                  <span style={{ color: PALETTE.ink, fontWeight: 500 }}>
-                    {d.label}
-                  </span>
+                  <span style={{ color: PALETTE.ink, fontWeight: 500 }}>{d.label}</span>
                 </td>
                 <td style={cellBody}>
                   <span
@@ -414,20 +599,11 @@ const CoverageTable = ({ coverage, view }) => {
                     {TYPE_LABELS[d.type]}
                   </span>
                 </td>
-                <td
-                  style={{
-                    ...cellBody,
-                    textAlign: 'right',
-                    fontFamily: FONT_MONO,
-                  }}
-                >
+                <td style={{ ...cellBody, textAlign: 'right', fontFamily: FONT_MONO }}>
                   {fmtFull(d.edges)}
                 </td>
                 <td style={cellBody}>
-                  <CoverageBar
-                    value={d.edges_pct}
-                    color={TYPE_COLORS[d.type]}
-                  />
+                  <CoverageBar value={d.edges_pct} color={TYPE_COLORS[d.type]} />
                 </td>
                 <td
                   style={{
@@ -439,82 +615,13 @@ const CoverageTable = ({ coverage, view }) => {
                 >
                   {fmtFull(d.unique)}
                 </td>
-                <td style={{ ...cellBody, textAlign: 'right' }}>
-                  {d.subscribed ? (
-                    <span
-                      style={{
-                        fontFamily: FONT_MONO,
-                        fontSize: 10,
-                        color: PALETTE.forest,
-                      }}
-                    >
-                      ●
-                    </span>
-                  ) : (
-                    <span
-                      style={{
-                        fontFamily: FONT_MONO,
-                        fontSize: 10,
-                        color: PALETTE.muted,
-                      }}
-                      title="Not currently subscribed"
-                    >
-                      ○
-                    </span>
-                  )}
-                </td>
               </tr>
             ))}
-            {any && (
-              <tr
-                style={{
-                  borderTop: `2px solid ${PALETTE.ink}`,
-                  background: PALETTE.cream,
-                }}
-              >
-                <td
-                  style={{
-                    ...cellBody,
-                    fontFamily: FONT_DISPLAY,
-                    fontWeight: 600,
-                    fontSize: 14,
-                  }}
-                >
-                  Any currently subscribed
-                </td>
-                <td style={cellBody}></td>
-                <td
-                  style={{
-                    ...cellBody,
-                    textAlign: 'right',
-                    fontFamily: FONT_MONO,
-                    fontWeight: 600,
-                  }}
-                >
-                  {fmtFull(any.edges)}
-                </td>
-                <td style={cellBody}>
-                  <CoverageBar value={any.edges_pct} color={PALETTE.ink} />
-                </td>
-                <td
-                  style={{
-                    ...cellBody,
-                    textAlign: 'right',
-                    fontFamily: FONT_MONO,
-                    fontWeight: 600,
-                    color: PALETTE.charcoal,
-                  }}
-                >
-                  {fmtFull(any.unique)}
-                </td>
-                <td style={cellBody}></td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
       <div
-        className="mt-4 flex flex-wrap gap-4"
+        className="mt-4"
         style={{
           fontFamily: FONT_MONO,
           fontSize: 9,
@@ -523,9 +630,7 @@ const CoverageTable = ({ coverage, view }) => {
           textTransform: 'uppercase',
         }}
       >
-        <span>● Subscribed at OAR</span>
-        <span>○ Not subscribed</span>
-        <span>EBSCO ASC/ASP/ASU share index, differ in full text</span>
+        Note · EBSCO ASC/ASP/ASU share the same indexing universe but differ in their full-text holdings
       </div>
     </Card>
   );
@@ -543,52 +648,50 @@ const cellBody = {
 };
 
 // ============================================================
-// OVERLAP HEATMAP
+// OVERLAP HEATMAP  (full width, percentage-based, public data)
 // ============================================================
 const OverlapHeatmap = ({ overlap, view }) => {
-  if (!overlap) return null;
+  if (!overlap || !overlap[view]) return null;
   const o = overlap[view];
   const labels = o.labels;
   const matrix = o.matrix;
-  // Diagonal is the unique-coverage of each database. Use the max
-  // off-diagonal value as the color scale max so the diagonal
-  // doesn't dominate.
-  const maxOff = useMemo(() => {
-    let m = 0;
-    for (let i = 0; i < matrix.length; i++) {
-      for (let j = 0; j < matrix.length; j++) {
-        if (i !== j && matrix[i][j] > m) m = matrix[i][j];
-      }
-    }
-    return m;
+  // Compute row-based percentages: cell[i][j] / cell[i][i] * 100
+  // Diagonal = 100%. Off-diagonal = "what % of database i's coverage
+  // is also in database j".
+  const pctMatrix = useMemo(() => {
+    return matrix.map((row, i) => {
+      const denom = matrix[i][i] || 1;
+      return row.map((v) => (v / denom) * 100);
+    });
   }, [matrix]);
-  const colorFor = (val, isDiag) => {
-    if (val === 0) return PALETTE.cream;
-    const ratio = Math.min(val / maxOff, 1);
-    // Map ratio to burgundy intensity. Diagonal uses a different (gold) hue
-    // so it visually separates from the off-diagonal overlap cells.
+
+  const colorFor = (pct, isDiag) => {
+    if (pct === 0) return PALETTE.cream;
+    const ratio = Math.min(pct / 100, 1);
     const hue = isDiag ? PALETTE.gold : PALETTE.burgundy;
-    return `${hue}${alpha(ratio)}`;
+    const a = Math.round((0.1 + ratio * 0.9) * 255);
+    return `${hue}${a.toString(16).padStart(2, '0')}`;
   };
-  function alpha(r) {
-    const a = Math.round(0.15 + r * 0.85 * 255);
-    const max = Math.min(255, a);
-    return max.toString(16).padStart(2, '0');
-  }
+
   return (
     <Card className="p-5">
       <SectionTitle
         icon={Network}
         kicker="Database overlap"
         title="How much do databases redundantly cover the same citations"
-        hint="Each cell shows the count of unique cited works covered by both databases. Diagonal shows the database's standalone coverage."
+        hint={
+          'Each cell shows what percentage of one database\'s coverage (the row) is also covered by another database (the column). ' +
+          'Numbers are based on the public title lists of each database, not on any specific institution\'s subscriptions. ' +
+          'Hover for the underlying counts.'
+        }
       />
       <div className="overflow-x-auto">
         <table
           style={{
             borderCollapse: 'collapse',
             fontFamily: FONT_MONO,
-            fontSize: 9.5,
+            fontSize: 10,
+            margin: '0 auto',
           }}
         >
           <thead>
@@ -599,12 +702,12 @@ const OverlapHeatmap = ({ overlap, view }) => {
                   key={i}
                   style={{
                     padding: '4px 2px',
-                    height: 130,
+                    height: 140,
                     verticalAlign: 'bottom',
                     textAlign: 'left',
                     color: PALETTE.charcoal,
                     fontWeight: 400,
-                    minWidth: 26,
+                    minWidth: 36,
                   }}
                 >
                   <div
@@ -636,29 +739,25 @@ const OverlapHeatmap = ({ overlap, view }) => {
                   {rowLabel}
                 </th>
                 {labels.map((_, j) => {
-                  const val = matrix[i][j];
+                  const pct = pctMatrix[i][j];
+                  const raw = matrix[i][j];
                   const isDiag = i === j;
                   return (
                     <td
                       key={j}
-                      title={`${labels[i]} ∩ ${labels[j]}: ${fmtFull(val)}`}
+                      title={`${labels[i]} → ${labels[j]}: ${pct.toFixed(1)}% (${fmtFull(raw)} works)`}
                       style={{
-                        width: 26,
-                        height: 26,
+                        width: 36,
+                        height: 30,
                         textAlign: 'center',
-                        background: colorFor(val, isDiag),
-                        color:
-                          val > maxOff * 0.5 ? PALETTE.paper : PALETTE.charcoal,
+                        background: colorFor(pct, isDiag),
+                        color: pct > 50 ? PALETTE.paper : PALETTE.charcoal,
                         border: `1px solid ${PALETTE.paper}`,
                         cursor: 'help',
-                        fontSize: 8,
+                        fontSize: 9.5,
                       }}
                     >
-                      {val >= 1000
-                        ? Math.round(val / 1000) + 'k'
-                        : val > 0
-                        ? val
-                        : ''}
+                      {pct >= 1 ? Math.round(pct) : pct > 0 ? '<1' : ''}
                     </td>
                   );
                 })}
@@ -686,7 +785,7 @@ const OverlapHeatmap = ({ overlap, view }) => {
               background: PALETTE.gold,
             }}
           />
-          Standalone (diagonal)
+          Diagonal (100% self-coverage)
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span
@@ -699,20 +798,21 @@ const OverlapHeatmap = ({ overlap, view }) => {
           />
           Pairwise overlap
         </span>
-        <span>Hover for exact counts</span>
+        <span>Row → column · "% of A's coverage that is also in B"</span>
       </div>
     </Card>
   );
 };
 
 // ============================================================
-// CITATIONS BY YEAR  (area chart, with pre-1990 bucketed)
+// CITATIONS BY YEAR
 // ============================================================
 const ByYearPanel = ({ byYear, view }) => {
-  if (!byYear) return null;
+  const [mode, setMode] = useState('chart');
+  if (!byYear || !byYear[view]) return null;
   const raw = byYear[view] || [];
-  // Bucket pre-1990 to keep the recent-decades trend visible.
-  const data = useMemo(() => {
+
+  const { data, total, peak, fullData } = useMemo(() => {
     const recent = raw.filter((r) => r.year >= 1990).sort((a, b) => a.year - b.year);
     const old = raw.filter((r) => r.year < 1990);
     const oldBucket = old.length
@@ -723,169 +823,202 @@ const ByYearPanel = ({ byYear, view }) => {
           isBucket: true,
         }
       : null;
-    return oldBucket ? [oldBucket, ...recent] : recent;
+    const data = oldBucket ? [oldBucket, ...recent] : recent;
+    const total = data.reduce((s, r) => s + r.edges, 0);
+    const peak = data.reduce((m, r) => (r.edges > (m?.edges || 0) ? r : m), null);
+    const fullData = [...raw].sort((a, b) => b.year - a.year);
+    return { data, total, peak, fullData };
   }, [raw]);
-
-  const total = useMemo(
-    () => data.reduce((s, r) => s + r.edges, 0),
-    [data],
-  );
-
-  // Find the year with peak citations for annotation
-  const peak = useMemo(
-    () => data.reduce((m, r) => (r.edges > (m?.edges || 0) ? r : m), null),
-    [data],
-  );
 
   return (
     <Card className="p-5">
-      <SectionTitle
-        icon={Calendar}
-        kicker="Time horizon"
-        title="When are the cited works from"
-        hint={`Distribution of ${fmtFull(total)} citations by the publication year of the cited work. Pre-1990 collapsed into a single bucket.`}
-      />
-      <div style={{ width: '100%', height: 320 }}>
-        <ResponsiveContainer>
-          <AreaChart
-            data={data}
-            margin={{ top: 12, right: 16, bottom: 8, left: 8 }}
-          >
-            <defs>
-              <linearGradient id="yearArea" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={PALETTE.burgundy} stopOpacity={0.7} />
-                <stop offset="100%" stopColor={PALETTE.burgundy} stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke={PALETTE.rule} vertical={false} />
-            <XAxis
-              dataKey="year"
-              tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
-              stroke={PALETTE.rule}
-              interval="preserveStartEnd"
-              minTickGap={20}
-            />
-            <YAxis
-              tickFormatter={fmt}
-              tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
-              stroke={PALETTE.rule}
-            />
-            <Tooltip
-              contentStyle={{
-                background: PALETTE.paper,
-                border: `1px solid ${PALETTE.ink}`,
-                fontFamily: FONT_BODY,
-                fontSize: 12,
-                borderRadius: 0,
-              }}
-              labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
-              formatter={(value, name) => [fmtFull(value), name === 'edges' ? 'Citations' : 'Unique']}
-            />
-            <Area
-              type="monotone"
-              dataKey="edges"
-              stroke={PALETTE.burgundy}
-              strokeWidth={1.5}
-              fill="url(#yearArea)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+        <SectionTitle
+          icon={Calendar}
+          kicker="Time horizon"
+          title="When are the cited works from"
+          hint={`Distribution of ${fmtFull(total)} citations by the publication year of the cited work. Pre-1990 collapsed in the chart for readability; the table view shows every year.`}
+        />
+        <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
-      {peak && (
-        <div
-          className="mt-2"
-          style={{
-            fontFamily: FONT_MONO,
-            fontSize: 10,
-            letterSpacing: '0.12em',
-            color: PALETTE.muted,
-            textTransform: 'uppercase',
-          }}
-        >
-          Peak year · {peak.year} · {fmtFull(peak.edges)} citations
-        </div>
+
+      {mode === 'chart' ? (
+        <>
+          <div style={{ width: '100%', height: 320 }}>
+            <ResponsiveContainer>
+              <AreaChart
+                data={data}
+                margin={{ top: 12, right: 16, bottom: 8, left: 8 }}
+              >
+                <defs>
+                  <linearGradient id="yearArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={PALETTE.burgundy} stopOpacity={0.7} />
+                    <stop offset="100%" stopColor={PALETTE.burgundy} stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke={PALETTE.rule} vertical={false} />
+                <XAxis
+                  dataKey="year"
+                  tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+                  stroke={PALETTE.rule}
+                  interval="preserveStartEnd"
+                  minTickGap={20}
+                />
+                <YAxis
+                  tickFormatter={fmt}
+                  tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+                  stroke={PALETTE.rule}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: PALETTE.paper,
+                    border: `1px solid ${PALETTE.ink}`,
+                    fontFamily: FONT_BODY,
+                    fontSize: 12,
+                    borderRadius: 0,
+                  }}
+                  labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
+                  formatter={(value, name) => [
+                    fmtFull(value),
+                    name === 'edges' ? 'Citations' : 'Unique',
+                  ]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="edges"
+                  stroke={PALETTE.burgundy}
+                  strokeWidth={1.5}
+                  fill="url(#yearArea)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          {peak && (
+            <div
+              className="mt-2"
+              style={{
+                fontFamily: FONT_MONO,
+                fontSize: 10,
+                letterSpacing: '0.12em',
+                color: PALETTE.muted,
+                textTransform: 'uppercase',
+              }}
+            >
+              Peak year · {peak.year} · {fmtFull(peak.edges)} citations
+            </div>
+          )}
+        </>
+      ) : (
+        <DataTable
+          rows={fullData}
+          columns={[
+            { key: 'year', label: 'Year', align: 'left', mono: true },
+            { key: 'edges', label: 'Citations', align: 'right', mono: true,
+              format: (v) => fmtFull(v) },
+            { key: 'unique', label: 'Unique works', align: 'right', mono: true,
+              format: (v) => fmtFull(v) },
+          ]}
+        />
       )}
     </Card>
   );
 };
 
 // ============================================================
-// CITATIONS BY TYPE  (horizontal bar with subscription overlay)
+// CITATIONS BY TYPE
 // ============================================================
 const ByTypePanel = ({ byType, view }) => {
-  if (!byType) return null;
-  const data = useMemo(() => {
-    const items = byType[view] || [];
-    return items
+  const [mode, setMode] = useState('chart');
+  if (!byType || !byType[view]) return null;
+  const items = byType[view] || [];
+
+  const chartData = useMemo(
+    () => items
       .filter((r) => r.edges >= 100)
-      .map((r) => ({
-        type: r.type,
-        edges: r.edges,
-        unique: r.unique,
-      }));
-  }, [byType, view]);
-  const total = useMemo(() => data.reduce((s, r) => s + r.edges, 0), [data]);
+      .map((r) => ({ type: r.type, edges: r.edges, unique: r.unique })),
+    [items],
+  );
+  const total = useMemo(() => chartData.reduce((s, r) => s + r.edges, 0), [chartData]);
 
   return (
     <Card className="p-5">
-      <SectionTitle
-        icon={FileText}
-        kicker="Material types"
-        title="What kinds of works are being cited"
-        hint="OpenAlex work-type classification. Articles dominate, but reviews, books, and chapters represent specific subscription needs. Types with fewer than 100 citations are omitted."
-      />
-      <div style={{ width: '100%', height: Math.max(220, data.length * 30) }}>
-        <ResponsiveContainer>
-          <BarChart
-            data={data}
-            layout="vertical"
-            margin={{ top: 4, right: 50, bottom: 4, left: 110 }}
+      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+        <SectionTitle
+          icon={FileText}
+          kicker="Material types"
+          title="What kinds of works are being cited"
+          hint="OpenAlex work-type classification. The chart filters out types with fewer than 100 citations; the table view shows everything."
+        />
+        <ChartTableToggle mode={mode} onChange={setMode} />
+      </div>
+
+      {mode === 'chart' ? (
+        <>
+          <div style={{ width: '100%', height: Math.max(220, chartData.length * 30) }}>
+            <ResponsiveContainer>
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                margin={{ top: 4, right: 50, bottom: 4, left: 110 }}
+              >
+                <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
+                <XAxis
+                  type="number"
+                  tickFormatter={fmt}
+                  tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+                  stroke={PALETTE.rule}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="type"
+                  tick={{ fontSize: 11, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
+                  stroke={PALETTE.rule}
+                  width={110}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: PALETTE.paper,
+                    border: `1px solid ${PALETTE.ink}`,
+                    fontFamily: FONT_BODY,
+                    fontSize: 12,
+                    borderRadius: 0,
+                  }}
+                  labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
+                  formatter={(value) => [fmtFull(value), 'Citations']}
+                />
+                <Bar dataKey="edges">
+                  {chartData.map((d, i) => (
+                    <Cell key={i} fill={i === 0 ? PALETTE.burgundy : PALETTE.navy} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div
+            className="mt-3"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 10,
+              letterSpacing: '0.12em',
+              color: PALETTE.muted,
+              textTransform: 'uppercase',
+            }}
           >
-            <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
-            <XAxis
-              type="number"
-              tickFormatter={fmt}
-              tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
-              stroke={PALETTE.rule}
-            />
-            <YAxis
-              type="category"
-              dataKey="type"
-              tick={{ fontSize: 11, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
-              stroke={PALETTE.rule}
-              width={110}
-            />
-            <Tooltip
-              contentStyle={{
-                background: PALETTE.paper,
-                border: `1px solid ${PALETTE.ink}`,
-                fontFamily: FONT_BODY,
-                fontSize: 12,
-                borderRadius: 0,
-              }}
-              labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
-              formatter={(value) => [fmtFull(value), 'Citations']}
-            />
-            <Bar dataKey="edges" fill={PALETTE.navy}>
-              {data.map((d, i) => (
-                <Cell key={i} fill={i === 0 ? PALETTE.burgundy : PALETTE.navy} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      <div
-        className="mt-3"
-        style={{
-          fontFamily: FONT_MONO,
-          fontSize: 10,
-          letterSpacing: '0.12em',
-          color: PALETTE.muted,
-          textTransform: 'uppercase',
-        }}
-      >
-        Total · {fmtFull(total)} citations across {data.length} types
-      </div>
+            Total · {fmtFull(total)} citations across {chartData.length} types
+          </div>
+        </>
+      ) : (
+        <DataTable
+          rows={items}
+          columns={[
+            { key: 'type', label: 'Type', align: 'left' },
+            { key: 'edges', label: 'Citations', align: 'right', mono: true,
+              format: (v) => fmtFull(v) },
+            { key: 'unique', label: 'Unique works', align: 'right', mono: true,
+              format: (v) => fmtFull(v) },
+          ]}
+        />
+      )}
     </Card>
   );
 };
@@ -894,8 +1027,9 @@ const ByTypePanel = ({ byType, view }) => {
 // TOP PUBLISHERS
 // ============================================================
 const TopPublishersPanel = ({ byPublisher, view }) => {
-  if (!byPublisher) return null;
+  const [mode, setMode] = useState('chart');
   const [showCount, setShowCount] = useState(15);
+  if (!byPublisher || !byPublisher[view]) return null;
   const allData = byPublisher[view] || [];
   const data = useMemo(
     () => allData.slice(0, showCount).map((r) => ({
@@ -907,82 +1041,102 @@ const TopPublishersPanel = ({ byPublisher, view }) => {
 
   return (
     <Card className="p-5">
-      <SectionTitle
-        icon={BookOpen}
-        kicker="Publisher concentration"
-        title="Which publishers' journals get cited most"
-        hint="Top publishers by citation count. Heavy concentration in a few names tells you where subscription money has the most impact."
-      />
-      <div style={{ width: '100%', height: data.length * 26 + 40 }}>
-        <ResponsiveContainer>
-          <BarChart
-            data={data}
-            layout="vertical"
-            margin={{ top: 4, right: 60, bottom: 4, left: 200 }}
-          >
-            <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
-            <XAxis
-              type="number"
-              tickFormatter={fmt}
-              tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
-              stroke={PALETTE.rule}
-            />
-            <YAxis
-              type="category"
-              dataKey="publisher"
-              tick={{ fontSize: 10.5, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
-              stroke={PALETTE.rule}
-              width={200}
-            />
-            <Tooltip
-              contentStyle={{
-                background: PALETTE.paper,
-                border: `1px solid ${PALETTE.ink}`,
-                fontFamily: FONT_BODY,
-                fontSize: 12,
-                borderRadius: 0,
-              }}
-              labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
-              formatter={(v) => [fmtFull(v), 'Citations']}
-            />
-            <Bar dataKey="edges" fill={PALETTE.teal} />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+        <SectionTitle
+          icon={BookOpen}
+          kicker="Publisher concentration"
+          title="Which publishers' journals get cited most"
+          hint="Top publishers by citation count. Heavy concentration in a few names tells you where subscription money has the most leverage."
+        />
+        <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
-      <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
-        <div
-          style={{
-            fontFamily: FONT_MONO,
-            fontSize: 10,
-            letterSpacing: '0.12em',
-            color: PALETTE.muted,
-            textTransform: 'uppercase',
-          }}
-        >
-          Showing top {showCount} of {allData.length}
-        </div>
-        <div className="flex gap-1">
-          {[10, 15, 25, 50, 100].map((n) => (
-            <button
-              key={n}
-              onClick={() => setShowCount(n)}
-              className="px-2 py-1 transition-colors"
+
+      {mode === 'chart' ? (
+        <>
+          <div style={{ width: '100%', height: data.length * 26 + 40 }}>
+            <ResponsiveContainer>
+              <BarChart
+                data={data}
+                layout="vertical"
+                margin={{ top: 4, right: 60, bottom: 4, left: 200 }}
+              >
+                <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
+                <XAxis
+                  type="number"
+                  tickFormatter={fmt}
+                  tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+                  stroke={PALETTE.rule}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="publisher"
+                  tick={{ fontSize: 10.5, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
+                  stroke={PALETTE.rule}
+                  width={200}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: PALETTE.paper,
+                    border: `1px solid ${PALETTE.ink}`,
+                    fontFamily: FONT_BODY,
+                    fontSize: 12,
+                    borderRadius: 0,
+                  }}
+                  labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
+                  formatter={(v) => [fmtFull(v), 'Citations']}
+                />
+                <Bar dataKey="edges" fill={PALETTE.teal} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+            <div
               style={{
                 fontFamily: FONT_MONO,
                 fontSize: 10,
-                letterSpacing: '0.06em',
-                background: showCount === n ? PALETTE.ink : 'transparent',
-                color: showCount === n ? PALETTE.paper : PALETTE.muted,
-                border: `1px solid ${showCount === n ? PALETTE.ink : PALETTE.rule}`,
-                cursor: showCount === n ? 'default' : 'pointer',
-                minWidth: 36,
+                letterSpacing: '0.12em',
+                color: PALETTE.muted,
+                textTransform: 'uppercase',
               }}
             >
-              {n}
-            </button>
-          ))}
-        </div>
-      </div>
+              Showing top {showCount} of {allData.length}
+            </div>
+            <div className="flex gap-1">
+              {[10, 15, 25, 50].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setShowCount(Math.min(n, allData.length))}
+                  className="px-2 py-1 transition-colors"
+                  style={{
+                    fontFamily: FONT_MONO,
+                    fontSize: 10,
+                    letterSpacing: '0.06em',
+                    background: showCount === n ? PALETTE.ink : 'transparent',
+                    color: showCount === n ? PALETTE.paper : PALETTE.muted,
+                    border: `1px solid ${showCount === n ? PALETTE.ink : PALETTE.rule}`,
+                    cursor: showCount === n ? 'default' : 'pointer',
+                    minWidth: 36,
+                  }}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : (
+        <DataTable
+          rows={allData}
+          columns={[
+            { key: 'publisher', label: 'Publisher', align: 'left',
+              maxWidth: 360 },
+            { key: 'edges', label: 'Citations', align: 'right', mono: true,
+              format: (v) => fmtFull(v) },
+            { key: 'unique', label: 'Unique works', align: 'right', mono: true,
+              format: (v) => fmtFull(v) },
+          ]}
+        />
+      )}
     </Card>
   );
 };
@@ -1002,15 +1156,17 @@ const INST_TYPE_COLORS = {
   archive: PALETTE.sage,
 };
 
-const TopInstitutionsPanel = ({ institutions, view }) => {
-  if (!institutions) return null;
-  // Note: this is a flat list (not view-keyed) because under the
-  // Chulalongkorn view, "top citing institutions" would be just CU.
-  // We always show the all-Thailand institutional landscape.
+const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }) => {
+  const [mode, setMode] = useState('chart');
   const [showCount, setShowCount] = useState(20);
-  const data = useMemo(
+  if (!institutions) return null;
+
+  const chartData = useMemo(
     () => institutions.slice(0, showCount).map((r) => ({
-      name: r.name.replace(/^King Mongkut's /, "KMUT-").replace(/^King Mongkut /, "KMUT-"),
+      id: (r.id || '').replace('https://openalex.org/', ''),
+      name: r.name
+        .replace(/^King Mongkut's /, "KMUT-")
+        .replace(/^King Mongkut /, "KMUT-"),
       type: r.type || 'other',
       edges: r.n_edges,
       seeds: r.n_seeds,
@@ -1020,117 +1176,164 @@ const TopInstitutionsPanel = ({ institutions, view }) => {
 
   return (
     <Card className="p-5">
-      <SectionTitle
-        icon={Building2}
-        kicker="Institutional landscape"
-        title="Which Thai institutions cite the most"
-        hint={
-          view === 'chulalongkorn'
-            ? "All Thai institutions ranked by their 2025 outgoing citations. Shown in both views since the institutional landscape is constant."
-            : "All Thai institutions with 2025 publications, ranked by total outgoing citations. A paper with co-authors at multiple institutions counts once for each."
-        }
-      />
-      <div style={{ width: '100%', height: data.length * 24 + 40 }}>
-        <ResponsiveContainer>
-          <BarChart
-            data={data}
-            layout="vertical"
-            margin={{ top: 4, right: 60, bottom: 4, left: 220 }}
-          >
-            <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
-            <XAxis
-              type="number"
-              tickFormatter={fmt}
-              tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
-              stroke={PALETTE.rule}
-            />
-            <YAxis
-              type="category"
-              dataKey="name"
-              tick={{ fontSize: 10, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
-              stroke={PALETTE.rule}
-              width={220}
-            />
-            <Tooltip
-              contentStyle={{
-                background: PALETTE.paper,
-                border: `1px solid ${PALETTE.ink}`,
-                fontFamily: FONT_BODY,
-                fontSize: 12,
-                borderRadius: 0,
-              }}
-              labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
-              formatter={(v, name, p) => {
-                if (name === 'edges') return [fmtFull(v), 'Citations'];
-                return [v, name];
-              }}
-            />
-            <Bar dataKey="edges">
-              {data.map((d, i) => (
-                <Cell key={i} fill={INST_TYPE_COLORS[d.type] || PALETTE.muted} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+        <SectionTitle
+          icon={Building2}
+          kicker="Institutional landscape"
+          title="Which Thai institutions cite the most"
+          hint="All Thai institutions ranked by their 2025 outgoing citations. Click a bar (in chart mode) or row (in table mode) to filter the dashboard to that institution. Co-affiliations are counted once for each institution."
+        />
+        <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
-      <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex flex-wrap gap-3">
-          {Object.entries(INST_TYPE_COLORS)
-            .filter(([t]) => data.some((d) => d.type === t))
-            .map(([t, color]) => (
-              <span
-                key={t}
-                className="inline-flex items-center gap-1.5"
-                style={{
-                  fontFamily: FONT_MONO,
-                  fontSize: 9,
-                  letterSpacing: '0.1em',
-                  color: PALETTE.muted,
-                  textTransform: 'uppercase',
+
+      {mode === 'chart' ? (
+        <>
+          <div style={{ width: '100%', height: chartData.length * 24 + 40 }}>
+            <ResponsiveContainer>
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                margin={{ top: 4, right: 60, bottom: 4, left: 220 }}
+                onClick={(e) => {
+                  if (e && e.activePayload && e.activePayload[0]) {
+                    const id = e.activePayload[0].payload.id;
+                    if (id && onSelectInstitution) onSelectInstitution(id);
+                  }
                 }}
               >
-                <span
-                  style={{
-                    display: 'inline-block',
-                    width: 9,
-                    height: 9,
-                    background: color,
-                  }}
+                <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
+                <XAxis
+                  type="number"
+                  tickFormatter={fmt}
+                  tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+                  stroke={PALETTE.rule}
                 />
-                {t}
-              </span>
-            ))}
-        </div>
-        <div className="flex gap-1">
-          {[10, 20, 30, 50].map((n) => (
-            <button
-              key={n}
-              onClick={() => setShowCount(n)}
-              className="px-2 py-1 transition-colors"
-              style={{
-                fontFamily: FONT_MONO,
-                fontSize: 10,
-                letterSpacing: '0.06em',
-                background: showCount === n ? PALETTE.ink : 'transparent',
-                color: showCount === n ? PALETTE.paper : PALETTE.muted,
-                border: `1px solid ${showCount === n ? PALETTE.ink : PALETTE.rule}`,
-                cursor: showCount === n ? 'default' : 'pointer',
-                minWidth: 36,
-              }}
-            >
-              {n}
-            </button>
-          ))}
-        </div>
-      </div>
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fontSize: 10, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
+                  stroke={PALETTE.rule}
+                  width={220}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: PALETTE.paper,
+                    border: `1px solid ${PALETTE.ink}`,
+                    fontFamily: FONT_BODY,
+                    fontSize: 12,
+                    borderRadius: 0,
+                  }}
+                  labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
+                  formatter={(v) => [fmtFull(v), 'Citations']}
+                />
+                <Bar dataKey="edges" cursor="pointer">
+                  {chartData.map((d, i) => (
+                    <Cell key={i} fill={INST_TYPE_COLORS[d.type] || PALETTE.muted} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex flex-wrap gap-3">
+              {Object.entries(INST_TYPE_COLORS)
+                .filter(([t]) => chartData.some((d) => d.type === t))
+                .map(([t, color]) => (
+                  <span
+                    key={t}
+                    className="inline-flex items-center gap-1.5"
+                    style={{
+                      fontFamily: FONT_MONO,
+                      fontSize: 9,
+                      letterSpacing: '0.1em',
+                      color: PALETTE.muted,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 9,
+                        height: 9,
+                        background: color,
+                      }}
+                    />
+                    {t}
+                  </span>
+                ))}
+            </div>
+            <div className="flex gap-1">
+              {[10, 20, 30, 50].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setShowCount(Math.min(n, institutions.length))}
+                  className="px-2 py-1 transition-colors"
+                  style={{
+                    fontFamily: FONT_MONO,
+                    fontSize: 10,
+                    letterSpacing: '0.06em',
+                    background: showCount === n ? PALETTE.ink : 'transparent',
+                    color: showCount === n ? PALETTE.paper : PALETTE.muted,
+                    border: `1px solid ${showCount === n ? PALETTE.ink : PALETTE.rule}`,
+                    cursor: showCount === n ? 'default' : 'pointer',
+                    minWidth: 36,
+                  }}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : (
+        <DataTable
+          rows={institutions.map((r) => ({
+            ...r,
+            short_id: (r.id || '').replace('https://openalex.org/', ''),
+          }))}
+          columns={[
+            { key: 'name', label: 'Institution', align: 'left',
+              maxWidth: 380,
+              format: (name, r) => (
+                <button
+                  onClick={() =>
+                    onSelectInstitution && onSelectInstitution(r.short_id)
+                  }
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: PALETTE.burgundy,
+                    cursor: 'pointer',
+                    padding: 0,
+                    textAlign: 'left',
+                    fontFamily: 'inherit',
+                    fontSize: 'inherit',
+                    textDecoration: 'underline',
+                    textDecorationColor: PALETTE.rule,
+                    textUnderlineOffset: 2,
+                  }}
+                >
+                  {name}
+                </button>
+              ),
+            },
+            { key: 'type', label: 'Type', align: 'left' },
+            { key: 'n_seeds', label: 'Citing papers', align: 'right', mono: true,
+              format: (v) => fmtFull(v) },
+            { key: 'n_edges', label: 'Citations', align: 'right', mono: true,
+              format: (v) => fmtFull(v) },
+          ]}
+        />
+      )}
     </Card>
   );
 };
 
 // ============================================================
-// INSTITUTION TYPE BREAKDOWN  (small donut)
+// INSTITUTION TYPE BREAKDOWN  (clarified parentheses)
 // ============================================================
 const InstitutionTypesPanel = ({ institutionTypes }) => {
+  const [mode, setMode] = useState('chart');
   if (!institutionTypes) return null;
   const data = useMemo(
     () => institutionTypes
@@ -1150,241 +1353,110 @@ const InstitutionTypesPanel = ({ institutionTypes }) => {
 
   return (
     <Card className="p-5">
-      <SectionTitle
-        icon={Tag}
-        kicker="Sector mix"
-        title="Citations by institution type"
-        hint="OpenAlex institutional classification. Citations counted across all author affiliations."
-      />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div style={{ width: '100%', height: 240 }}>
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie
-                data={data}
-                dataKey="n_edges"
-                nameKey="type"
-                innerRadius={50}
-                outerRadius={90}
-                paddingAngle={2}
-              >
-                {data.map((d, i) => (
-                  <Cell
-                    key={i}
-                    fill={INST_TYPE_COLORS[d.type] || PALETTE.muted}
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  background: PALETTE.paper,
-                  border: `1px solid ${PALETTE.ink}`,
-                  fontFamily: FONT_BODY,
-                  fontSize: 12,
-                  borderRadius: 0,
-                }}
-                formatter={(v) => fmtFull(v) + ' citations'}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="flex flex-col gap-2 self-center">
-          {data.map((r) => {
-            const p = (r.n_edges / totalEdges) * 100;
-            return (
-              <div
-                key={r.type}
-                className="flex items-center justify-between gap-3"
-                style={{ fontFamily: FONT_BODY, fontSize: 12 }}
-              >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      width: 10,
-                      height: 10,
-                      background: INST_TYPE_COLORS[r.type] || PALETTE.muted,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span style={{ color: PALETTE.ink, textTransform: 'capitalize' }}>
-                    {r.type}
-                  </span>
-                  <span style={{ color: PALETTE.muted, fontSize: 10 }}>
-                    ({r.n_institutions})
-                  </span>
-                </div>
-                <div
-                  style={{
-                    fontFamily: FONT_MONO,
-                    fontSize: 11,
-                    color: PALETTE.charcoal,
-                    minWidth: 90,
-                    textAlign: 'right',
-                  }}
+      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+        <SectionTitle
+          icon={Tag}
+          kicker="Sector mix"
+          title="Citations by institution type"
+          hint="OpenAlex institutional classification. Citations counted across all author affiliations."
+        />
+        <ChartTableToggle mode={mode} onChange={setMode} />
+      </div>
+
+      {mode === 'chart' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div style={{ width: '100%', height: 240 }}>
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie
+                  data={data}
+                  dataKey="n_edges"
+                  nameKey="type"
+                  innerRadius={50}
+                  outerRadius={90}
+                  paddingAngle={2}
                 >
-                  {fmt(r.n_edges)}
-                  <span style={{ color: PALETTE.muted, marginLeft: 6 }}>
-                    {p.toFixed(1)}%
-                  </span>
+                  {data.map((d, i) => (
+                    <Cell key={i} fill={INST_TYPE_COLORS[d.type] || PALETTE.muted} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    background: PALETTE.paper,
+                    border: `1px solid ${PALETTE.ink}`,
+                    fontFamily: FONT_BODY,
+                    fontSize: 12,
+                    borderRadius: 0,
+                  }}
+                  formatter={(v) => fmtFull(v) + ' citations'}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex flex-col gap-2 self-center">
+            {data.map((r) => {
+              const p = (r.n_edges / totalEdges) * 100;
+              return (
+                <div
+                  key={r.type}
+                  className="flex items-center justify-between gap-3"
+                  style={{ fontFamily: FONT_BODY, fontSize: 12 }}
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 10,
+                        height: 10,
+                        background: INST_TYPE_COLORS[r.type] || PALETTE.muted,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span style={{ color: PALETTE.ink, textTransform: 'capitalize' }}>
+                      {r.type}
+                    </span>
+                    <span
+                      style={{ color: PALETTE.muted, fontSize: 10 }}
+                      title={`${r.n_institutions} institutions of this type`}
+                    >
+                      ({r.n_institutions} institutions)
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: FONT_MONO,
+                      fontSize: 11,
+                      color: PALETTE.charcoal,
+                      minWidth: 90,
+                      textAlign: 'right',
+                    }}
+                  >
+                    {fmt(r.n_edges)}
+                    <span style={{ color: PALETTE.muted, marginLeft: 6 }}>
+                      {p.toFixed(1)}%
+                    </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </Card>
-  );
-};
-
-// ============================================================
-// SCIENCEDIRECT  CU vs STANDARD COMPARISON
-// ============================================================
-const ScienceDirectComparison = ({ coverage, view }) => {
-  if (!coverage) return null;
-  const data = coverage[view];
-  const cu = data.databases.find((d) => d.key === 'sciencedirect_cu');
-  const std = data.databases.find((d) => d.key === 'sciencedirect_std');
-  if (!cu || !std) return null;
-
-  const gain_edges = std.edges - cu.edges;
-  const gain_unique = std.unique - cu.unique;
-  const gain_pct = std.edges_pct - cu.edges_pct;
-
-  return (
-    <Card className="p-5">
-      <SectionTitle
-        icon={GitCompare}
-        kicker="Subscription scenario"
-        title="ScienceDirect: current CU subscription vs full Standard list"
-        hint="What would upgrading from the CU-subscribed ScienceDirect titles to Elsevier's full Standard product gain in coverage."
-      />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div
-          className="p-4"
-          style={{
-            background: PALETTE.cream,
-            border: `1px solid ${PALETTE.rule}`,
-          }}
-        >
-          <div
-            className="uppercase mb-2"
-            style={{
-              fontFamily: FONT_MONO,
-              fontSize: 9,
-              letterSpacing: '0.18em',
-              color: PALETTE.muted,
-            }}
-          >
-            Current CU Subscription
-          </div>
-          <div
-            style={{
-              fontFamily: FONT_DISPLAY,
-              fontSize: 28,
-              fontWeight: 500,
-              color: PALETTE.burgundy,
-              lineHeight: 1,
-            }}
-          >
-            {fmtPct(cu.edges_pct)}
-          </div>
-          <div
-            className="mt-1"
-            style={{ fontFamily: FONT_BODY, fontSize: 11, color: PALETTE.muted }}
-          >
-            {fmtFull(cu.edges)} citations covered
+              );
+            })}
           </div>
         </div>
-        <div
-          className="p-4"
-          style={{
-            background: PALETTE.cream,
-            border: `1px solid ${PALETTE.rule}`,
-          }}
-        >
-          <div
-            className="uppercase mb-2"
-            style={{
-              fontFamily: FONT_MONO,
-              fontSize: 9,
-              letterSpacing: '0.18em',
-              color: PALETTE.muted,
-            }}
-          >
-            Full Standard Product
-          </div>
-          <div
-            style={{
-              fontFamily: FONT_DISPLAY,
-              fontSize: 28,
-              fontWeight: 500,
-              color: PALETTE.navy,
-              lineHeight: 1,
-            }}
-          >
-            {fmtPct(std.edges_pct)}
-          </div>
-          <div
-            className="mt-1"
-            style={{ fontFamily: FONT_BODY, fontSize: 11, color: PALETTE.muted }}
-          >
-            {fmtFull(std.edges)} citations covered
-          </div>
-        </div>
-        <div
-          className="p-4"
-          style={{
-            background: PALETTE.paper,
-            border: `2px solid ${PALETTE.ink}`,
-          }}
-        >
-          <div
-            className="uppercase mb-2"
-            style={{
-              fontFamily: FONT_MONO,
-              fontSize: 9,
-              letterSpacing: '0.18em',
-              color: PALETTE.muted,
-            }}
-          >
-            Marginal Gain
-          </div>
-          <div
-            style={{
-              fontFamily: FONT_DISPLAY,
-              fontSize: 28,
-              fontWeight: 600,
-              color: PALETTE.ink,
-              lineHeight: 1,
-            }}
-          >
-            +{gain_pct.toFixed(2)} pts
-          </div>
-          <div
-            className="mt-1"
-            style={{ fontFamily: FONT_BODY, fontSize: 11, color: PALETTE.charcoal }}
-          >
-            +{fmtFull(gain_edges)} citations · +{fmtFull(gain_unique)} unique works
-          </div>
-        </div>
-      </div>
-      <p
-        className="mt-4"
-        style={{
-          fontFamily: FONT_BODY,
-          fontSize: 12,
-          color: PALETTE.muted,
-          lineHeight: 1.5,
-          maxWidth: 720,
-        }}
-      >
-        Interpretation: Elsevier's full Standard list is broader than what
-        OAR currently subscribes to via the Chula package, but the marginal
-        gain in citation coverage is modest. Whether the upgrade is worthwhile
-        depends on the cost differential and whether the additional titles
-        align with disciplines that are underserved by current subscriptions.
-      </p>
+      ) : (
+        <DataTable
+          rows={data}
+          columns={[
+            { key: 'type', label: 'Type', align: 'left' },
+            { key: 'n_institutions', label: 'Institutions', align: 'right', mono: true,
+              format: (v) => fmtFull(v) },
+            { key: 'n_seeds', label: 'Citing papers', align: 'right', mono: true,
+              format: (v) => fmtFull(v) },
+            { key: 'n_edges', label: 'Citations', align: 'right', mono: true,
+              format: (v) => fmtFull(v) },
+            { key: '_pct', label: 'Share', align: 'right', mono: true,
+              format: (_, r) => ((r.n_edges / totalEdges) * 100).toFixed(1) + '%' },
+          ]}
+        />
+      )}
     </Card>
   );
 };
@@ -1392,12 +1464,11 @@ const ScienceDirectComparison = ({ coverage, view }) => {
 // ============================================================
 // HEADER, FOOTER
 // ============================================================
-const Header = ({ view, onViewChange, generatedAt }) => (
+const Header = ({ view, onViewChange, institutionViews, generatedAt, viewLabel }) => (
   <header
     className="border-b"
     style={{ borderColor: PALETTE.ink, background: PALETTE.paper }}
   >
-    {/* OAR logo strip */}
     <div className="border-b" style={{ borderColor: PALETTE.rule }}>
       <div className="mx-auto max-w-[1400px] px-6 py-3">
         <a
@@ -1411,10 +1482,7 @@ const Header = ({ view, onViewChange, generatedAt }) => (
             src={`${import.meta.env.BASE_URL}oar_logo.png`}
             alt="Office of Academic Resources, Chulalongkorn University"
             style={{ height: 44, width: 'auto', display: 'block' }}
-            onError={(e) => {
-              // Hide broken-image icon if logo isn't yet supplied
-              e.target.style.display = 'none';
-            }}
+            onError={(e) => { e.target.style.display = 'none'; }}
           />
         </a>
       </div>
@@ -1430,7 +1498,7 @@ const Header = ({ view, onViewChange, generatedAt }) => (
           color: PALETTE.muted,
         }}
       >
-        Citations Coverage Brief · OpenAlex × OAR Indexing Lists
+        Citations Coverage Brief · OpenAlex × Public Database Title Lists
       </div>
 
       <h1
@@ -1456,14 +1524,19 @@ const Header = ({ view, onViewChange, generatedAt }) => (
           lineHeight: 1.55,
         }}
       >
-        Where Thai researchers' 2025 citations actually land across the
-        databases OAR subscribes to. Use this to see which subscriptions
-        carry the most weight, where coverage overlaps, and where the
-        gaps are.
+        Where Thai researchers' 2025 citations land across major academic
+        databases. Use this to understand citation patterns, database coverage,
+        and overlaps for consortium-level decisions. Filter by citing
+        institution to see how patterns differ across the Thai academic
+        landscape.
       </p>
 
-      <div className="mt-6 flex flex-wrap items-center gap-4">
-        <ViewToggle view={view} onChange={onViewChange} />
+      <div className="mt-6 flex flex-wrap items-end gap-4">
+        <InstitutionSelector
+          view={view}
+          onChange={onViewChange}
+          institutionViews={institutionViews}
+        />
         <a
           href="#/explore"
           className="inline-flex items-center gap-1.5 px-3 py-2 transition-colors"
@@ -1476,6 +1549,7 @@ const Header = ({ view, onViewChange, generatedAt }) => (
             color: PALETTE.burgundy,
             border: `1px solid ${PALETTE.burgundy}`,
             textDecoration: 'none',
+            alignSelf: 'flex-end',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = PALETTE.burgundy;
@@ -1495,6 +1569,8 @@ const Header = ({ view, onViewChange, generatedAt }) => (
             letterSpacing: '0.12em',
             color: PALETTE.muted,
             textTransform: 'uppercase',
+            alignSelf: 'flex-end',
+            paddingBottom: 8,
           }}
         >
           {generatedAt && `Data generated · ${generatedAt.slice(0, 10)}`}
@@ -1528,23 +1604,17 @@ const Footer = () => (
             href="https://www.car.chula.ac.th"
             target="_blank"
             rel="noreferrer noopener"
-            style={{
-              color: PALETTE.burgundy,
-              textDecoration: 'underline',
-            }}
+            style={{ color: PALETTE.burgundy, textDecoration: 'underline' }}
           >
             Office of Academic Resources, Chulalongkorn University
           </a>
-          . Data pipeline, dashboard scaffolding, and visual design were
-          developed in collaboration with{' '}
+          . Data pipeline, dashboard scaffolding, and visual design developed
+          in collaboration with{' '}
           <a
             href="https://www.anthropic.com/claude"
             target="_blank"
             rel="noreferrer noopener"
-            style={{
-              color: PALETTE.burgundy,
-              textDecoration: 'underline',
-            }}
+            style={{ color: PALETTE.burgundy, textDecoration: 'underline' }}
           >
             Claude
           </a>
@@ -1572,8 +1642,8 @@ const Footer = () => (
         }}
       >
         <div className="uppercase">
-          Citation graph · OpenAlex (CC0) · Indexing lists from publisher KBART
-          and database title-list exports
+          Citation graph · OpenAlex (CC0) · Database title lists from public
+          KBART exports and vendor downloads
         </div>
         <div className="uppercase">Static export · refreshed monthly</div>
       </div>
@@ -1588,6 +1658,13 @@ export default function Dashboard() {
   useFonts();
   const [view, setView] = useState('all_thailand');
   const data = useDataFiles();
+
+  const institutionViews = data.meta?.institution_views || [];
+  const viewLabel = useMemo(() => {
+    if (view === 'all_thailand') return 'All Thailand';
+    const found = institutionViews.find((iv) => iv.id === view);
+    return found ? found.name : view;
+  }, [view, institutionViews]);
 
   if (data.status === 'loading') {
     return (
@@ -1619,21 +1696,20 @@ export default function Dashboard() {
               Could not load data
             </span>
           </div>
-          <p style={{ color: PALETTE.charcoal, fontSize: 14 }}>
-            {data.error}
-          </p>
-          <p
-            className="mt-3"
-            style={{ color: PALETTE.muted, fontSize: 13 }}
-          >
+          <p style={{ color: PALETTE.charcoal, fontSize: 14 }}>{data.error}</p>
+          <p className="mt-3" style={{ color: PALETTE.muted, fontSize: 13 }}>
             Make sure the JSON files are in <code>public/data/</code> at the
-            project root. Run <code>python pipeline.py export</code> on the
+            project root. Run <code>python export_dashboard_v2.py</code> on the
             data side to regenerate them.
           </p>
         </Card>
       </div>
     );
   }
+
+  // Validate that the current view exists in the data; if not, fall back
+  const viewExists = data.summary && data.summary[view];
+  const effectiveView = viewExists ? view : 'all_thailand';
 
   return (
     <div
@@ -1645,29 +1721,53 @@ export default function Dashboard() {
       }}
     >
       <Header
-        view={view}
+        view={effectiveView}
         onViewChange={setView}
+        institutionViews={institutionViews}
         generatedAt={data.meta?.generated_at}
+        viewLabel={viewLabel}
       />
       <main className="mx-auto max-w-[1400px] px-6 py-8">
         <div className="space-y-6">
-          <TopStats summary={data.summary} coverage={data.coverage} view={view} />
-          <CoverageTable coverage={data.coverage} view={view} />
+          {!viewExists && view !== 'all_thailand' && (
+            <Card
+              className="p-4"
+              style={{ borderColor: PALETTE.gold, background: PALETTE.cream }}
+            >
+              <div
+                style={{
+                  fontFamily: FONT_BODY,
+                  fontSize: 13,
+                  color: PALETTE.charcoal,
+                }}
+              >
+                Showing All Thailand because per-institution data has not been
+                exported yet. Re-run <code>python export_dashboard_v2.py</code>
+                to generate institution-specific views.
+              </div>
+            </Card>
+          )}
 
-          <ScienceDirectComparison coverage={data.coverage} view={view} />
-
-          <OverlapHeatmap overlap={data.overlap} view={view} />
-
-          <ByYearPanel byYear={data.by_year} view={view} />
+          <TopStats
+            summary={data.summary}
+            view={effectiveView}
+            viewLabel={viewLabel}
+          />
+          <CoverageTable coverage={data.coverage} view={effectiveView} />
+          <OverlapHeatmap overlap={data.overlap} view={effectiveView} />
+          <ByYearPanel byYear={data.by_year} view={effectiveView} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ByTypePanel byType={data.by_type} view={view} />
+            <ByTypePanel byType={data.by_type} view={effectiveView} />
             <InstitutionTypesPanel institutionTypes={data.institution_types} />
           </div>
 
-          <TopPublishersPanel byPublisher={data.by_publisher} view={view} />
-
-          <TopInstitutionsPanel institutions={data.institutions} view={view} />
+          <TopPublishersPanel byPublisher={data.by_publisher} view={effectiveView} />
+          <TopInstitutionsPanel
+            institutions={data.institutions}
+            onSelectInstitution={setView}
+            currentView={effectiveView}
+          />
         </div>
       </main>
       <Footer />
