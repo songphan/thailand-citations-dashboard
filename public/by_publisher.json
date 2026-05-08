@@ -1,0 +1,3040 @@
+{
+  "all_thailand": [
+    {
+      "publisher": "Elsevier BV",
+      "edges": 375777,
+      "unique": 307037,
+      "by_database": {
+        "ebsco_asp_idx": 249511,
+        "doaj": 58189,
+        "wos_scie": 312399,
+        "wiley": 509,
+        "ebsco_asu_ft": 1159,
+        "ebsco_asu_idx": 249511,
+        "scopus": 366739,
+        "sciencedirect_cu": 364824,
+        "wos_ssci": 34599,
+        "wos_esci": 13509,
+        "ebsco_asc_idx": 249511,
+        "ebsco_asc_ft": 365,
+        "wos_ahci": 505,
+        "ebsco_asp_ft": 117,
+        "sciencedirect_std": 369731
+      }
+    },
+    {
+      "publisher": "Wiley",
+      "edges": 95724,
+      "unique": 79240,
+      "by_database": {
+        "scopus": 95025,
+        "sciencedirect_cu": 1449,
+        "wos_ssci": 14680,
+        "ebsco_asp_ft": 13443,
+        "ebsco_asp_idx": 60525,
+        "doaj": 11946,
+        "sciencedirect_std": 2392,
+        "ebsco_asu_idx": 60525,
+        "wos_esci": 2558,
+        "ebsco_asc_idx": 60525,
+        "ebsco_asc_ft": 16716,
+        "wos_ahci": 288,
+        "wos_scie": 79381,
+        "wiley": 79477,
+        "ebsco_asu_ft": 25662
+      }
+    },
+    {
+      "publisher": "Springer Science+Business Media",
+      "edges": 88368,
+      "unique": 72372,
+      "by_database": {
+        "scopus": 87514,
+        "sciencedirect_cu": 1337,
+        "wos_ssci": 8757,
+        "sciencedirect_std": 1812,
+        "wos_scie": 65964,
+        "wiley": 404,
+        "ebsco_asu_ft": 19514,
+        "ebsco_asp_ft": 12015,
+        "wos_esci": 4949,
+        "ebsco_asc_idx": 40374,
+        "ebsco_asc_ft": 14863,
+        "wos_ahci": 232,
+        "ebsco_asu_idx": 40379,
+        "ebsco_asp_idx": 40374,
+        "doaj": 8532
+      }
+    },
+    {
+      "publisher": "Multidisciplinary Digital Publishing Institute",
+      "edges": 83833,
+      "unique": 66906,
+      "by_database": {
+        "wos_esci": 4964,
+        "ebsco_asc_idx": 42738,
+        "ebsco_asc_ft": 34028,
+        "wos_ahci": 93,
+        "ebsco_asu_idx": 42738,
+        "wos_scie": 73783,
+        "ebsco_asu_ft": 39616,
+        "sciencedirect_std": 298,
+        "ebsco_asp_idx": 42738,
+        "doaj": 51534,
+        "scopus": 83620,
+        "sciencedirect_cu": 298,
+        "wos_ssci": 7495,
+        "ebsco_asp_ft": 2759
+      }
+    },
+    {
+      "publisher": "(unknown)",
+      "edges": 82185,
+      "unique": 69378,
+      "by_database": {
+        "ebsco_asp_ft": 474,
+        "sciencedirect_std": 867,
+        "scopus": 19987,
+        "sciencedirect_cu": 726,
+        "wos_ssci": 357,
+        "ebsco_asu_idx": 5138,
+        "ebsco_asp_idx": 5138,
+        "doaj": 5189,
+        "wos_scie": 7979,
+        "wiley": 2681,
+        "ebsco_asu_ft": 2609,
+        "wos_esci": 3962,
+        "ebsco_asc_idx": 5138,
+        "ebsco_asc_ft": 1417,
+        "wos_ahci": 54
+      }
+    },
+    {
+      "publisher": "Taylor & Francis",
+      "edges": 41810,
+      "unique": 34672,
+      "by_database": {
+        "ebsco_asp_idx": 29073,
+        "doaj": 5765,
+        "wos_scie": 24000,
+        "wiley": 190,
+        "ebsco_asu_ft": 14224,
+        "ebsco_asu_idx": 29080,
+        "scopus": 41486,
+        "sciencedirect_cu": 447,
+        "wos_ssci": 12223,
+        "wos_esci": 5050,
+        "ebsco_asc_idx": 29073,
+        "ebsco_asc_ft": 12852,
+        "wos_ahci": 757,
+        "ebsco_asp_ft": 10982,
+        "sciencedirect_std": 721
+      }
+    },
+    {
+      "publisher": "Nature Portfolio",
+      "edges": 40705,
+      "unique": 29720,
+      "by_database": {
+        "ebsco_asu_idx": 28633,
+        "wos_esci": 122,
+        "ebsco_asc_idx": 28633,
+        "ebsco_asc_ft": 12660,
+        "ebsco_asp_idx": 28633,
+        "doaj": 20484,
+        "wos_scie": 40491,
+        "ebsco_asu_ft": 13146,
+        "scopus": 40690,
+        "wos_ssci": 658
+      }
+    },
+    {
+      "publisher": "American Chemical Society",
+      "edges": 37961,
+      "unique": 31344,
+      "by_database": {
+        "ebsco_asu_idx": 17101,
+        "wos_esci": 868,
+        "ebsco_asc_idx": 17101,
+        "ebsco_asp_idx": 17101,
+        "doaj": 2585,
+        "wos_scie": 36688,
+        "wiley": 83,
+        "scopus": 37923,
+        "sciencedirect_cu": 53,
+        "sciencedirect_std": 66
+      }
+    },
+    {
+      "publisher": "Oxford University Press",
+      "edges": 36349,
+      "unique": 25761,
+      "by_database": {
+        "ebsco_asp_ft": 2381,
+        "sciencedirect_std": 2484,
+        "scopus": 35736,
+        "sciencedirect_cu": 498,
+        "wos_ssci": 3690,
+        "ebsco_asu_idx": 22894,
+        "ebsco_asp_idx": 22894,
+        "doaj": 11375,
+        "wos_scie": 32269,
+        "wiley": 551,
+        "ebsco_asu_ft": 3907,
+        "wos_esci": 588,
+        "ebsco_asc_idx": 22894,
+        "ebsco_asc_ft": 3136,
+        "wos_ahci": 262
+      }
+    },
+    {
+      "publisher": "BioMed Central",
+      "edges": 27970,
+      "unique": 22307,
+      "by_database": {
+        "ebsco_asp_idx": 20474,
+        "doaj": 27729,
+        "wos_scie": 25395,
+        "ebsco_asu_ft": 332,
+        "ebsco_asu_idx": 20474,
+        "scopus": 27768,
+        "sciencedirect_cu": 290,
+        "wos_ssci": 2866,
+        "ebsco_asc_idx": 20474,
+        "ebsco_asc_ft": 266,
+        "wos_esci": 1065,
+        "wos_ahci": 4,
+        "sciencedirect_std": 294
+      }
+    },
+    {
+      "publisher": "SAGE Publishing",
+      "edges": 25005,
+      "unique": 20163,
+      "by_database": {
+        "scopus": 24612,
+        "sciencedirect_cu": 839,
+        "wos_ssci": 12629,
+        "sciencedirect_std": 1166,
+        "wos_scie": 10123,
+        "wiley": 64,
+        "ebsco_asu_ft": 2481,
+        "ebsco_asp_ft": 1028,
+        "wos_esci": 2508,
+        "ebsco_asc_idx": 11523,
+        "ebsco_asc_ft": 1520,
+        "wos_ahci": 375,
+        "ebsco_asu_idx": 11523,
+        "ebsco_asp_idx": 11523,
+        "doaj": 4220
+      }
+    },
+    {
+      "publisher": "Frontiers Media",
+      "edges": 24991,
+      "unique": 20748,
+      "by_database": {
+        "ebsco_asu_idx": 602,
+        "wos_esci": 1528,
+        "ebsco_asc_idx": 602,
+        "ebsco_asp_idx": 602,
+        "doaj": 24973,
+        "wos_scie": 21457,
+        "ebsco_asu_ft": 602,
+        "scopus": 24911,
+        "wos_ssci": 3368
+      }
+    },
+    {
+      "publisher": "Springer Nature",
+      "edges": 20866,
+      "unique": 16978,
+      "by_database": {
+        "scopus": 19986,
+        "sciencedirect_cu": 398,
+        "wos_ssci": 569,
+        "sciencedirect_std": 623,
+        "wos_scie": 15234,
+        "ebsco_asu_ft": 1488,
+        "ebsco_asp_ft": 347,
+        "wos_esci": 1174,
+        "ebsco_asc_idx": 9320,
+        "ebsco_asc_ft": 897,
+        "wos_ahci": 50,
+        "ebsco_asu_idx": 9320,
+        "ebsco_asp_idx": 9320,
+        "doaj": 9782
+      }
+    },
+    {
+      "publisher": "Lippincott Williams & Wilkins",
+      "edges": 19405,
+      "unique": 16345,
+      "by_database": {
+        "wos_esci": 500,
+        "ebsco_asc_idx": 5620,
+        "ebsco_asu_idx": 5620,
+        "wos_scie": 18043,
+        "wiley": 1052,
+        "ebsco_asu_ft": 33,
+        "sciencedirect_std": 2483,
+        "ebsco_asp_idx": 5620,
+        "doaj": 649,
+        "scopus": 19368,
+        "sciencedirect_cu": 1441,
+        "wos_ssci": 1026
+      }
+    },
+    {
+      "publisher": "Royal Society of Chemistry",
+      "edges": 18886,
+      "unique": 15814,
+      "by_database": {
+        "ebsco_asc_idx": 5020,
+        "wos_esci": 648,
+        "ebsco_asu_idx": 5020,
+        "wos_scie": 17688,
+        "ebsco_asp_idx": 5020,
+        "doaj": 4866,
+        "scopus": 18827,
+        "wos_ssci": 50
+      }
+    },
+    {
+      "publisher": "Public Library of Science",
+      "edges": 14603,
+      "unique": 11648,
+      "by_database": {
+        "wos_scie": 14304,
+        "ebsco_asu_ft": 14304,
+        "ebsco_asp_idx": 14306,
+        "doaj": 14588,
+        "ebsco_asc_idx": 14306,
+        "ebsco_asc_ft": 14304,
+        "wos_esci": 282,
+        "ebsco_asu_idx": 14306,
+        "ebsco_asp_ft": 14304,
+        "scopus": 14603
+      }
+    },
+    {
+      "publisher": "Institute of Electrical and Electronics Engineers",
+      "edges": 13445,
+      "unique": 11365,
+      "by_database": {
+        "sciencedirect_std": 13,
+        "scopus": 13376,
+        "wos_ssci": 212,
+        "ebsco_asu_idx": 4341,
+        "ebsco_asp_idx": 4341,
+        "doaj": 4334,
+        "wos_scie": 12477,
+        "ebsco_asc_idx": 4341,
+        "wos_esci": 358,
+        "wos_ahci": 2
+      }
+    },
+    {
+      "publisher": "Emerald Publishing Limited",
+      "edges": 11475,
+      "unique": 9326,
+      "by_database": {
+        "wos_scie": 1312,
+        "ebsco_asp_idx": 1265,
+        "doaj": 485,
+        "wos_esci": 4645,
+        "ebsco_asc_idx": 1265,
+        "wos_ahci": 27,
+        "ebsco_asu_idx": 1265,
+        "sciencedirect_std": 62,
+        "scopus": 11313,
+        "sciencedirect_cu": 62,
+        "wos_ssci": 5236
+      }
+    },
+    {
+      "publisher": "American Physical Society",
+      "edges": 10195,
+      "unique": 6959,
+      "by_database": {
+        "scopus": 10033,
+        "wos_ssci": 38,
+        "ebsco_asu_idx": 6643,
+        "ebsco_asp_idx": 6643,
+        "doaj": 277,
+        "wos_scie": 6439,
+        "ebsco_asc_idx": 6643,
+        "wos_esci": 72
+      }
+    },
+    {
+      "publisher": "IOP Publishing",
+      "edges": 9223,
+      "unique": 7477,
+      "by_database": {
+        "sciencedirect_std": 6,
+        "wos_esci": 197,
+        "ebsco_asc_idx": 3683,
+        "scopus": 6644,
+        "sciencedirect_cu": 6,
+        "wos_scie": 6331,
+        "ebsco_asp_idx": 3683,
+        "doaj": 3425,
+        "ebsco_asu_idx": 3683
+      }
+    },
+    {
+      "publisher": "American Society for Microbiology",
+      "edges": 7861,
+      "unique": 6377,
+      "by_database": {
+        "ebsco_asc_idx": 3238,
+        "wos_esci": 97,
+        "ebsco_asu_idx": 3238,
+        "wos_scie": 7429,
+        "ebsco_asp_idx": 3238,
+        "doaj": 5661,
+        "scopus": 7861
+      }
+    },
+    {
+      "publisher": "National Institutes of Health",
+      "edges": 7647,
+      "unique": 6786,
+      "by_database": {}
+    },
+    {
+      "publisher": "Cambridge University Press",
+      "edges": 7472,
+      "unique": 6196,
+      "by_database": {
+        "ebsco_asp_idx": 2689,
+        "doaj": 1555,
+        "wiley": 12,
+        "wos_scie": 3739,
+        "ebsco_asu_ft": 372,
+        "ebsco_asu_idx": 2695,
+        "scopus": 6020,
+        "sciencedirect_cu": 518,
+        "wos_ssci": 2129,
+        "wos_esci": 296,
+        "ebsco_asc_idx": 2689,
+        "ebsco_asc_ft": 111,
+        "wos_ahci": 473,
+        "ebsco_asp_ft": 63,
+        "sciencedirect_std": 550
+      }
+    },
+    {
+      "publisher": "Hindawi Publishing Corporation",
+      "edges": 6910,
+      "unique": 5870,
+      "by_database": {
+        "wos_scie": 1995,
+        "ebsco_asu_ft": 3215,
+        "ebsco_asp_idx": 3828,
+        "doaj": 3575,
+        "wos_esci": 1964,
+        "ebsco_asc_idx": 3828,
+        "ebsco_asc_ft": 3212,
+        "ebsco_asu_idx": 3828,
+        "ebsco_asp_ft": 1249,
+        "scopus": 6516,
+        "wos_ssci": 16
+      }
+    },
+    {
+      "publisher": "BMJ",
+      "edges": 6583,
+      "unique": 5373,
+      "by_database": {
+        "wos_esci": 455,
+        "ebsco_asc_idx": 2804,
+        "wos_ahci": 6,
+        "ebsco_asu_idx": 2804,
+        "wos_scie": 5446,
+        "sciencedirect_std": 689,
+        "ebsco_asp_idx": 2804,
+        "doaj": 2219,
+        "scopus": 5981,
+        "sciencedirect_cu": 507,
+        "wos_ssci": 757
+      }
+    },
+    {
+      "publisher": "American Association for the Advancement of Science",
+      "edges": 5643,
+      "unique": 4109,
+      "by_database": {
+        "ebsco_asp_idx": 4871,
+        "doaj": 1127,
+        "wos_scie": 5592,
+        "ebsco_asu_ft": 3901,
+        "ebsco_asu_idx": 4871,
+        "scopus": 5643,
+        "sciencedirect_cu": 19,
+        "ebsco_asc_idx": 4871,
+        "wos_esci": 46,
+        "sciencedirect_std": 19
+      }
+    },
+    {
+      "publisher": "Cell Press",
+      "edges": 4892,
+      "unique": 3850,
+      "by_database": {
+        "scopus": 4892,
+        "sciencedirect_cu": 4892,
+        "sciencedirect_std": 4892,
+        "wos_scie": 4890,
+        "ebsco_asc_idx": 2893,
+        "ebsco_asu_idx": 2893,
+        "ebsco_asp_idx": 2893,
+        "doaj": 1195
+      }
+    },
+    {
+      "publisher": "American Institute of Physics",
+      "edges": 4643,
+      "unique": 3498,
+      "by_database": {
+        "scopus": 4100,
+        "sciencedirect_cu": 7,
+        "sciencedirect_std": 7,
+        "wos_scie": 3482,
+        "ebsco_asu_ft": 4,
+        "ebsco_asc_idx": 3623,
+        "wos_esci": 21,
+        "ebsco_asu_idx": 3623,
+        "ebsco_asp_idx": 3623,
+        "doaj": 264
+      }
+    },
+    {
+      "publisher": "American Medical Association",
+      "edges": 4559,
+      "unique": 3634,
+      "by_database": {
+        "ebsco_asc_ft": 94,
+        "ebsco_asc_idx": 1926,
+        "ebsco_asu_idx": 1926,
+        "wos_scie": 3738,
+        "ebsco_asu_ft": 94,
+        "ebsco_asp_idx": 1926,
+        "doaj": 660,
+        "scopus": 4541,
+        "wos_ssci": 122,
+        "ebsco_asp_ft": 94
+      }
+    },
+    {
+      "publisher": "National Academy of Sciences",
+      "edges": 4418,
+      "unique": 3609,
+      "by_database": {
+        "ebsco_asp_idx": 4418,
+        "wos_scie": 4418,
+        "ebsco_asu_idx": 4418,
+        "scopus": 4418,
+        "ebsco_asc_idx": 4418
+      }
+    },
+    {
+      "publisher": "Dove Medical Press",
+      "edges": 3641,
+      "unique": 3033,
+      "by_database": {
+        "wos_scie": 2830,
+        "ebsco_asu_ft": 642,
+        "ebsco_asp_idx": 726,
+        "doaj": 3488,
+        "wos_esci": 629,
+        "ebsco_asc_ft": 266,
+        "ebsco_asc_idx": 726,
+        "ebsco_asu_idx": 726,
+        "scopus": 3526,
+        "wos_ssci": 217
+      }
+    },
+    {
+      "publisher": "Massachusetts Medical Society",
+      "edges": 3608,
+      "unique": 2214,
+      "by_database": {
+        "scopus": 3608,
+        "wos_scie": 3608,
+        "ebsco_asc_idx": 3608,
+        "ebsco_asu_idx": 3608,
+        "ebsco_asp_idx": 3608
+      }
+    },
+    {
+      "publisher": "American Psychological Association",
+      "edges": 3594,
+      "unique": 2388,
+      "by_database": {
+        "ebsco_asc_idx": 2212,
+        "wos_ahci": 40,
+        "wos_esci": 69,
+        "ebsco_asu_idx": 2212,
+        "wos_scie": 838,
+        "ebsco_asp_idx": 2212,
+        "doaj": 2,
+        "scopus": 3481,
+        "wos_ssci": 3275
+      }
+    },
+    {
+      "publisher": "Institute of Physics",
+      "edges": 3593,
+      "unique": 2455,
+      "by_database": {
+        "wos_scie": 3444,
+        "ebsco_asp_idx": 656,
+        "doaj": 578,
+        "ebsco_asc_idx": 656,
+        "wos_esci": 14,
+        "ebsco_asu_idx": 656,
+        "scopus": 3535
+      }
+    },
+    {
+      "publisher": "Medknow",
+      "edges": 3572,
+      "unique": 3157,
+      "by_database": {
+        "wos_scie": 1059,
+        "ebsco_asu_ft": 2043,
+        "ebsco_asp_idx": 2113,
+        "doaj": 2235,
+        "wos_esci": 1384,
+        "ebsco_asc_idx": 2113,
+        "ebsco_asc_ft": 1958,
+        "ebsco_asu_idx": 2113,
+        "sciencedirect_std": 329,
+        "ebsco_asp_ft": 538,
+        "scopus": 3131,
+        "sciencedirect_cu": 214,
+        "wos_ssci": 118
+      }
+    },
+    {
+      "publisher": "Annual Reviews",
+      "edges": 2976,
+      "unique": 2171,
+      "by_database": {
+        "wos_scie": 2532,
+        "ebsco_asp_idx": 2354,
+        "ebsco_asc_idx": 2354,
+        "wos_ahci": 7,
+        "wos_esci": 5,
+        "ebsco_asu_idx": 2354,
+        "scopus": 2969,
+        "wos_ssci": 820
+      }
+    },
+    {
+      "publisher": "Routledge",
+      "edges": 2921,
+      "unique": 2433,
+      "by_database": {
+        "ebsco_asp_ft": 834,
+        "sciencedirect_std": 7,
+        "scopus": 2857,
+        "wos_ssci": 2115,
+        "ebsco_asu_idx": 1971,
+        "ebsco_asp_idx": 1971,
+        "doaj": 12,
+        "wos_scie": 281,
+        "ebsco_asu_ft": 942,
+        "wos_esci": 432,
+        "ebsco_asc_idx": 1971,
+        "ebsco_asc_ft": 875,
+        "wos_ahci": 570
+      }
+    },
+    {
+      "publisher": "Mary Ann Liebert, Inc.",
+      "edges": 2680,
+      "unique": 2270,
+      "by_database": {
+        "scopus": 2673,
+        "wos_ssci": 225,
+        "wos_scie": 2324,
+        "wos_esci": 80,
+        "ebsco_asc_idx": 1793,
+        "ebsco_asu_idx": 1793,
+        "ebsco_asp_idx": 1793,
+        "doaj": 29
+      }
+    },
+    {
+      "publisher": "Karger Publishers",
+      "edges": 2374,
+      "unique": 2041,
+      "by_database": {
+        "wos_esci": 214,
+        "ebsco_asc_idx": 1625,
+        "ebsco_asc_ft": 50,
+        "wos_ahci": 21,
+        "ebsco_asu_idx": 1625,
+        "wos_scie": 1908,
+        "ebsco_asu_ft": 399,
+        "sciencedirect_std": 9,
+        "ebsco_asp_idx": 1625,
+        "doaj": 615,
+        "scopus": 2363,
+        "wos_ssci": 88,
+        "sciencedirect_cu": 9,
+        "ebsco_asp_ft": 50
+      }
+    },
+    {
+      "publisher": "Bentham Science Publishers",
+      "edges": 2236,
+      "unique": 1981,
+      "by_database": {
+        "sciencedirect_std": 48,
+        "wos_esci": 182,
+        "scopus": 2197,
+        "sciencedirect_cu": 48,
+        "wos_scie": 1626
+      }
+    },
+    {
+      "publisher": "De Gruyter",
+      "edges": 2227,
+      "unique": 1894,
+      "by_database": {
+        "scopus": 2129,
+        "sciencedirect_cu": 14,
+        "wos_ssci": 172,
+        "sciencedirect_std": 14,
+        "wos_scie": 1376,
+        "ebsco_asu_ft": 129,
+        "ebsco_asp_ft": 15,
+        "wos_esci": 298,
+        "ebsco_asc_ft": 18,
+        "wos_ahci": 103,
+        "ebsco_asc_idx": 855,
+        "ebsco_asu_idx": 855,
+        "ebsco_asp_idx": 855,
+        "doaj": 717
+      }
+    },
+    {
+      "publisher": "Springer International Publishing",
+      "edges": 2106,
+      "unique": 1777,
+      "by_database": {
+        "wos_esci": 74,
+        "ebsco_asc_idx": 191,
+        "ebsco_asu_idx": 191,
+        "wos_scie": 175,
+        "ebsco_asu_ft": 70,
+        "sciencedirect_std": 13,
+        "ebsco_asp_idx": 191,
+        "doaj": 25,
+        "scopus": 1490
+      }
+    },
+    {
+      "publisher": "Wolters Kluwer",
+      "edges": 2091,
+      "unique": 1854,
+      "by_database": {
+        "ebsco_asp_idx": 416,
+        "doaj": 1115,
+        "wos_scie": 1690,
+        "ebsco_asu_idx": 416,
+        "scopus": 2075,
+        "sciencedirect_cu": 334,
+        "wos_ssci": 41,
+        "wos_esci": 380,
+        "ebsco_asc_idx": 416,
+        "sciencedirect_std": 334
+      }
+    },
+    {
+      "publisher": "EDP Sciences",
+      "edges": 2070,
+      "unique": 1757,
+      "by_database": {
+        "sciencedirect_std": 29,
+        "scopus": 1431,
+        "ebsco_asu_idx": 1131,
+        "ebsco_asp_idx": 1131,
+        "doaj": 1883,
+        "wos_scie": 1218,
+        "ebsco_asu_ft": 25,
+        "wos_esci": 50,
+        "ebsco_asc_idx": 1131,
+        "ebsco_asc_ft": 10
+      }
+    },
+    {
+      "publisher": "Thieme Medical Publishers (Germany)",
+      "edges": 1988,
+      "unique": 1729,
+      "by_database": {
+        "scopus": 1788,
+        "wos_ssci": 5,
+        "sciencedirect_cu": 14,
+        "sciencedirect_std": 17,
+        "wiley": 9,
+        "wos_scie": 1530,
+        "ebsco_asu_ft": 144,
+        "ebsco_asp_ft": 25,
+        "wos_esci": 355,
+        "ebsco_asc_ft": 119,
+        "ebsco_asc_idx": 1370,
+        "ebsco_asu_idx": 1370,
+        "doaj": 291,
+        "ebsco_asp_idx": 1370
+      }
+    },
+    {
+      "publisher": "American Association for Cancer Research",
+      "edges": 1902,
+      "unique": 1652,
+      "by_database": {
+        "scopus": 1902,
+        "ebsco_asp_idx": 642,
+        "doaj": 23,
+        "ebsco_asu_idx": 642,
+        "wos_esci": 32,
+        "ebsco_asc_idx": 642,
+        "wos_scie": 1870
+      }
+    },
+    {
+      "publisher": "World Scientific",
+      "edges": 1638,
+      "unique": 1300,
+      "by_database": {
+        "sciencedirect_std": 11,
+        "ebsco_asp_ft": 26,
+        "ebsco_asc_ft": 45,
+        "wos_esci": 204,
+        "ebsco_asc_idx": 1211,
+        "scopus": 1470,
+        "wos_ssci": 36,
+        "sciencedirect_cu": 11,
+        "wos_scie": 1202,
+        "ebsco_asu_ft": 83,
+        "ebsco_asp_idx": 1211,
+        "doaj": 45,
+        "ebsco_asu_idx": 1211
+      }
+    },
+    {
+      "publisher": "RELX Group (Netherlands)",
+      "edges": 1621,
+      "unique": 1443,
+      "by_database": {}
+    },
+    {
+      "publisher": "Copernicus Publications",
+      "edges": 1600,
+      "unique": 1357,
+      "by_database": {
+        "ebsco_asp_ft": 1,
+        "wos_esci": 6,
+        "ebsco_asc_ft": 443,
+        "ebsco_asc_idx": 496,
+        "scopus": 1490,
+        "wos_scie": 1473,
+        "ebsco_asu_ft": 493,
+        "ebsco_asp_idx": 496,
+        "doaj": 1598,
+        "ebsco_asu_idx": 496
+      }
+    },
+    {
+      "publisher": "American Society of Civil Engineers",
+      "edges": 1596,
+      "unique": 1349,
+      "by_database": {
+        "ebsco_asp_idx": 1179,
+        "doaj": 2,
+        "wos_scie": 1347,
+        "ebsco_asu_idx": 1179,
+        "scopus": 1579,
+        "wos_ssci": 30,
+        "wos_esci": 46,
+        "ebsco_asc_idx": 1179
+      }
+    },
+    {
+      "publisher": "Microbiology Society",
+      "edges": 1552,
+      "unique": 1149,
+      "by_database": {
+        "wos_scie": 1408,
+        "doaj": 385,
+        "ebsco_asp_idx": 225,
+        "ebsco_asc_idx": 225,
+        "ebsco_asu_idx": 225,
+        "scopus": 1552
+      }
+    },
+    {
+      "publisher": "Adis, Springer Healthcare",
+      "edges": 1532,
+      "unique": 1331,
+      "by_database": {
+        "ebsco_asc_idx": 1242,
+        "ebsco_asc_ft": 75,
+        "wos_esci": 83,
+        "ebsco_asu_idx": 1242,
+        "wos_scie": 1446,
+        "ebsco_asu_ft": 351,
+        "sciencedirect_std": 1,
+        "ebsco_asp_idx": 1242,
+        "doaj": 386,
+        "scopus": 1530,
+        "wos_ssci": 208,
+        "ebsco_asp_ft": 14
+      }
+    },
+    {
+      "publisher": "Cornell University",
+      "edges": 1507,
+      "unique": 1225,
+      "by_database": {}
+    },
+    {
+      "publisher": "Royal Society",
+      "edges": 1483,
+      "unique": 1155,
+      "by_database": {
+        "ebsco_asc_idx": 917,
+        "scopus": 1358,
+        "wos_scie": 1358,
+        "ebsco_asp_idx": 917,
+        "doaj": 246,
+        "ebsco_asu_idx": 917
+      }
+    },
+    {
+      "publisher": "American Geophysical Union",
+      "edges": 1372,
+      "unique": 1189,
+      "by_database": {
+        "scopus": 1363,
+        "doaj": 719,
+        "ebsco_asp_idx": 553,
+        "ebsco_asu_idx": 553,
+        "ebsco_asc_idx": 553,
+        "wos_scie": 719,
+        "wiley": 1134,
+        "ebsco_asu_ft": 25
+      }
+    },
+    {
+      "publisher": "Informa",
+      "edges": 1368,
+      "unique": 1239,
+      "by_database": {
+        "ebsco_asp_ft": 427,
+        "ebsco_asc_idx": 1072,
+        "ebsco_asc_ft": 468,
+        "wos_esci": 2,
+        "scopus": 1363,
+        "wos_ssci": 229,
+        "wos_scie": 1285,
+        "ebsco_asu_ft": 468,
+        "ebsco_asp_idx": 1072,
+        "doaj": 1065,
+        "ebsco_asu_idx": 1072
+      }
+    },
+    {
+      "publisher": "Palgrave Macmillan",
+      "edges": 1367,
+      "unique": 1190,
+      "by_database": {
+        "ebsco_asp_idx": 88,
+        "doaj": 302,
+        "wos_scie": 145,
+        "ebsco_asu_idx": 88,
+        "scopus": 1030,
+        "wos_ssci": 780,
+        "wos_ahci": 292,
+        "wos_esci": 196,
+        "ebsco_asc_idx": 88,
+        "sciencedirect_std": 15
+      }
+    },
+    {
+      "publisher": "IOS Press",
+      "edges": 1209,
+      "unique": 1074,
+      "by_database": {
+        "wos_scie": 750,
+        "ebsco_asu_ft": 552,
+        "ebsco_asp_idx": 864,
+        "doaj": 139,
+        "wos_esci": 152,
+        "ebsco_asc_ft": 419,
+        "ebsco_asc_idx": 864,
+        "ebsco_asu_idx": 864,
+        "sciencedirect_std": 40,
+        "ebsco_asp_ft": 351,
+        "sciencedirect_cu": 17,
+        "scopus": 1186,
+        "wos_ssci": 116
+      }
+    },
+    {
+      "publisher": "JMIR Publications",
+      "edges": 1189,
+      "unique": 1030,
+      "by_database": {
+        "wos_esci": 114,
+        "ebsco_asc_ft": 620,
+        "ebsco_asc_idx": 681,
+        "ebsco_asu_idx": 681,
+        "wos_scie": 1075,
+        "ebsco_asu_ft": 681,
+        "ebsco_asp_idx": 681,
+        "doaj": 1189,
+        "scopus": 1180,
+        "wos_ssci": 74,
+        "ebsco_asp_ft": 620
+      }
+    },
+    {
+      "publisher": "Q15088586",
+      "edges": 1163,
+      "unique": 916,
+      "by_database": {
+        "scopus": 1152,
+        "doaj": 6,
+        "wos_scie": 1152
+      }
+    },
+    {
+      "publisher": "Spandidos Publishing",
+      "edges": 1134,
+      "unique": 1010,
+      "by_database": {
+        "ebsco_asc_ft": 521,
+        "wos_esci": 108,
+        "ebsco_asc_idx": 794,
+        "scopus": 1131,
+        "wos_scie": 1021,
+        "ebsco_asu_ft": 794,
+        "ebsco_asp_idx": 794,
+        "ebsco_asu_idx": 794
+      }
+    },
+    {
+      "publisher": "Cold Spring Harbor Laboratory Press",
+      "edges": 1114,
+      "unique": 750,
+      "by_database": {
+        "scopus": 1113,
+        "wos_scie": 1040,
+        "ebsco_asc_idx": 670,
+        "ebsco_asu_idx": 670,
+        "ebsco_asp_idx": 670
+      }
+    },
+    {
+      "publisher": "American Physiological Society",
+      "edges": 1087,
+      "unique": 931,
+      "by_database": {
+        "scopus": 1087,
+        "ebsco_asp_idx": 777,
+        "ebsco_asu_idx": 777,
+        "ebsco_asc_idx": 777,
+        "wos_scie": 1076
+      }
+    },
+    {
+      "publisher": "De Gruyter Open",
+      "edges": 1079,
+      "unique": 946,
+      "by_database": {
+        "wos_esci": 263,
+        "ebsco_asc_idx": 338,
+        "ebsco_asc_ft": 66,
+        "wos_ahci": 2,
+        "ebsco_asu_idx": 338,
+        "wos_scie": 556,
+        "ebsco_asu_ft": 111,
+        "sciencedirect_std": 2,
+        "doaj": 865,
+        "ebsco_asp_idx": 338,
+        "scopus": 982,
+        "wos_ssci": 9,
+        "sciencedirect_cu": 2,
+        "ebsco_asp_ft": 29
+      }
+    },
+    {
+      "publisher": "American Diabetes Association",
+      "edges": 1050,
+      "unique": 828,
+      "by_database": {
+        "scopus": 1048,
+        "ebsco_asp_idx": 1026,
+        "ebsco_asu_idx": 1026,
+        "ebsco_asc_idx": 1026,
+        "wos_scie": 990
+      }
+    },
+    {
+      "publisher": "Centers for Disease Control and Prevention",
+      "edges": 1045,
+      "unique": 821,
+      "by_database": {
+        "scopus": 1045,
+        "wos_ssci": 41,
+        "wos_scie": 1045,
+        "ebsco_asu_ft": 1004,
+        "ebsco_asp_ft": 1004,
+        "ebsco_asc_idx": 1004,
+        "ebsco_asc_ft": 1004,
+        "ebsco_asu_idx": 1004,
+        "ebsco_asp_idx": 1004,
+        "doaj": 829
+      }
+    },
+    {
+      "publisher": "American Society for Clinical Investigation",
+      "edges": 1011,
+      "unique": 889,
+      "by_database": {
+        "ebsco_asc_idx": 806,
+        "scopus": 1011,
+        "wos_scie": 1011,
+        "ebsco_asp_idx": 806,
+        "doaj": 1011,
+        "ebsco_asu_idx": 806
+      }
+    },
+    {
+      "publisher": "Academy of Management",
+      "edges": 1004,
+      "unique": 656,
+      "by_database": {
+        "scopus": 964,
+        "wos_ssci": 964
+      }
+    },
+    {
+      "publisher": "American Society of Tropical Medicine and Hygiene",
+      "edges": 998,
+      "unique": 762,
+      "by_database": {
+        "scopus": 998,
+        "wos_scie": 998
+      }
+    },
+    {
+      "publisher": "American Phytopathological Society",
+      "edges": 997,
+      "unique": 903,
+      "by_database": {
+        "ebsco_asc_idx": 864,
+        "scopus": 991,
+        "wos_scie": 991,
+        "ebsco_asp_idx": 864,
+        "doaj": 127,
+        "ebsco_asu_idx": 864
+      }
+    },
+    {
+      "publisher": "Scientific Research Publishing",
+      "edges": 990,
+      "unique": 885,
+      "by_database": {}
+    },
+    {
+      "publisher": "Association for Computing Machinery",
+      "edges": 974,
+      "unique": 785,
+      "by_database": {
+        "wos_ahci": 56,
+        "wos_esci": 133,
+        "ebsco_asc_idx": 365,
+        "scopus": 905,
+        "wos_ssci": 9,
+        "wos_scie": 711,
+        "ebsco_asp_idx": 365,
+        "ebsco_asu_idx": 365
+      }
+    },
+    {
+      "publisher": "IGI Global",
+      "edges": 958,
+      "unique": 786,
+      "by_database": {
+        "wos_esci": 202,
+        "ebsco_asc_idx": 11,
+        "scopus": 269,
+        "wos_ssci": 26,
+        "wos_scie": 17,
+        "ebsco_asu_ft": 7,
+        "ebsco_asp_idx": 11,
+        "ebsco_asu_idx": 11
+      }
+    },
+    {
+      "publisher": "PeerJ, Inc.",
+      "edges": 953,
+      "unique": 710,
+      "by_database": {
+        "doaj": 953,
+        "wos_scie": 949,
+        "scopus": 949
+      }
+    },
+    {
+      "publisher": "Pensoft Publishers",
+      "edges": 945,
+      "unique": 672,
+      "by_database": {
+        "ebsco_asu_idx": 811,
+        "ebsco_asc_ft": 758,
+        "wos_esci": 48,
+        "ebsco_asc_idx": 811,
+        "ebsco_asp_idx": 811,
+        "doaj": 938,
+        "ebsco_asp_ft": 18,
+        "wos_scie": 875,
+        "ebsco_asu_ft": 810,
+        "scopus": 935,
+        "sciencedirect_cu": 3,
+        "sciencedirect_std": 3
+      }
+    },
+    {
+      "publisher": "American Thoracic Society",
+      "edges": 942,
+      "unique": 721,
+      "by_database": {
+        "doaj": 5,
+        "wos_scie": 888,
+        "scopus": 942,
+        "wos_esci": 5
+      }
+    },
+    {
+      "publisher": "Pleiades Publishing",
+      "edges": 900,
+      "unique": 794,
+      "by_database": {
+        "ebsco_asu_idx": 656,
+        "wos_esci": 104,
+        "ebsco_asc_idx": 656,
+        "ebsco_asc_ft": 337,
+        "ebsco_asp_idx": 656,
+        "ebsco_asp_ft": 323,
+        "wos_scie": 750,
+        "ebsco_asu_ft": 554,
+        "scopus": 892,
+        "sciencedirect_std": 9
+      }
+    },
+    {
+      "publisher": "AME Publishing Company",
+      "edges": 897,
+      "unique": 804,
+      "by_database": {
+        "wos_esci": 148,
+        "wos_scie": 479,
+        "doaj": 13,
+        "scopus": 869
+      }
+    },
+    {
+      "publisher": "Baishideng Publishing Group",
+      "edges": 888,
+      "unique": 786,
+      "by_database": {
+        "wos_scie": 597,
+        "wos_esci": 127,
+        "scopus": 759
+      }
+    },
+    {
+      "publisher": "Guizhou Academy of Agricultural Sciences",
+      "edges": 860,
+      "unique": 214,
+      "by_database": {
+        "scopus": 858,
+        "wos_scie": 858,
+        "doaj": 858
+      }
+    },
+    {
+      "publisher": "Cureus, Inc.",
+      "edges": 832,
+      "unique": 757,
+      "by_database": {}
+    },
+    {
+      "publisher": "Ivyspring International Publisher",
+      "edges": 827,
+      "unique": 715,
+      "by_database": {
+        "ebsco_asp_idx": 124,
+        "doaj": 826,
+        "wos_scie": 803,
+        "ebsco_asu_ft": 124,
+        "ebsco_asu_idx": 124,
+        "scopus": 821,
+        "ebsco_asc_idx": 124
+      }
+    },
+    {
+      "publisher": "Japan Society of Medical Entomology and Zoology",
+      "edges": 820,
+      "unique": 597,
+      "by_database": {}
+    },
+    {
+      "publisher": "Association of College and Research Libraries",
+      "edges": 797,
+      "unique": 610,
+      "by_database": {
+        "ebsco_asp_ft": 33,
+        "wos_ssci": 26,
+        "scopus": 36,
+        "ebsco_asu_idx": 33,
+        "ebsco_asp_idx": 33,
+        "doaj": 29,
+        "ebsco_asu_ft": 33,
+        "ebsco_asc_idx": 33,
+        "ebsco_asc_ft": 33
+      }
+    },
+    {
+      "publisher": "Cold Spring Harbor Laboratory",
+      "edges": 773,
+      "unique": 686,
+      "by_database": {}
+    },
+    {
+      "publisher": "University of Chicago Press",
+      "edges": 769,
+      "unique": 587,
+      "by_database": {
+        "scopus": 765,
+        "wos_ssci": 500,
+        "ebsco_asp_ft": 37,
+        "ebsco_asp_idx": 410,
+        "ebsco_asu_idx": 410,
+        "ebsco_asc_idx": 410,
+        "ebsco_asc_ft": 76,
+        "wos_ahci": 27,
+        "wos_esci": 10,
+        "wos_scie": 177,
+        "ebsco_asu_ft": 79
+      }
+    },
+    {
+      "publisher": "IEEE Computer Society",
+      "edges": 768,
+      "unique": 560,
+      "by_database": {
+        "ebsco_asu_idx": 607,
+        "ebsco_asc_ft": 12,
+        "ebsco_asc_idx": 607,
+        "ebsco_asp_idx": 607,
+        "doaj": 12,
+        "ebsco_asp_ft": 12,
+        "wos_scie": 752,
+        "ebsco_asu_ft": 12,
+        "scopus": 764,
+        "wos_ssci": 12
+      }
+    },
+    {
+      "publisher": "Impact Journals LLC",
+      "edges": 757,
+      "unique": 682,
+      "by_database": {
+        "scopus": 757
+      }
+    },
+    {
+      "publisher": "Institute for Operations Research and the Management Sciences",
+      "edges": 755,
+      "unique": 513,
+      "by_database": {
+        "wos_esci": 10,
+        "ebsco_asc_idx": 43,
+        "ebsco_asu_idx": 43,
+        "wos_scie": 459,
+        "ebsco_asp_idx": 43,
+        "doaj": 2,
+        "scopus": 755,
+        "wos_ssci": 707
+      }
+    },
+    {
+      "publisher": "Portland Press",
+      "edges": 721,
+      "unique": 610,
+      "by_database": {
+        "sciencedirect_std": 53,
+        "ebsco_asc_idx": 612,
+        "wos_esci": 13,
+        "sciencedirect_cu": 53,
+        "scopus": 685,
+        "wos_scie": 665,
+        "ebsco_asp_idx": 612,
+        "doaj": 5,
+        "ebsco_asu_idx": 612
+      }
+    },
+    {
+      "publisher": "Optica Publishing Group",
+      "edges": 718,
+      "unique": 663,
+      "by_database": {
+        "scopus": 655,
+        "wos_scie": 632,
+        "doaj": 406
+      }
+    },
+    {
+      "publisher": "Rockefeller University Press",
+      "edges": 715,
+      "unique": 624,
+      "by_database": {
+        "ebsco_asc_idx": 363,
+        "ebsco_asu_idx": 363,
+        "wos_scie": 715,
+        "ebsco_asp_idx": 363,
+        "scopus": 715
+      }
+    },
+    {
+      "publisher": "Cogent OA",
+      "edges": 683,
+      "unique": 558,
+      "by_database": {
+        "ebsco_asp_idx": 102,
+        "doaj": 669,
+        "wos_scie": 111,
+        "ebsco_asu_ft": 94,
+        "ebsco_asu_idx": 102,
+        "scopus": 675,
+        "wos_esci": 558,
+        "ebsco_asc_ft": 94,
+        "ebsco_asc_idx": 102,
+        "ebsco_asp_ft": 94
+      }
+    },
+    {
+      "publisher": "American Association of Immunologists",
+      "edges": 679,
+      "unique": 628,
+      "by_database": {
+        "scopus": 679,
+        "wos_scie": 679
+      }
+    },
+    {
+      "publisher": "American College of Physicians",
+      "edges": 673,
+      "unique": 354,
+      "by_database": {
+        "ebsco_asp_idx": 673,
+        "wos_scie": 670,
+        "ebsco_asu_idx": 673,
+        "scopus": 673,
+        "ebsco_asc_idx": 673
+      }
+    },
+    {
+      "publisher": "American Academy of Pediatrics",
+      "edges": 671,
+      "unique": 576,
+      "by_database": {
+        "wos_scie": 599,
+        "ebsco_asp_idx": 599,
+        "wos_esci": 42,
+        "ebsco_asc_idx": 599,
+        "ebsco_asu_idx": 599,
+        "scopus": 657
+      }
+    },
+    {
+      "publisher": "University of Oxford",
+      "edges": 670,
+      "unique": 462,
+      "by_database": {
+        "wos_scie": 608,
+        "ebsco_asu_ft": 240,
+        "ebsco_asp_idx": 257,
+        "doaj": 630,
+        "ebsco_asc_ft": 80,
+        "wos_esci": 34,
+        "ebsco_asc_idx": 257,
+        "ebsco_asu_idx": 257,
+        "scopus": 630,
+        "wos_ssci": 101
+      }
+    },
+    {
+      "publisher": "Inderscience Publishers",
+      "edges": 663,
+      "unique": 602,
+      "by_database": {
+        "ebsco_asp_idx": 17,
+        "wiley": 4,
+        "wos_scie": 60,
+        "ebsco_asu_idx": 17,
+        "scopus": 662,
+        "wos_ssci": 24,
+        "wos_esci": 221,
+        "ebsco_asc_idx": 17
+      }
+    },
+    {
+      "publisher": "The MIT Press",
+      "edges": 660,
+      "unique": 439,
+      "by_database": {
+        "ebsco_asu_idx": 352,
+        "wos_esci": 60,
+        "ebsco_asc_ft": 295,
+        "wos_ahci": 28,
+        "ebsco_asc_idx": 352,
+        "ebsco_asp_idx": 352,
+        "doaj": 55,
+        "ebsco_asp_ft": 276,
+        "wos_scie": 289,
+        "ebsco_asu_ft": 296,
+        "scopus": 524,
+        "wos_ssci": 204
+      }
+    },
+    {
+      "publisher": "American Meteorological Society",
+      "edges": 659,
+      "unique": 528,
+      "by_database": {
+        "ebsco_asu_idx": 621,
+        "ebsco_asc_ft": 595,
+        "ebsco_asc_idx": 621,
+        "wos_esci": 2,
+        "ebsco_asp_idx": 621,
+        "ebsco_asp_ft": 595,
+        "wos_scie": 608,
+        "ebsco_asu_ft": 595,
+        "scopus": 650,
+        "wos_ssci": 13
+      }
+    }
+  ],
+  "chulalongkorn": [
+    {
+      "publisher": "Elsevier BV",
+      "edges": 69186,
+      "unique": 62386,
+      "by_database": {
+        "ebsco_asp_ft": 24,
+        "doaj": 9564,
+        "ebsco_asp_idx": 47319,
+        "sciencedirect_std": 68073,
+        "ebsco_asu_idx": 47319,
+        "ebsco_asc_idx": 47319,
+        "wos_esci": 2118,
+        "wos_ahci": 118,
+        "ebsco_asc_ft": 59,
+        "ebsco_asu_ft": 177,
+        "wos_scie": 59034,
+        "wiley": 68,
+        "scopus": 67700,
+        "wos_ssci": 4541,
+        "sciencedirect_cu": 67252
+      }
+    },
+    {
+      "publisher": "Wiley",
+      "edges": 17986,
+      "unique": 16115,
+      "by_database": {
+        "ebsco_asu_idx": 11624,
+        "scopus": 17892,
+        "wos_ssci": 2301,
+        "sciencedirect_cu": 221,
+        "ebsco_asc_idx": 11624,
+        "wos_esci": 438,
+        "wos_ahci": 36,
+        "ebsco_asc_ft": 3101,
+        "ebsco_asp_ft": 2553,
+        "sciencedirect_std": 367,
+        "ebsco_asu_ft": 4850,
+        "wos_scie": 15232,
+        "wiley": 15266,
+        "doaj": 1994,
+        "ebsco_asp_idx": 11624
+      }
+    },
+    {
+      "publisher": "Springer Science+Business Media",
+      "edges": 13864,
+      "unique": 12673,
+      "by_database": {
+        "ebsco_asc_idx": 6536,
+        "wos_esci": 690,
+        "wos_ahci": 24,
+        "ebsco_asc_ft": 2460,
+        "ebsco_asu_idx": 6537,
+        "sciencedirect_std": 299,
+        "ebsco_asp_ft": 1919,
+        "scopus": 13738,
+        "wos_ssci": 1178,
+        "sciencedirect_cu": 192,
+        "doaj": 1337,
+        "ebsco_asp_idx": 6536,
+        "ebsco_asu_ft": 3105,
+        "wos_scie": 10707,
+        "wiley": 65
+      }
+    },
+    {
+      "publisher": "Multidisciplinary Digital Publishing Institute",
+      "edges": 12551,
+      "unique": 11351,
+      "by_database": {
+        "ebsco_asc_idx": 7115,
+        "wos_esci": 672,
+        "ebsco_asc_ft": 5874,
+        "wos_ahci": 3,
+        "scopus": 12507,
+        "wos_ssci": 719,
+        "sciencedirect_cu": 46,
+        "ebsco_asu_ft": 6584,
+        "wos_scie": 11194,
+        "doaj": 7566,
+        "ebsco_asp_idx": 7115,
+        "ebsco_asu_idx": 7115,
+        "ebsco_asp_ft": 395,
+        "sciencedirect_std": 46
+      }
+    },
+    {
+      "publisher": "(unknown)",
+      "edges": 11120,
+      "unique": 9953,
+      "by_database": {
+        "doaj": 670,
+        "ebsco_asp_idx": 778,
+        "ebsco_asp_ft": 52,
+        "ebsco_asu_ft": 332,
+        "wos_scie": 1596,
+        "wiley": 650,
+        "scopus": 3198,
+        "wos_ssci": 65,
+        "sciencedirect_cu": 98,
+        "sciencedirect_std": 107,
+        "ebsco_asc_idx": 778,
+        "wos_esci": 527,
+        "wos_ahci": 12,
+        "ebsco_asc_ft": 164,
+        "ebsco_asu_idx": 778
+      }
+    },
+    {
+      "publisher": "American Chemical Society",
+      "edges": 8447,
+      "unique": 7522,
+      "by_database": {
+        "scopus": 8437,
+        "sciencedirect_cu": 19,
+        "ebsco_asu_idx": 3657,
+        "doaj": 576,
+        "ebsco_asp_idx": 3657,
+        "wos_scie": 8159,
+        "wiley": 18,
+        "ebsco_asc_idx": 3657,
+        "wos_esci": 210,
+        "sciencedirect_std": 21
+      }
+    },
+    {
+      "publisher": "Nature Portfolio",
+      "edges": 7610,
+      "unique": 6307,
+      "by_database": {
+        "scopus": 7604,
+        "wos_ssci": 109,
+        "ebsco_asu_idx": 5362,
+        "doaj": 4135,
+        "ebsco_asp_idx": 5362,
+        "ebsco_asu_ft": 2727,
+        "wos_scie": 7570,
+        "ebsco_asc_idx": 5362,
+        "wos_esci": 14,
+        "ebsco_asc_ft": 2619
+      }
+    },
+    {
+      "publisher": "Oxford University Press",
+      "edges": 6612,
+      "unique": 5236,
+      "by_database": {
+        "doaj": 2001,
+        "ebsco_asp_idx": 3921,
+        "ebsco_asp_ft": 406,
+        "ebsco_asu_ft": 746,
+        "wos_scie": 5886,
+        "wiley": 113,
+        "scopus": 6516,
+        "wos_ssci": 696,
+        "sciencedirect_cu": 54,
+        "sciencedirect_std": 418,
+        "ebsco_asc_idx": 3921,
+        "wos_esci": 94,
+        "wos_ahci": 37,
+        "ebsco_asc_ft": 573,
+        "ebsco_asu_idx": 3921
+      }
+    },
+    {
+      "publisher": "Taylor & Francis",
+      "edges": 5648,
+      "unique": 5163,
+      "by_database": {
+        "ebsco_asp_ft": 1703,
+        "doaj": 837,
+        "ebsco_asp_idx": 3916,
+        "sciencedirect_std": 120,
+        "ebsco_asu_idx": 3916,
+        "ebsco_asc_idx": 3916,
+        "wos_esci": 569,
+        "wos_ahci": 94,
+        "ebsco_asc_ft": 1964,
+        "ebsco_asu_ft": 2168,
+        "wos_scie": 3454,
+        "wiley": 10,
+        "scopus": 5603,
+        "wos_ssci": 1526,
+        "sciencedirect_cu": 81
+      }
+    },
+    {
+      "publisher": "BioMed Central",
+      "edges": 4643,
+      "unique": 4170,
+      "by_database": {
+        "doaj": 4606,
+        "ebsco_asp_idx": 3195,
+        "sciencedirect_std": 51,
+        "ebsco_asu_idx": 3195,
+        "ebsco_asc_idx": 3195,
+        "wos_esci": 158,
+        "ebsco_asc_ft": 14,
+        "wos_ahci": 1,
+        "ebsco_asu_ft": 24,
+        "wos_scie": 4264,
+        "scopus": 4613,
+        "wos_ssci": 376,
+        "sciencedirect_cu": 50
+      }
+    },
+    {
+      "publisher": "Royal Society of Chemistry",
+      "edges": 4384,
+      "unique": 4028,
+      "by_database": {
+        "ebsco_asc_idx": 1093,
+        "wos_esci": 141,
+        "scopus": 4377,
+        "wos_ssci": 9,
+        "wos_scie": 4117,
+        "doaj": 1037,
+        "ebsco_asp_idx": 1093,
+        "ebsco_asu_idx": 1093
+      }
+    },
+    {
+      "publisher": "Frontiers Media",
+      "edges": 4125,
+      "unique": 3815,
+      "by_database": {
+        "scopus": 4109,
+        "wos_ssci": 413,
+        "ebsco_asu_idx": 99,
+        "doaj": 4124,
+        "ebsco_asp_idx": 99,
+        "ebsco_asu_ft": 99,
+        "wos_scie": 3670,
+        "ebsco_asc_idx": 99,
+        "wos_esci": 249
+      }
+    },
+    {
+      "publisher": "Springer Nature",
+      "edges": 4071,
+      "unique": 3556,
+      "by_database": {
+        "ebsco_asc_idx": 2214,
+        "wos_esci": 170,
+        "ebsco_asc_ft": 146,
+        "wos_ahci": 4,
+        "ebsco_asu_idx": 2214,
+        "sciencedirect_std": 115,
+        "ebsco_asp_ft": 45,
+        "scopus": 3949,
+        "wos_ssci": 38,
+        "sciencedirect_cu": 68,
+        "doaj": 2129,
+        "ebsco_asp_idx": 2214,
+        "ebsco_asu_ft": 244,
+        "wos_scie": 3341
+      }
+    },
+    {
+      "publisher": "SAGE Publishing",
+      "edges": 3881,
+      "unique": 3539,
+      "by_database": {
+        "ebsco_asc_idx": 1763,
+        "wos_esci": 359,
+        "wos_ahci": 84,
+        "ebsco_asc_ft": 220,
+        "ebsco_asu_idx": 1763,
+        "sciencedirect_std": 162,
+        "ebsco_asp_ft": 131,
+        "scopus": 3819,
+        "wos_ssci": 1660,
+        "sciencedirect_cu": 91,
+        "doaj": 695,
+        "ebsco_asp_idx": 1763,
+        "ebsco_asu_ft": 326,
+        "wos_scie": 1889,
+        "wiley": 13
+      }
+    },
+    {
+      "publisher": "Lippincott Williams & Wilkins",
+      "edges": 3425,
+      "unique": 3146,
+      "by_database": {
+        "ebsco_asc_idx": 935,
+        "wos_esci": 98,
+        "scopus": 3421,
+        "wos_ssci": 116,
+        "sciencedirect_cu": 272,
+        "ebsco_asu_ft": 6,
+        "wos_scie": 3182,
+        "wiley": 302,
+        "doaj": 142,
+        "ebsco_asp_idx": 935,
+        "ebsco_asu_idx": 935,
+        "sciencedirect_std": 569
+      }
+    },
+    {
+      "publisher": "Public Library of Science",
+      "edges": 2466,
+      "unique": 2150,
+      "by_database": {
+        "ebsco_asu_ft": 2429,
+        "wos_scie": 2429,
+        "ebsco_asp_ft": 2429,
+        "ebsco_asc_idx": 2429,
+        "wos_esci": 37,
+        "ebsco_asc_ft": 2429,
+        "ebsco_asu_idx": 2429,
+        "doaj": 2466,
+        "ebsco_asp_idx": 2429,
+        "scopus": 2466
+      }
+    },
+    {
+      "publisher": "American Physical Society",
+      "edges": 2326,
+      "unique": 1591,
+      "by_database": {
+        "doaj": 97,
+        "ebsco_asp_idx": 1513,
+        "wos_scie": 1470,
+        "scopus": 2275,
+        "wos_ssci": 1,
+        "ebsco_asc_idx": 1513,
+        "wos_esci": 41,
+        "ebsco_asu_idx": 1513
+      }
+    },
+    {
+      "publisher": "American Society for Microbiology",
+      "edges": 1586,
+      "unique": 1419,
+      "by_database": {
+        "ebsco_asc_idx": 686,
+        "wos_esci": 17,
+        "scopus": 1586,
+        "wos_scie": 1505,
+        "doaj": 1195,
+        "ebsco_asp_idx": 686,
+        "ebsco_asu_idx": 686
+      }
+    },
+    {
+      "publisher": "Institute of Electrical and Electronics Engineers",
+      "edges": 1515,
+      "unique": 1405,
+      "by_database": {
+        "doaj": 469,
+        "ebsco_asp_idx": 460,
+        "wos_scie": 1404,
+        "scopus": 1505,
+        "wos_ssci": 14,
+        "ebsco_asc_idx": 460,
+        "wos_esci": 29,
+        "wos_ahci": 1,
+        "ebsco_asu_idx": 460
+      }
+    },
+    {
+      "publisher": "National Institutes of Health",
+      "edges": 1432,
+      "unique": 1353,
+      "by_database": {}
+    },
+    {
+      "publisher": "IOP Publishing",
+      "edges": 1299,
+      "unique": 1126,
+      "by_database": {
+        "wos_scie": 938,
+        "doaj": 476,
+        "ebsco_asp_idx": 523,
+        "scopus": 981,
+        "ebsco_asu_idx": 523,
+        "ebsco_asc_idx": 523,
+        "wos_esci": 32
+      }
+    },
+    {
+      "publisher": "Cambridge University Press",
+      "edges": 1140,
+      "unique": 1028,
+      "by_database": {
+        "ebsco_asp_ft": 14,
+        "doaj": 227,
+        "ebsco_asp_idx": 414,
+        "sciencedirect_std": 60,
+        "ebsco_asu_idx": 415,
+        "ebsco_asc_idx": 414,
+        "wos_esci": 49,
+        "wos_ahci": 58,
+        "ebsco_asc_ft": 24,
+        "ebsco_asu_ft": 52,
+        "wos_scie": 554,
+        "wiley": 2,
+        "scopus": 923,
+        "wos_ssci": 387,
+        "sciencedirect_cu": 58
+      }
+    },
+    {
+      "publisher": "Hindawi Publishing Corporation",
+      "edges": 1045,
+      "unique": 995,
+      "by_database": {
+        "ebsco_asu_ft": 529,
+        "wos_scie": 315,
+        "ebsco_asp_ft": 204,
+        "ebsco_asc_idx": 618,
+        "wos_esci": 308,
+        "ebsco_asc_ft": 529,
+        "ebsco_asu_idx": 618,
+        "doaj": 560,
+        "ebsco_asp_idx": 618,
+        "scopus": 978
+      }
+    },
+    {
+      "publisher": "BMJ",
+      "edges": 1040,
+      "unique": 936,
+      "by_database": {
+        "ebsco_asc_idx": 530,
+        "wos_esci": 68,
+        "wos_ahci": 1,
+        "scopus": 928,
+        "wos_ssci": 87,
+        "sciencedirect_cu": 62,
+        "wos_scie": 844,
+        "doaj": 298,
+        "ebsco_asp_idx": 530,
+        "ebsco_asu_idx": 530,
+        "sciencedirect_std": 75
+      }
+    },
+    {
+      "publisher": "Emerald Publishing Limited",
+      "edges": 995,
+      "unique": 915,
+      "by_database": {
+        "sciencedirect_std": 4,
+        "wos_scie": 124,
+        "ebsco_asc_idx": 112,
+        "wos_esci": 465,
+        "wos_ahci": 2,
+        "ebsco_asu_idx": 112,
+        "doaj": 46,
+        "ebsco_asp_idx": 112,
+        "scopus": 983,
+        "wos_ssci": 376,
+        "sciencedirect_cu": 4
+      }
+    },
+    {
+      "publisher": "American Association for the Advancement of Science",
+      "edges": 963,
+      "unique": 818,
+      "by_database": {
+        "doaj": 206,
+        "ebsco_asp_idx": 821,
+        "sciencedirect_std": 2,
+        "ebsco_asu_idx": 821,
+        "ebsco_asc_idx": 821,
+        "wos_esci": 16,
+        "ebsco_asu_ft": 647,
+        "wos_scie": 946,
+        "scopus": 963,
+        "sciencedirect_cu": 2
+      }
+    },
+    {
+      "publisher": "American Medical Association",
+      "edges": 848,
+      "unique": 779,
+      "by_database": {
+        "ebsco_asc_idx": 386,
+        "ebsco_asc_ft": 17,
+        "scopus": 845,
+        "wos_ssci": 25,
+        "ebsco_asu_ft": 17,
+        "wos_scie": 695,
+        "doaj": 111,
+        "ebsco_asp_idx": 386,
+        "ebsco_asu_idx": 386,
+        "ebsco_asp_ft": 17
+      }
+    },
+    {
+      "publisher": "American Institute of Physics",
+      "edges": 788,
+      "unique": 593,
+      "by_database": {
+        "ebsco_asc_idx": 617,
+        "wos_esci": 2,
+        "ebsco_asu_idx": 617,
+        "sciencedirect_std": 4,
+        "scopus": 718,
+        "sciencedirect_cu": 4,
+        "doaj": 42,
+        "ebsco_asp_idx": 617,
+        "wos_scie": 639
+      }
+    },
+    {
+      "publisher": "Massachusetts Medical Society",
+      "edges": 775,
+      "unique": 635,
+      "by_database": {
+        "ebsco_asc_idx": 775,
+        "ebsco_asu_idx": 775,
+        "scopus": 775,
+        "ebsco_asp_idx": 775,
+        "wos_scie": 775
+      }
+    },
+    {
+      "publisher": "Cell Press",
+      "edges": 769,
+      "unique": 698,
+      "by_database": {
+        "ebsco_asc_idx": 424,
+        "ebsco_asu_idx": 424,
+        "sciencedirect_std": 769,
+        "scopus": 769,
+        "sciencedirect_cu": 769,
+        "doaj": 224,
+        "ebsco_asp_idx": 424,
+        "wos_scie": 769
+      }
+    },
+    {
+      "publisher": "National Academy of Sciences",
+      "edges": 762,
+      "unique": 678,
+      "by_database": {
+        "ebsco_asp_idx": 762,
+        "ebsco_asu_idx": 762,
+        "ebsco_asc_idx": 762,
+        "wos_scie": 762,
+        "scopus": 762
+      }
+    },
+    {
+      "publisher": "Institute of Physics",
+      "edges": 657,
+      "unique": 516,
+      "by_database": {
+        "wos_scie": 613,
+        "ebsco_asc_idx": 106,
+        "wos_esci": 3,
+        "ebsco_asu_idx": 106,
+        "doaj": 70,
+        "ebsco_asp_idx": 106,
+        "scopus": 647
+      }
+    },
+    {
+      "publisher": "Dove Medical Press",
+      "edges": 629,
+      "unique": 587,
+      "by_database": {
+        "ebsco_asu_ft": 95,
+        "wos_scie": 509,
+        "ebsco_asc_idx": 110,
+        "wos_esci": 100,
+        "ebsco_asc_ft": 41,
+        "ebsco_asu_idx": 110,
+        "doaj": 604,
+        "ebsco_asp_idx": 110,
+        "scopus": 610,
+        "wos_ssci": 22
+      }
+    },
+    {
+      "publisher": "American Psychological Association",
+      "edges": 587,
+      "unique": 511,
+      "by_database": {
+        "ebsco_asc_idx": 383,
+        "wos_ahci": 16,
+        "wos_esci": 16,
+        "scopus": 566,
+        "wos_ssci": 525,
+        "wos_scie": 136,
+        "ebsco_asp_idx": 383,
+        "ebsco_asu_idx": 383
+      }
+    },
+    {
+      "publisher": "Medknow",
+      "edges": 573,
+      "unique": 551,
+      "by_database": {
+        "sciencedirect_std": 37,
+        "ebsco_asu_ft": 301,
+        "wos_scie": 146,
+        "ebsco_asp_ft": 77,
+        "ebsco_asc_idx": 311,
+        "wos_esci": 232,
+        "ebsco_asc_ft": 288,
+        "ebsco_asu_idx": 311,
+        "doaj": 381,
+        "ebsco_asp_idx": 311,
+        "scopus": 501,
+        "wos_ssci": 21,
+        "sciencedirect_cu": 23
+      }
+    },
+    {
+      "publisher": "Karger Publishers",
+      "edges": 536,
+      "unique": 480,
+      "by_database": {
+        "ebsco_asc_idx": 361,
+        "wos_ahci": 15,
+        "wos_esci": 42,
+        "ebsco_asc_ft": 30,
+        "scopus": 533,
+        "wos_ssci": 23,
+        "sciencedirect_cu": 4,
+        "ebsco_asu_ft": 135,
+        "wos_scie": 423,
+        "doaj": 156,
+        "ebsco_asp_idx": 361,
+        "ebsco_asu_idx": 361,
+        "ebsco_asp_ft": 30,
+        "sciencedirect_std": 4
+      }
+    },
+    {
+      "publisher": "Annual Reviews",
+      "edges": 481,
+      "unique": 421,
+      "by_database": {
+        "wos_scie": 396,
+        "ebsco_asc_idx": 363,
+        "wos_esci": 2,
+        "wos_ahci": 1,
+        "ebsco_asu_idx": 363,
+        "ebsco_asp_idx": 363,
+        "scopus": 479,
+        "wos_ssci": 128
+      }
+    },
+    {
+      "publisher": "Mary Ann Liebert, Inc.",
+      "edges": 475,
+      "unique": 426,
+      "by_database": {
+        "ebsco_asc_idx": 289,
+        "wos_esci": 18,
+        "ebsco_asu_idx": 289,
+        "scopus": 474,
+        "wos_ssci": 42,
+        "doaj": 4,
+        "ebsco_asp_idx": 289,
+        "wos_scie": 415
+      }
+    },
+    {
+      "publisher": "Microbiology Society",
+      "edges": 406,
+      "unique": 320,
+      "by_database": {
+        "wos_scie": 364,
+        "ebsco_asc_idx": 49,
+        "ebsco_asu_idx": 49,
+        "doaj": 72,
+        "ebsco_asp_idx": 49,
+        "scopus": 406
+      }
+    },
+    {
+      "publisher": "Bentham Science Publishers",
+      "edges": 398,
+      "unique": 378,
+      "by_database": {
+        "wos_scie": 304,
+        "sciencedirect_std": 6,
+        "scopus": 392,
+        "sciencedirect_cu": 6,
+        "wos_esci": 37
+      }
+    },
+    {
+      "publisher": "Thieme Medical Publishers (Germany)",
+      "edges": 385,
+      "unique": 372,
+      "by_database": {
+        "ebsco_asc_idx": 275,
+        "wos_esci": 57,
+        "ebsco_asc_ft": 13,
+        "ebsco_asu_idx": 275,
+        "sciencedirect_std": 3,
+        "ebsco_asp_ft": 4,
+        "scopus": 350,
+        "wos_ssci": 2,
+        "sciencedirect_cu": 3,
+        "ebsco_asp_idx": 275,
+        "doaj": 61,
+        "ebsco_asu_ft": 16,
+        "wos_scie": 312,
+        "wiley": 1
+      }
+    },
+    {
+      "publisher": "Wolters Kluwer",
+      "edges": 370,
+      "unique": 352,
+      "by_database": {
+        "doaj": 183,
+        "ebsco_asp_idx": 56,
+        "sciencedirect_std": 52,
+        "ebsco_asu_idx": 56,
+        "ebsco_asc_idx": 56,
+        "wos_esci": 49,
+        "wos_scie": 318,
+        "scopus": 368,
+        "wos_ssci": 4,
+        "sciencedirect_cu": 52
+      }
+    },
+    {
+      "publisher": "Routledge",
+      "edges": 360,
+      "unique": 338,
+      "by_database": {
+        "ebsco_asp_idx": 254,
+        "doaj": 4,
+        "ebsco_asp_ft": 108,
+        "ebsco_asu_ft": 136,
+        "wos_scie": 42,
+        "scopus": 357,
+        "wos_ssci": 255,
+        "sciencedirect_std": 2,
+        "ebsco_asc_idx": 254,
+        "wos_ahci": 65,
+        "wos_esci": 50,
+        "ebsco_asc_ft": 124,
+        "ebsco_asu_idx": 254
+      }
+    },
+    {
+      "publisher": "American Society of Civil Engineers",
+      "edges": 342,
+      "unique": 288,
+      "by_database": {
+        "ebsco_asp_idx": 214,
+        "ebsco_asu_idx": 214,
+        "ebsco_asc_idx": 214,
+        "wos_esci": 21,
+        "wos_scie": 295,
+        "scopus": 336,
+        "wos_ssci": 4
+      }
+    },
+    {
+      "publisher": "De Gruyter",
+      "edges": 341,
+      "unique": 310,
+      "by_database": {
+        "ebsco_asc_idx": 122,
+        "wos_esci": 61,
+        "wos_ahci": 11,
+        "ebsco_asc_ft": 3,
+        "ebsco_asu_idx": 122,
+        "ebsco_asp_ft": 3,
+        "scopus": 333,
+        "wos_ssci": 24,
+        "doaj": 135,
+        "ebsco_asp_idx": 122,
+        "ebsco_asu_ft": 26,
+        "wos_scie": 214
+      }
+    },
+    {
+      "publisher": "Cornell University",
+      "edges": 302,
+      "unique": 278,
+      "by_database": {}
+    },
+    {
+      "publisher": "RELX Group (Netherlands)",
+      "edges": 295,
+      "unique": 272,
+      "by_database": {}
+    },
+    {
+      "publisher": "Adis, Springer Healthcare",
+      "edges": 285,
+      "unique": 271,
+      "by_database": {
+        "ebsco_asc_idx": 226,
+        "wos_esci": 15,
+        "ebsco_asc_ft": 7,
+        "scopus": 284,
+        "wos_ssci": 34,
+        "ebsco_asu_ft": 59,
+        "wos_scie": 269,
+        "doaj": 65,
+        "ebsco_asp_idx": 226,
+        "ebsco_asu_idx": 226,
+        "ebsco_asp_ft": 2
+      }
+    },
+    {
+      "publisher": "American Association for Cancer Research",
+      "edges": 284,
+      "unique": 266,
+      "by_database": {
+        "ebsco_asu_idx": 87,
+        "scopus": 284,
+        "ebsco_asc_idx": 87,
+        "wos_esci": 10,
+        "wos_scie": 274,
+        "doaj": 5,
+        "ebsco_asp_idx": 87
+      }
+    },
+    {
+      "publisher": "EDP Sciences",
+      "edges": 274,
+      "unique": 256,
+      "by_database": {
+        "doaj": 247,
+        "ebsco_asp_idx": 164,
+        "wos_scie": 180,
+        "ebsco_asu_ft": 3,
+        "scopus": 213,
+        "sciencedirect_std": 3,
+        "ebsco_asc_idx": 164,
+        "wos_esci": 4,
+        "ebsco_asc_ft": 2,
+        "ebsco_asu_idx": 164
+      }
+    },
+    {
+      "publisher": "Royal Society",
+      "edges": 260,
+      "unique": 225,
+      "by_database": {
+        "wos_scie": 241,
+        "doaj": 49,
+        "ebsco_asp_idx": 159,
+        "scopus": 241,
+        "ebsco_asu_idx": 159,
+        "ebsco_asc_idx": 159
+      }
+    },
+    {
+      "publisher": "Springer International Publishing",
+      "edges": 251,
+      "unique": 233,
+      "by_database": {
+        "ebsco_asc_idx": 33,
+        "wos_esci": 13,
+        "scopus": 178,
+        "ebsco_asu_ft": 19,
+        "wos_scie": 40,
+        "ebsco_asp_idx": 33,
+        "doaj": 6,
+        "ebsco_asu_idx": 33,
+        "sciencedirect_std": 5
+      }
+    },
+    {
+      "publisher": "World Scientific",
+      "edges": 240,
+      "unique": 200,
+      "by_database": {
+        "ebsco_asu_ft": 10,
+        "wos_scie": 186,
+        "ebsco_asp_idx": 182,
+        "doaj": 3,
+        "scopus": 216,
+        "wos_ssci": 6,
+        "ebsco_asp_ft": 1,
+        "ebsco_asu_idx": 182,
+        "ebsco_asc_idx": 182,
+        "wos_esci": 21,
+        "ebsco_asc_ft": 3
+      }
+    },
+    {
+      "publisher": "Informa",
+      "edges": 228,
+      "unique": 220,
+      "by_database": {
+        "ebsco_asu_ft": 93,
+        "wos_scie": 217,
+        "doaj": 173,
+        "ebsco_asp_idx": 185,
+        "scopus": 228,
+        "wos_ssci": 38,
+        "ebsco_asp_ft": 89,
+        "ebsco_asu_idx": 185,
+        "ebsco_asc_idx": 185,
+        "ebsco_asc_ft": 93
+      }
+    },
+    {
+      "publisher": "American Physiological Society",
+      "edges": 215,
+      "unique": 204,
+      "by_database": {
+        "ebsco_asu_idx": 148,
+        "scopus": 215,
+        "ebsco_asc_idx": 148,
+        "wos_scie": 213,
+        "ebsco_asp_idx": 148
+      }
+    },
+    {
+      "publisher": "IOS Press",
+      "edges": 210,
+      "unique": 200,
+      "by_database": {
+        "sciencedirect_std": 15,
+        "ebsco_asu_ft": 111,
+        "wos_scie": 148,
+        "ebsco_asp_ft": 51,
+        "ebsco_asc_idx": 159,
+        "wos_esci": 19,
+        "ebsco_asc_ft": 54,
+        "ebsco_asu_idx": 159,
+        "ebsco_asp_idx": 159,
+        "doaj": 55,
+        "scopus": 209,
+        "wos_ssci": 14,
+        "sciencedirect_cu": 7
+      }
+    },
+    {
+      "publisher": "American Thoracic Society",
+      "edges": 208,
+      "unique": 191,
+      "by_database": {
+        "wos_scie": 196,
+        "scopus": 208
+      }
+    },
+    {
+      "publisher": "American Diabetes Association",
+      "edges": 207,
+      "unique": 187,
+      "by_database": {
+        "ebsco_asu_idx": 203,
+        "scopus": 207,
+        "ebsco_asc_idx": 203,
+        "wos_scie": 200,
+        "ebsco_asp_idx": 203
+      }
+    },
+    {
+      "publisher": "Spandidos Publishing",
+      "edges": 204,
+      "unique": 195,
+      "by_database": {
+        "ebsco_asu_ft": 158,
+        "wos_scie": 176,
+        "ebsco_asp_idx": 158,
+        "scopus": 204,
+        "ebsco_asu_idx": 158,
+        "ebsco_asc_idx": 158,
+        "wos_esci": 27,
+        "ebsco_asc_ft": 108
+      }
+    },
+    {
+      "publisher": "Baishideng Publishing Group",
+      "edges": 204,
+      "unique": 197,
+      "by_database": {
+        "wos_scie": 147,
+        "wos_esci": 25,
+        "scopus": 182
+      }
+    },
+    {
+      "publisher": "Centers for Disease Control and Prevention",
+      "edges": 198,
+      "unique": 175,
+      "by_database": {
+        "ebsco_asc_idx": 192,
+        "ebsco_asc_ft": 192,
+        "ebsco_asu_idx": 192,
+        "ebsco_asp_ft": 192,
+        "scopus": 198,
+        "wos_ssci": 6,
+        "doaj": 156,
+        "ebsco_asp_idx": 192,
+        "ebsco_asu_ft": 192,
+        "wos_scie": 198
+      }
+    },
+    {
+      "publisher": "American Society for Clinical Investigation",
+      "edges": 194,
+      "unique": 185,
+      "by_database": {
+        "wos_scie": 194,
+        "doaj": 194,
+        "ebsco_asp_idx": 149,
+        "scopus": 194,
+        "ebsco_asu_idx": 149,
+        "ebsco_asc_idx": 149
+      }
+    },
+    {
+      "publisher": "Cold Spring Harbor Laboratory Press",
+      "edges": 192,
+      "unique": 159,
+      "by_database": {
+        "ebsco_asc_idx": 119,
+        "ebsco_asu_idx": 119,
+        "scopus": 192,
+        "ebsco_asp_idx": 119,
+        "wos_scie": 183
+      }
+    },
+    {
+      "publisher": "Pensoft Publishers",
+      "edges": 183,
+      "unique": 139,
+      "by_database": {
+        "scopus": 180,
+        "sciencedirect_cu": 1,
+        "ebsco_asu_idx": 170,
+        "doaj": 182,
+        "ebsco_asp_idx": 170,
+        "ebsco_asu_ft": 169,
+        "wos_scie": 171,
+        "ebsco_asc_idx": 170,
+        "ebsco_asc_ft": 157,
+        "wos_esci": 5,
+        "sciencedirect_std": 1,
+        "ebsco_asp_ft": 3
+      }
+    },
+    {
+      "publisher": "PeerJ, Inc.",
+      "edges": 179,
+      "unique": 154,
+      "by_database": {
+        "scopus": 179,
+        "doaj": 179,
+        "wos_scie": 179
+      }
+    },
+    {
+      "publisher": "University of Chicago Press",
+      "edges": 172,
+      "unique": 137,
+      "by_database": {
+        "ebsco_asu_idx": 59,
+        "scopus": 169,
+        "wos_ssci": 126,
+        "ebsco_asc_idx": 59,
+        "wos_ahci": 7,
+        "ebsco_asc_ft": 7,
+        "wos_esci": 2,
+        "ebsco_asp_ft": 6,
+        "ebsco_asu_ft": 8,
+        "wos_scie": 21,
+        "ebsco_asp_idx": 59
+      }
+    },
+    {
+      "publisher": "Academy of Management",
+      "edges": 169,
+      "unique": 143,
+      "by_database": {
+        "scopus": 165,
+        "wos_ssci": 165
+      }
+    },
+    {
+      "publisher": "American Economic Association",
+      "edges": 169,
+      "unique": 133,
+      "by_database": {
+        "scopus": 164,
+        "wos_ssci": 164
+      }
+    },
+    {
+      "publisher": "Pleiades Publishing",
+      "edges": 166,
+      "unique": 147,
+      "by_database": {
+        "scopus": 166,
+        "ebsco_asu_idx": 128,
+        "ebsco_asp_idx": 128,
+        "ebsco_asu_ft": 106,
+        "wos_scie": 150,
+        "ebsco_asc_idx": 128,
+        "wos_esci": 10,
+        "ebsco_asc_ft": 68,
+        "sciencedirect_std": 2,
+        "ebsco_asp_ft": 65
+      }
+    },
+    {
+      "publisher": "JMIR Publications",
+      "edges": 163,
+      "unique": 154,
+      "by_database": {
+        "ebsco_asc_idx": 94,
+        "wos_esci": 22,
+        "ebsco_asc_ft": 88,
+        "scopus": 160,
+        "wos_ssci": 6,
+        "ebsco_asu_ft": 94,
+        "wos_scie": 141,
+        "doaj": 163,
+        "ebsco_asp_idx": 94,
+        "ebsco_asu_idx": 94,
+        "ebsco_asp_ft": 88
+      }
+    },
+    {
+      "publisher": "University of Oxford",
+      "edges": 156,
+      "unique": 118,
+      "by_database": {
+        "ebsco_asu_ft": 42,
+        "wos_scie": 136,
+        "ebsco_asc_idx": 43,
+        "wos_esci": 4,
+        "ebsco_asc_ft": 19,
+        "ebsco_asu_idx": 43,
+        "doaj": 139,
+        "ebsco_asp_idx": 43,
+        "scopus": 139,
+        "wos_ssci": 29
+      }
+    },
+    {
+      "publisher": "American Association of Immunologists",
+      "edges": 152,
+      "unique": 146,
+      "by_database": {
+        "scopus": 152,
+        "wos_scie": 152
+      }
+    },
+    {
+      "publisher": "Copernicus Publications",
+      "edges": 143,
+      "unique": 137,
+      "by_database": {
+        "ebsco_asu_ft": 27,
+        "wos_scie": 127,
+        "ebsco_asp_idx": 27,
+        "doaj": 143,
+        "scopus": 130,
+        "ebsco_asu_idx": 27,
+        "ebsco_asc_idx": 27,
+        "ebsco_asc_ft": 18,
+        "wos_esci": 1
+      }
+    },
+    {
+      "publisher": "Palgrave Macmillan",
+      "edges": 141,
+      "unique": 133,
+      "by_database": {
+        "doaj": 25,
+        "ebsco_asp_idx": 13,
+        "sciencedirect_std": 1,
+        "ebsco_asu_idx": 13,
+        "ebsco_asc_idx": 13,
+        "wos_esci": 20,
+        "wos_ahci": 21,
+        "wos_scie": 17,
+        "scopus": 99,
+        "wos_ssci": 69
+      }
+    },
+    {
+      "publisher": "American College of Physicians",
+      "edges": 140,
+      "unique": 88,
+      "by_database": {
+        "ebsco_asp_idx": 140,
+        "ebsco_asu_idx": 140,
+        "ebsco_asc_idx": 140,
+        "wos_scie": 139,
+        "scopus": 140
+      }
+    },
+    {
+      "publisher": "AME Publishing Company",
+      "edges": 134,
+      "unique": 127,
+      "by_database": {
+        "wos_esci": 17,
+        "scopus": 126,
+        "wos_scie": 72,
+        "doaj": 1
+      }
+    },
+    {
+      "publisher": "Ivyspring International Publisher",
+      "edges": 134,
+      "unique": 128,
+      "by_database": {
+        "doaj": 134,
+        "ebsco_asp_idx": 21,
+        "ebsco_asu_idx": 21,
+        "ebsco_asc_idx": 21,
+        "ebsco_asu_ft": 21,
+        "wos_scie": 131,
+        "scopus": 133
+      }
+    },
+    {
+      "publisher": "Cold Spring Harbor Laboratory",
+      "edges": 134,
+      "unique": 127,
+      "by_database": {}
+    },
+    {
+      "publisher": "American Geophysical Union",
+      "edges": 133,
+      "unique": 119,
+      "by_database": {
+        "ebsco_asu_idx": 65,
+        "scopus": 130,
+        "ebsco_asc_idx": 65,
+        "ebsco_asu_ft": 3,
+        "wiley": 105,
+        "wos_scie": 82,
+        "doaj": 82,
+        "ebsco_asp_idx": 65
+      }
+    },
+    {
+      "publisher": "Association for Computing Machinery",
+      "edges": 129,
+      "unique": 120,
+      "by_database": {
+        "wos_scie": 74,
+        "ebsco_asp_idx": 45,
+        "scopus": 115,
+        "ebsco_asu_idx": 45,
+        "ebsco_asc_idx": 45,
+        "wos_esci": 38,
+        "wos_ahci": 2
+      }
+    },
+    {
+      "publisher": "Impact Journals LLC",
+      "edges": 127,
+      "unique": 118,
+      "by_database": {
+        "scopus": 127
+      }
+    },
+    {
+      "publisher": "Q15088586",
+      "edges": 124,
+      "unique": 110,
+      "by_database": {
+        "scopus": 118,
+        "wos_scie": 118,
+        "doaj": 5
+      }
+    },
+    {
+      "publisher": "De Gruyter Open",
+      "edges": 124,
+      "unique": 120,
+      "by_database": {
+        "ebsco_asc_idx": 33,
+        "wos_esci": 15,
+        "ebsco_asc_ft": 11,
+        "scopus": 111,
+        "ebsco_asu_ft": 14,
+        "wos_scie": 74,
+        "doaj": 94,
+        "ebsco_asp_idx": 33,
+        "ebsco_asu_idx": 33,
+        "ebsco_asp_ft": 3
+      }
+    },
+    {
+      "publisher": "Rockefeller University Press",
+      "edges": 123,
+      "unique": 117,
+      "by_database": {
+        "ebsco_asc_idx": 52,
+        "scopus": 123,
+        "wos_scie": 123,
+        "ebsco_asp_idx": 52,
+        "ebsco_asu_idx": 52
+      }
+    },
+    {
+      "publisher": "Association of College and Research Libraries",
+      "edges": 122,
+      "unique": 107,
+      "by_database": {
+        "ebsco_asp_idx": 1,
+        "ebsco_asp_ft": 1,
+        "ebsco_asu_ft": 1,
+        "scopus": 1,
+        "ebsco_asc_ft": 1,
+        "ebsco_asc_idx": 1,
+        "ebsco_asu_idx": 1
+      }
+    },
+    {
+      "publisher": "Scientific Research Publishing",
+      "edges": 121,
+      "unique": 110,
+      "by_database": {}
+    },
+    {
+      "publisher": "Portland Press",
+      "edges": 120,
+      "unique": 108,
+      "by_database": {
+        "wos_scie": 111,
+        "sciencedirect_std": 9,
+        "ebsco_asp_idx": 102,
+        "doaj": 1,
+        "scopus": 114,
+        "sciencedirect_cu": 9,
+        "ebsco_asu_idx": 102,
+        "ebsco_asc_idx": 102,
+        "wos_esci": 2
+      }
+    },
+    {
+      "publisher": "Cureus, Inc.",
+      "edges": 119,
+      "unique": 115,
+      "by_database": {}
+    },
+    {
+      "publisher": "American Society of Nephrology",
+      "edges": 118,
+      "unique": 107,
+      "by_database": {
+        "wos_scie": 118,
+        "scopus": 118
+      }
+    },
+    {
+      "publisher": "Japan Society of Medical Entomology and Zoology",
+      "edges": 117,
+      "unique": 106,
+      "by_database": {}
+    },
+    {
+      "publisher": "IEEE Computer Society",
+      "edges": 117,
+      "unique": 98,
+      "by_database": {
+        "scopus": 117,
+        "wos_ssci": 1,
+        "ebsco_asu_idx": 99,
+        "ebsco_asp_idx": 99,
+        "doaj": 1,
+        "wos_scie": 116,
+        "ebsco_asu_ft": 1,
+        "ebsco_asc_idx": 99,
+        "ebsco_asc_ft": 1,
+        "ebsco_asp_ft": 1
+      }
+    },
+    {
+      "publisher": "eLife Sciences Publications Ltd",
+      "edges": 113,
+      "unique": 99,
+      "by_database": {
+        "ebsco_asc_idx": 113,
+        "wos_esci": 113,
+        "ebsco_asu_idx": 113,
+        "doaj": 113,
+        "ebsco_asp_idx": 113,
+        "scopus": 113
+      }
+    },
+    {
+      "publisher": "American Society of Tropical Medicine and Hygiene",
+      "edges": 109,
+      "unique": 99,
+      "by_database": {
+        "scopus": 109,
+        "wos_scie": 109
+      }
+    },
+    {
+      "publisher": "CSIRO Publishing",
+      "edges": 103,
+      "unique": 91,
+      "by_database": {
+        "ebsco_asc_idx": 66,
+        "wos_esci": 5,
+        "ebsco_asc_ft": 2,
+        "scopus": 103,
+        "wos_ssci": 8,
+        "ebsco_asu_ft": 42,
+        "wos_scie": 91,
+        "ebsco_asp_idx": 66,
+        "doaj": 5,
+        "ebsco_asu_idx": 66
+      }
+    },
+    {
+      "publisher": "Future Medicine",
+      "edges": 102,
+      "unique": 95,
+      "by_database": {
+        "wos_scie": 92,
+        "wos_esci": 10,
+        "doaj": 8,
+        "scopus": 102
+      }
+    },
+    {
+      "publisher": "American Academy of Pediatrics",
+      "edges": 100,
+      "unique": 96,
+      "by_database": {
+        "wos_scie": 96,
+        "ebsco_asc_idx": 96,
+        "wos_esci": 3,
+        "ebsco_asu_idx": 96,
+        "ebsco_asp_idx": 96,
+        "scopus": 99
+      }
+    },
+    {
+      "publisher": "Institute for Operations Research and the Management Sciences",
+      "edges": 99,
+      "unique": 78,
+      "by_database": {
+        "wos_esci": 1,
+        "ebsco_asc_idx": 1,
+        "scopus": 99,
+        "wos_ssci": 92,
+        "wos_scie": 69,
+        "ebsco_asp_idx": 1,
+        "ebsco_asu_idx": 1
+      }
+    },
+    {
+      "publisher": "The MIT Press",
+      "edges": 99,
+      "unique": 76,
+      "by_database": {
+        "scopus": 80,
+        "wos_ssci": 38,
+        "ebsco_asu_idx": 55,
+        "doaj": 8,
+        "ebsco_asp_idx": 55,
+        "ebsco_asu_ft": 44,
+        "wos_scie": 49,
+        "ebsco_asc_idx": 55,
+        "wos_ahci": 3,
+        "ebsco_asc_ft": 44,
+        "wos_esci": 8,
+        "ebsco_asp_ft": 44
+      }
+    },
+    {
+      "publisher": "European Respiratory Society",
+      "edges": 98,
+      "unique": 95,
+      "by_database": {
+        "wos_scie": 94,
+        "doaj": 25,
+        "scopus": 96,
+        "wos_esci": 2
+      }
+    },
+    {
+      "publisher": "KeAi",
+      "edges": 96,
+      "unique": 83,
+      "by_database": {
+        "sciencedirect_std": 96,
+        "ebsco_asu_ft": 14,
+        "wos_scie": 72,
+        "ebsco_asc_idx": 14,
+        "wos_esci": 20,
+        "ebsco_asu_idx": 14,
+        "doaj": 96,
+        "ebsco_asp_idx": 14,
+        "scopus": 96,
+        "sciencedirect_cu": 96
+      }
+    }
+  ]
+}
