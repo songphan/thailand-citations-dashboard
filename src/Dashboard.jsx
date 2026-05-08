@@ -821,6 +821,15 @@ const OverlapHeatmap = ({ overlap, meta }) => {
     });
   }, [matrix]);
 
+  // Map each visible database to its type's color, for label coloring
+  const labelColors = useMemo(() => {
+    const typeByKey = {};
+    if (meta && meta.databases) {
+      for (const d of meta.databases) typeByKey[d.key] = d.type;
+    }
+    return dbKeys.map((k) => TYPE_COLORS[typeByKey[k]] || PALETTE.charcoal);
+  }, [dbKeys, meta]);
+
   // Reset selection when filter changes (it might no longer be valid)
   useEffect(() => {
     setSelectedCell(null);
@@ -927,8 +936,8 @@ const OverlapHeatmap = ({ overlap, meta }) => {
                       height: 140,
                       verticalAlign: 'bottom',
                       textAlign: 'left',
-                      color: PALETTE.charcoal,
-                      fontWeight: 400,
+                      color: labelColors[i],
+                      fontWeight: 500,
                       minWidth: 36,
                     }}
                   >
@@ -953,8 +962,8 @@ const OverlapHeatmap = ({ overlap, meta }) => {
                     style={{
                       padding: '4px 8px',
                       textAlign: 'right',
-                      fontWeight: 400,
-                      color: PALETTE.charcoal,
+                      fontWeight: 500,
+                      color: labelColors[i],
                       whiteSpace: 'nowrap',
                     }}
                   >
@@ -1108,6 +1117,25 @@ const OverlapHeatmap = ({ overlap, meta }) => {
             }}
           />
           Pairwise overlap
+        </span>
+        {/* Database label color key */}
+        <span
+          className="inline-flex items-center gap-1.5"
+          style={{ color: TYPE_COLORS.open_access }}
+        >
+          ▮ Open access
+        </span>
+        <span
+          className="inline-flex items-center gap-1.5"
+          style={{ color: TYPE_COLORS.abstract_index }}
+        >
+          ▮ Index
+        </span>
+        <span
+          className="inline-flex items-center gap-1.5"
+          style={{ color: TYPE_COLORS.full_text }}
+        >
+          ▮ Full text
         </span>
         <span>Row → column · Click any cell for details</span>
       </div>
@@ -1634,10 +1662,26 @@ const INST_TYPE_FILTER_ORDER = [
   'nonprofit', 'funder', 'company', 'archive', 'other',
 ];
 
-const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }) => {
+const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, typeViews }) => {
   const [mode, setMode] = useState('chart');
   const [showCount, setShowCount] = useState(20);
-  const [typeFilter, setTypeFilter] = useState('all');
+  // Initialize typeFilter from currentView if it's a type:* view
+  const [typeFilter, setTypeFilter] = useState(() => {
+    if (currentView && currentView.startsWith('type:')) return currentView.slice(5);
+    return 'all';
+  });
+
+  // Keep typeFilter in sync if currentView changes externally (e.g., reset).
+  // We don't override typeFilter when an individual institution is selected,
+  // so the user's chart-narrowing intention is preserved.
+  useEffect(() => {
+    if (!currentView || currentView === 'all_thailand') {
+      setTypeFilter('all');
+    } else if (currentView.startsWith('type:')) {
+      setTypeFilter(currentView.slice(5));
+    }
+  }, [currentView]);
+
   if (!institutions) return null;
 
   const availableTypes = useMemo(() => {
@@ -1645,6 +1689,13 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }
     for (const r of institutions) seen.add(r.type || 'other');
     return INST_TYPE_FILTER_ORDER.filter((t) => seen.has(t));
   }, [institutions]);
+
+  // Lookup of which types have aggregate views available (from meta)
+  const typeViewSet = useMemo(() => {
+    const set = new Set();
+    if (typeViews) for (const tv of typeViews) set.add(tv.type);
+    return set;
+  }, [typeViews]);
 
   const filtered = useMemo(() => {
     return typeFilter === 'all'
@@ -1672,6 +1723,21 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }
     }
   };
 
+  // When user clicks a type filter pill, narrow the chart AND
+  // (if the type has an aggregate view available) filter the rest
+  // of the dashboard to the type aggregate.
+  const handleTypeClick = (t) => {
+    setTypeFilter(t);
+    if (!onSelectInstitution) return;
+    if (t === 'all') {
+      onSelectInstitution('all_thailand');
+    } else if (typeViewSet.has(t)) {
+      onSelectInstitution(`type:${t}`);
+    }
+    // If the type doesn't have an aggregate view (rare), we still
+    // narrow the chart but leave the global filter alone.
+  };
+
   return (
     <Card className="p-5">
       <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
@@ -1679,7 +1745,7 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }
           icon={Building2}
           kicker="Institutional landscape"
           title="Which Thai institutions produce the most cited research"
-          hint="Each institution's 2025 publications (navy, top axis) and the citations those publications make (burgundy, bottom axis), shown on independent scales. Click any bar or row to filter the panels below."
+          hint="Each institution's 2025 publications (navy, top axis) and the citations those publications make (burgundy, bottom axis), shown on independent scales. Click a type pill to filter to the type-aggregate; click a single bar or row to filter to that institution."
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
@@ -1701,7 +1767,7 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }
         <FilterPill
           label="All"
           active={typeFilter === 'all'}
-          onClick={() => setTypeFilter('all')}
+          onClick={() => handleTypeClick('all')}
         />
         {availableTypes.map((t) => (
           <FilterPill
@@ -1709,7 +1775,7 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView }
             label={t.charAt(0).toUpperCase() + t.slice(1)}
             active={typeFilter === t}
             color={INST_TYPE_COLORS[t]}
-            onClick={() => setTypeFilter(t)}
+            onClick={() => handleTypeClick(t)}
           />
         ))}
       </div>
@@ -2386,11 +2452,27 @@ export default function Dashboard() {
   const data = useDataFiles();
 
   const institutionViews = data.meta?.institution_views || [];
+  const typeViews = data.meta?.type_views || [];
   const viewLabel = useMemo(() => {
     if (view === 'all_thailand') return 'All Thailand';
-    const found = institutionViews.find((iv) => iv.id === view);
-    return found ? found.name : view;
-  }, [view, institutionViews]);
+    // Type-aggregate view (e.g. 'type:education')
+    if (view.startsWith('type:')) {
+      const t = view.slice(5);
+      const cap = t.charAt(0).toUpperCase() + t.slice(1);
+      return `All ${cap} institutions`;
+    }
+    // Lookup in the top-N (institution_views in meta.json)
+    const fromMeta = institutionViews.find((iv) => iv.id === view);
+    if (fromMeta) return fromMeta.name;
+    // Fallback: lookup in the full institutions panel data (50 entries)
+    if (data.institutions) {
+      const fromList = data.institutions.find(
+        (r) => (r.id || '').replace('https://openalex.org/', '') === view,
+      );
+      if (fromList) return fromList.name;
+    }
+    return view;
+  }, [view, institutionViews, data.institutions]);
 
   if (data.status === 'loading') {
     return (
@@ -2455,6 +2537,7 @@ export default function Dashboard() {
             institutions={data.institutions}
             onSelectInstitution={setView}
             currentView={effectiveView}
+            typeViews={typeViews}
           />
 
           {/* Filter bar: readout + reset button */}
