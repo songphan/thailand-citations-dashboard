@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  background: #f6f1e7;
+  color: #1a1612;
+}
+
+/* Smooth scroll for anchor jumps */
+html { scroll-behavior: smooth; }
+
+/* Subtle paper grain on the body. Very faint, only visible at large sizes. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(26, 22, 18, 0.025) 1px, transparent 1px);
+  background-size: 3px 3px;
+  z-index: 0;
+}
+
+#root { position: relative; z-index: 1; }
