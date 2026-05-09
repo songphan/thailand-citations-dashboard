@@ -1359,21 +1359,37 @@ const SankeyLink = (props) => {
      ${targetControlX},${targetY}
      ${targetX},${targetY}
   `;
-  // When a node is selected, only the strands touching that node stay
-  // visible at full opacity; everything else fades way down so the
-  // selected publisher's flows pop visually.
   const anySelected = selectedNodeIndex != null;
   const sourceIdx = payload?.source?.index ?? payload?.source;
   const targetIdx = payload?.target?.index ?? payload?.target;
   const isConnected =
     selectedNodeIndex === sourceIdx || selectedNodeIndex === targetIdx;
-  const opacity = !anySelected ? 0.7 : (isConnected ? 0.85 : 0.08);
+  // When nothing is selected: every band at moderate opacity.
+  // When something IS selected: connected bands pop to full opacity,
+  // unconnected ones fade almost to nothing so the selected
+  // publisher's flows are unmistakable. The 0.04 floor keeps the
+  // shape of the diagram visible (so users can see the connections
+  // they're NOT looking at as ghosts) without competing with the
+  // highlighted bands.
+  const opacity = !anySelected ? 0.7 : (isConnected ? 1.0 : 0.04);
+  // Connected bands also get a subtle dark stroke outline at high
+  // resolutions to make them visually distinct from any neighboring
+  // bands at the same y position. The outline disappears for non-
+  // connected bands (they're already faded out).
   return (
     <Layer key={`sankey-link-${index}`}>
       <defs>
         <linearGradient id={`grad-${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor={PALETTE.navy} stopOpacity={0.55} />
-          <stop offset="100%" stopColor={PALETTE.burgundy} stopOpacity={0.55} />
+          <stop
+            offset="0%"
+            stopColor={PALETTE.navy}
+            stopOpacity={isConnected && anySelected ? 0.85 : 0.55}
+          />
+          <stop
+            offset="100%"
+            stopColor={PALETTE.burgundy}
+            stopOpacity={isConnected && anySelected ? 0.85 : 0.55}
+          />
         </linearGradient>
       </defs>
       <path
@@ -1399,11 +1415,21 @@ const PublisherSankey = ({ publisherSankey }) => {
   // Recharts mutates the data it's given, so we deep-clone via JSON
   // round-trip. Cheap (a few hundred objects) and avoids subtle bugs
   // where the second render sees a mutated first-render structure.
+  //
+  // We also sort links by VALUE ASCENDING so smallest go to the bottom
+  // of the SVG layer stack and largest go on top. The pipeline emits
+  // links sorted by value descending — fine for tooltips and the data
+  // dump but the wrong order for SVG painters because earlier elements
+  // get painted under later ones. Reversing here means the dominant
+  // bands (Elsevier→Elsevier, etc.) sit on top of the criss-crossing
+  // smaller ones rather than being obscured by them.
   const sankeyData = useMemo(() => {
     if (!hasData) return { nodes: [], links: [] };
     return {
       nodes: data.nodes.map((n) => ({ ...n })),
-      links: data.links.map((l) => ({ ...l })),
+      links: data.links
+        .map((l) => ({ ...l }))
+        .sort((a, b) => a.value - b.value),
     };
   }, [data, hasData]);
 
@@ -1557,6 +1583,15 @@ const PublisherSankey = ({ publisherSankey }) => {
             link={<SankeyLink selectedNodeIndex={selectedNode} />}
             nodePadding={14}
             nodeWidth={10}
+            // sort={false} prevents Recharts from reordering nodes within
+            // each column to minimize link crossings. Without it, the
+            // default sort would put nodes in whatever order minimizes
+            // visual clutter, which scrambles the proportion ordering
+            // we want. With it, nodes stay in input array order — which
+            // the pipeline emits as proportion descending, "Other" last.
+            // Layout iterations still run and place link endpoints
+            // correctly within each node's vertical slot.
+            sort={false}
             margin={{ top: 16, right: 220, bottom: 16, left: 220 }}
           >
             <Tooltip
