@@ -2,11 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Database, Network, AlertCircle, Loader2,
   Calendar, FileText, Building2, BookOpen, Tag,
-  BarChart3, Table as TableIcon,
+  BarChart3, Table as TableIcon, GitBranch,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   AreaChart, Area, Cell, PieChart, Pie,
+  Sankey, Layer, Rectangle,
 } from 'recharts';
 
 // ============================================================
@@ -75,6 +76,7 @@ function useDataFiles() {
     institutions: null,
     institution_types: null,
     institution_overlap: null,
+    publisher_sankey: null,
   });
 
   useEffect(() => {
@@ -86,7 +88,7 @@ function useDataFiles() {
       'institutions', 'institution_types',
     ];
     // Optional files: load if present, ignore 404 silently
-    const optionalFiles = ['institution_overlap'];
+    const optionalFiles = ['institution_overlap', 'publisher_sankey'];
 
     const loadRequired = Promise.all(
       requiredFiles.map((f) =>
@@ -1226,6 +1228,251 @@ const OverlapHeatmap = ({ overlap, meta }) => {
         </span>
         <span>Row → column · Click any cell for details</span>
       </div>
+    </Card>
+  );
+};
+
+// ============================================================
+// PUBLISHER SANKEY  (alluvial flow diagram)
+// ============================================================
+// Shows citation flows from seed publishers (publishers of Thai 2025
+// papers) on the left to cited publishers on the right. Each strand's
+// thickness is proportional to the number of citation edges between
+// that pair of publishers. Top 12 publishers on each side are kept by
+// name; the rest are rolled into "Other publishers". Tiny links are
+// dropped at compute time so the diagram stays readable.
+//
+// This is a panoramic view (always all_thailand). The data file is
+// `publisher_sankey.json`. The whole panel renders nothing if the
+// file is missing or empty so it's safe to deploy the JSX before
+// regenerating data.
+
+// Custom node renderer: a small rectangle plus a label outside the
+// chart area so long publisher names don't overlap the bars.
+const SankeyNode = ({ x, y, width, height, index, payload, containerWidth }) => {
+  const isLeft = x < containerWidth / 2;
+  const color = payload.side === 'seed' ? PALETTE.navy : PALETTE.burgundy;
+  return (
+    <Layer key={`sankey-node-${index}`}>
+      <Rectangle
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill={color}
+        fillOpacity={payload.name === 'Other publishers' ? 0.4 : 0.85}
+      />
+      <text
+        x={isLeft ? x - 6 : x + width + 6}
+        y={y + height / 2}
+        textAnchor={isLeft ? 'end' : 'start'}
+        dominantBaseline="middle"
+        style={{
+          fontFamily: FONT_BODY,
+          fontSize: 11,
+          fill: payload.name === 'Other publishers'
+            ? PALETTE.muted
+            : PALETTE.charcoal,
+          fontStyle: payload.name === 'Other publishers' ? 'italic' : 'normal',
+        }}
+      >
+        {payload.name}
+      </text>
+      {/* Total count under each label, in monospace */}
+      <text
+        x={isLeft ? x - 6 : x + width + 6}
+        y={y + height / 2 + 14}
+        textAnchor={isLeft ? 'end' : 'start'}
+        dominantBaseline="middle"
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: 9,
+          fill: PALETTE.muted,
+          letterSpacing: '0.04em',
+        }}
+      >
+        {fmtFull(payload.value || 0)}
+      </text>
+    </Layer>
+  );
+};
+
+// Custom link renderer: gradient strand from navy to burgundy, opacity
+// scaled to draw the eye toward thicker flows.
+const SankeyLink = (props) => {
+  const { sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX,
+    linkWidth, index } = props;
+  // Cubic bezier path between the source and target points.
+  const path = `
+    M${sourceX},${sourceY}
+    C${sourceControlX},${sourceY}
+     ${targetControlX},${targetY}
+     ${targetX},${targetY}
+  `;
+  return (
+    <Layer key={`sankey-link-${index}`}>
+      <defs>
+        <linearGradient id={`grad-${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor={PALETTE.navy} stopOpacity={0.55} />
+          <stop offset="100%" stopColor={PALETTE.burgundy} stopOpacity={0.55} />
+        </linearGradient>
+      </defs>
+      <path
+        d={path}
+        fill="none"
+        stroke={`url(#grad-${index})`}
+        strokeWidth={linkWidth}
+        strokeOpacity={0.7}
+      />
+    </Layer>
+  );
+};
+
+const PublisherSankey = ({ publisherSankey }) => {
+  // We hold the same hooks every render even when data is null, so the
+  // null guard sits below all hook calls.
+  const data = publisherSankey;
+  const hasData = data && Array.isArray(data.nodes) && data.nodes.length > 0
+    && Array.isArray(data.links) && data.links.length > 0;
+
+  // Recharts mutates the data it's given, so we deep-clone via JSON
+  // round-trip. Cheap (a few hundred objects) and avoids subtle bugs
+  // where the second render sees a mutated first-render structure.
+  const sankeyData = useMemo(() => {
+    if (!hasData) return { nodes: [], links: [] };
+    return {
+      nodes: data.nodes.map((n) => ({ ...n })),
+      links: data.links.map((l) => ({ ...l })),
+    };
+  }, [data, hasData]);
+
+  if (!data) return null;
+
+  // If the pipeline emitted a warning (no publisher column on seeds),
+  // show an explanatory placeholder rather than a broken chart.
+  if (data.meta && data.meta.warning) {
+    return (
+      <Card className="p-5">
+        <SectionTitle
+          icon={GitBranch}
+          kicker="Publisher flow"
+          title="Citations from Thai publications to cited publishers"
+          hint="A Sankey diagram showing how citations flow from publishers of Thai 2025 papers to publishers of cited works."
+        />
+        <div
+          className="p-6 text-center"
+          style={{
+            fontFamily: FONT_BODY,
+            fontSize: 13,
+            color: PALETTE.muted,
+            background: PALETTE.cream,
+            border: `1px dashed ${PALETTE.rule}`,
+            marginTop: 16,
+          }}
+        >
+          {data.meta.warning}
+        </div>
+      </Card>
+    );
+  }
+
+  if (!hasData) return null;
+
+  const m = data.meta || {};
+
+  return (
+    <Card className="p-5">
+      <SectionTitle
+        icon={GitBranch}
+        kicker="Publisher flow"
+        title="Citations from Thai publications to cited publishers"
+        hint={
+          `Each strand is a flow from one seed publisher (left, navy) to one cited publisher (right, burgundy); thickness is proportional to the number of citation edges between them. Top ${m.n_seed_publishers_shown - 1} publishers on each side are shown by name; the rest are aggregated into "Other publishers" buckets. Hover any strand for the exact count. Coverage: ${m.coverage_pct}% of all citations have publisher metadata on both sides.`
+        }
+      />
+
+      <div
+        className="mb-4 flex flex-wrap items-center gap-3"
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: 9,
+          letterSpacing: '0.12em',
+          color: PALETTE.muted,
+          textTransform: 'uppercase',
+        }}
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <span style={{
+            display: 'inline-block', width: 14, height: 9,
+            background: PALETTE.navy,
+          }} />
+          Seed publishers (Thai 2025 papers)
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span style={{
+            display: 'inline-block', width: 14, height: 9,
+            background: PALETTE.burgundy,
+          }} />
+          Cited publishers
+        </span>
+        <span>{fmtFull(m.total_edges_with_both_publishers || 0)} citations shown</span>
+      </div>
+
+      <div style={{ width: '100%', height: 600 }}>
+        <ResponsiveContainer>
+          <Sankey
+            data={sankeyData}
+            node={<SankeyNode containerWidth={1200} />}
+            link={<SankeyLink />}
+            nodePadding={14}
+            nodeWidth={10}
+            margin={{ top: 16, right: 220, bottom: 16, left: 220 }}
+          >
+            <Tooltip
+              contentStyle={{
+                background: PALETTE.paper,
+                border: `1px solid ${PALETTE.ink}`,
+                fontFamily: FONT_BODY,
+                fontSize: 12,
+                borderRadius: 0,
+              }}
+              labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
+              formatter={(value, name, props) => {
+                // The default formatter shows {source: idx, target: idx, value};
+                // we prefer human names with the citation count.
+                const p = props.payload || {};
+                if (p.source !== undefined && p.target !== undefined) {
+                  const srcName = sankeyData.nodes[p.source.index ?? p.source]?.name
+                    ?? sankeyData.nodes[p.source]?.name ?? '?';
+                  const dstName = sankeyData.nodes[p.target.index ?? p.target]?.name
+                    ?? sankeyData.nodes[p.target]?.name ?? '?';
+                  return [
+                    `${fmtFull(value)} citations`,
+                    `${srcName} → ${dstName}`,
+                  ];
+                }
+                return [fmtFull(value), p.name || name];
+              }}
+            />
+          </Sankey>
+        </ResponsiveContainer>
+      </div>
+
+      {m.n_links_dropped > 0 && (
+        <div
+          className="mt-3"
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            letterSpacing: '0.12em',
+            color: PALETTE.muted,
+            textTransform: 'uppercase',
+          }}
+        >
+          Note · {m.n_links_dropped} small flows below the visibility threshold
+          ({fmtFull(m.edges_dropped)} edges, {((m.edges_dropped / (m.total_edges_with_both_publishers || 1)) * 100).toFixed(2)}% of total) were omitted to keep the diagram readable.
+        </div>
+      )}
     </Card>
   );
 };
@@ -3059,6 +3306,7 @@ export default function Dashboard() {
         <div className="space-y-6">
           {/* Panoramic panels: do NOT depend on the institution filter */}
           <OverlapHeatmap overlap={data.overlap} meta={data.meta} />
+          <PublisherSankey publisherSankey={data.publisher_sankey} />
           <TopInstitutionsPanel
             institutions={data.institutions}
             onSelectInstitution={setView}
