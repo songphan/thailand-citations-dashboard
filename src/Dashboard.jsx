@@ -3436,7 +3436,7 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
               </span>
             </div>
             <div className="flex gap-1">
-              {[10, 20, 30, 50].map((n) => (
+              {[10, 20, 30, 50, 85].map((n) => (
                 <button
                   key={n}
                   onClick={() => setShowCount(Math.min(n, filtered.length || institutions.length))}
