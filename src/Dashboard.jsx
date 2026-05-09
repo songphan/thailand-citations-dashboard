@@ -136,7 +136,7 @@ const Card = ({ children, className = '', style = {} }) => (
   </section>
 );
 
-const SectionTitle = ({ icon: Icon, kicker, title, hint }) => (
+const SectionTitle = ({ icon: Icon, kicker, title, hint, totalN, totalLabel }) => (
   <header className="mb-3">
     <div
       className="mb-2 flex items-center gap-2 uppercase"
@@ -162,6 +162,23 @@ const SectionTitle = ({ icon: Icon, kicker, title, hint }) => (
     >
       {title}
     </h2>
+    {/* Consistent location for the relevant denominator across every
+        panel — sits between the title and the hint. The 'n' notation
+        mirrors how a methods section reports sample size. */}
+    {totalN != null && (
+      <div
+        className="mt-1"
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: 11,
+          color: PALETTE.charcoal,
+          letterSpacing: '0.02em',
+        }}
+      >
+        n = <strong style={{ color: PALETTE.ink }}>{fmtFull(totalN)}</strong>
+        {totalLabel ? ` ${totalLabel}` : ''}
+      </div>
+    )}
     {hint && (
       <p
         className="mt-1.5"
@@ -608,7 +625,7 @@ const FilterPill = ({ label, active, onClick, color }) => (
   </button>
 );
 
-const CoverageTable = ({ coverage, view }) => {
+const CoverageTable = ({ coverage, summary, view }) => {
   const [typeFilter, setTypeFilter] = useState('all');
   if (!coverage || !coverage[view]) return null;
   const data = coverage[view];
@@ -642,6 +659,8 @@ const CoverageTable = ({ coverage, view }) => {
         icon={Database}
         kicker="Database coverage"
         title="What fraction of citations is reachable through each database"
+        totalN={summary && summary[view] ? summary[view].n_total_edges : null}
+        totalLabel="citations"
         hint={
           isFiltered
             ? 'Matched on normalized ISSN against the public title list of each database. The gold marker on each bar shows the All Thailand baseline for that database, so you can see whether this institution leans on a database more or less than Thailand as a whole.'
@@ -861,7 +880,7 @@ const cellBody = {
 // ============================================================
 // OVERLAP HEATMAP  (full width, percentage-based, public data)
 // ============================================================
-const OverlapHeatmap = ({ overlap, meta }) => {
+const OverlapHeatmap = ({ overlap, meta, summary }) => {
   // This panel always uses the all_thailand data, regardless of the
   // institution filter. Database overlap is a structural property of
   // the databases themselves and shouldn't change when the user filters
@@ -949,6 +968,8 @@ const OverlapHeatmap = ({ overlap, meta }) => {
         icon={Network}
         kicker="Database overlap · All Thailand"
         title="How much do databases redundantly cover the same citations"
+        totalN={summary && summary.all_thailand ? summary.all_thailand.n_total_edges : null}
+        totalLabel="citations"
         hint={
           'Each cell shows what percentage of one database\'s coverage (the row) is also covered by another database (the column). ' +
           'Numbers are based on the public title lists of each database, not on any specific institution\'s subscriptions. ' +
@@ -1249,9 +1270,26 @@ const OverlapHeatmap = ({ overlap, meta }) => {
 
 // Custom node renderer: a small rectangle plus a label outside the
 // chart area so long publisher names don't overlap the bars.
-const SankeyNode = ({ x, y, width, height, index, payload, containerWidth }) => {
+const SankeyNode = ({
+  x, y, width, height, index, payload, containerWidth,
+  onNodeClick, selectedNodeIndex,
+}) => {
   const isLeft = x < containerWidth / 2;
-  const color = payload.side === 'seed' ? PALETTE.navy : PALETTE.burgundy;
+  const baseColor = payload.side === 'seed' ? PALETTE.navy : PALETTE.burgundy;
+  const isSelected = selectedNodeIndex === index;
+  const isOther = payload.name === 'Other publishers';
+  // Selected node gets full saturation + stroke; non-selected fade
+  // slightly when SOMETHING is selected (so the chosen node pops).
+  const anySelected = selectedNodeIndex != null;
+  const fillOpacity = isSelected ? 1 : (anySelected ? 0.35 : (isOther ? 0.4 : 0.85));
+  const labelColor = isSelected
+    ? PALETTE.ink
+    : isOther
+    ? PALETTE.muted
+    : PALETTE.charcoal;
+  const handleClick = () => {
+    if (onNodeClick) onNodeClick(index);
+  };
   return (
     <Layer key={`sankey-node-${index}`}>
       <Rectangle
@@ -1259,21 +1297,31 @@ const SankeyNode = ({ x, y, width, height, index, payload, containerWidth }) => 
         y={y}
         width={width}
         height={height}
-        fill={color}
-        fillOpacity={payload.name === 'Other publishers' ? 0.4 : 0.85}
+        fill={baseColor}
+        fillOpacity={fillOpacity}
+        stroke={isSelected ? PALETTE.ink : 'none'}
+        strokeWidth={isSelected ? 2 : 0}
+        style={{ cursor: 'pointer' }}
+        onClick={handleClick}
       />
       <text
         x={isLeft ? x - 6 : x + width + 6}
         y={y + height / 2}
         textAnchor={isLeft ? 'end' : 'start'}
         dominantBaseline="middle"
+        onClick={handleClick}
         style={{
           fontFamily: FONT_BODY,
           fontSize: 11,
-          fill: payload.name === 'Other publishers'
-            ? PALETTE.muted
-            : PALETTE.charcoal,
-          fontStyle: payload.name === 'Other publishers' ? 'italic' : 'normal',
+          fill: labelColor,
+          fontStyle: isOther ? 'italic' : 'normal',
+          fontWeight: isSelected ? 600 : 400,
+          cursor: 'pointer',
+          // The label gets a subtle dotted underline to hint that it's
+          // clickable. Selected labels switch to a solid underline.
+          textDecoration: isSelected ? 'underline' : 'underline dotted',
+          textDecorationColor: isSelected ? PALETTE.ink : PALETTE.rule,
+          textUnderlineOffset: 3,
         }}
       >
         {payload.name}
@@ -1284,11 +1332,13 @@ const SankeyNode = ({ x, y, width, height, index, payload, containerWidth }) => 
         y={y + height / 2 + 14}
         textAnchor={isLeft ? 'end' : 'start'}
         dominantBaseline="middle"
+        onClick={handleClick}
         style={{
           fontFamily: FONT_MONO,
           fontSize: 9,
           fill: PALETTE.muted,
           letterSpacing: '0.04em',
+          cursor: 'pointer',
         }}
       >
         {fmtFull(payload.value || 0)}
@@ -1301,7 +1351,7 @@ const SankeyNode = ({ x, y, width, height, index, payload, containerWidth }) => 
 // scaled to draw the eye toward thicker flows.
 const SankeyLink = (props) => {
   const { sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX,
-    linkWidth, index } = props;
+    linkWidth, index, payload, selectedNodeIndex } = props;
   // Cubic bezier path between the source and target points.
   const path = `
     M${sourceX},${sourceY}
@@ -1309,6 +1359,15 @@ const SankeyLink = (props) => {
      ${targetControlX},${targetY}
      ${targetX},${targetY}
   `;
+  // When a node is selected, only the strands touching that node stay
+  // visible at full opacity; everything else fades way down so the
+  // selected publisher's flows pop visually.
+  const anySelected = selectedNodeIndex != null;
+  const sourceIdx = payload?.source?.index ?? payload?.source;
+  const targetIdx = payload?.target?.index ?? payload?.target;
+  const isConnected =
+    selectedNodeIndex === sourceIdx || selectedNodeIndex === targetIdx;
+  const opacity = !anySelected ? 0.7 : (isConnected ? 0.85 : 0.08);
   return (
     <Layer key={`sankey-link-${index}`}>
       <defs>
@@ -1322,18 +1381,20 @@ const SankeyLink = (props) => {
         fill="none"
         stroke={`url(#grad-${index})`}
         strokeWidth={linkWidth}
-        strokeOpacity={0.7}
+        strokeOpacity={opacity}
+        style={{ transition: 'stroke-opacity 200ms' }}
       />
     </Layer>
   );
 };
 
 const PublisherSankey = ({ publisherSankey }) => {
-  // We hold the same hooks every render even when data is null, so the
-  // null guard sits below all hook calls.
+  // Hooks always run; null guard is below them.
   const data = publisherSankey;
   const hasData = data && Array.isArray(data.nodes) && data.nodes.length > 0
     && Array.isArray(data.links) && data.links.length > 0;
+
+  const [selectedNode, setSelectedNode] = useState(null);
 
   // Recharts mutates the data it's given, so we deep-clone via JSON
   // round-trip. Cheap (a few hundred objects) and avoids subtle bugs
@@ -1345,6 +1406,48 @@ const PublisherSankey = ({ publisherSankey }) => {
       links: data.links.map((l) => ({ ...l })),
     };
   }, [data, hasData]);
+
+  // For the selected node, build a sorted breakdown of its connected
+  // counterparts on the other side. Memoized so it only re-runs when
+  // the selection or the underlying data changes.
+  const detail = useMemo(() => {
+    if (!hasData || selectedNode == null) return null;
+    const nodes = data.nodes;
+    const links = data.links;
+    const node = nodes[selectedNode];
+    if (!node) return null;
+    const isSeedSide = node.side === 'seed';
+
+    // Collect all flows that touch the selected node, on the OTHER side.
+    const rows = [];
+    for (const l of links) {
+      const sIdx = typeof l.source === 'object' ? l.source.index : l.source;
+      const tIdx = typeof l.target === 'object' ? l.target.index : l.target;
+      if (isSeedSide && sIdx === selectedNode) {
+        rows.push({ otherIdx: tIdx, value: l.value });
+      } else if (!isSeedSide && tIdx === selectedNode) {
+        rows.push({ otherIdx: sIdx, value: l.value });
+      }
+    }
+    const total = rows.reduce((s, r) => s + r.value, 0);
+    const enriched = rows.map((r) => {
+      const other = nodes[r.otherIdx];
+      return {
+        otherIdx: r.otherIdx,
+        otherName: other?.name ?? '(unknown)',
+        otherIsOther: other?.name === 'Other publishers',
+        value: r.value,
+        pct_of_node: total ? (r.value / total) * 100 : 0,
+      };
+    });
+    enriched.sort((a, b) => b.value - a.value);
+    return {
+      anchor: node,
+      anchorIsSeedSide: isSeedSide,
+      total,
+      rows: enriched,
+    };
+  }, [data, hasData, selectedNode]);
 
   if (!data) return null;
 
@@ -1386,8 +1489,10 @@ const PublisherSankey = ({ publisherSankey }) => {
         icon={GitBranch}
         kicker="Publisher flow"
         title="Citations from Thai publications to cited publishers"
+        totalN={m.total_edges_with_both_publishers}
+        totalLabel={`citations with publisher metadata on both sides (${m.coverage_pct}% of total)`}
         hint={
-          `Each strand is a flow from one seed publisher (left, navy) to one cited publisher (right, burgundy); thickness is proportional to the number of citation edges between them. Top ${m.n_seed_publishers_shown - 1} publishers on each side are shown by name; the rest are aggregated into "Other publishers" buckets. Hover any strand for the exact count. Coverage: ${m.coverage_pct}% of all citations have publisher metadata on both sides.`
+          `Each strand is a flow from one seed publisher (left, navy) to one cited publisher (right, burgundy); thickness is proportional to the number of citation edges between them. Top ${m.n_seed_publishers_shown - 1} publishers on each side are shown by name; the rest are aggregated into "Other publishers" buckets. Click any publisher label to see its detailed flow breakdown. Hover a strand for exact counts.`
         }
       />
 
@@ -1415,17 +1520,44 @@ const PublisherSankey = ({ publisherSankey }) => {
           }} />
           Cited publishers
         </span>
-        <span>{fmtFull(m.total_edges_with_both_publishers || 0)} citations shown</span>
+        {selectedNode != null && (
+          <button
+            onClick={() => setSelectedNode(null)}
+            className="px-2 py-0.5"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 9,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: PALETTE.muted,
+              background: 'transparent',
+              border: `1px solid ${PALETTE.rule}`,
+              cursor: 'pointer',
+              marginLeft: 'auto',
+            }}
+          >
+            Clear selection
+          </button>
+        )}
       </div>
 
       <div style={{ width: '100%', height: 600 }}>
         <ResponsiveContainer>
           <Sankey
             data={sankeyData}
-            node={<SankeyNode containerWidth={1200} />}
-            link={<SankeyLink />}
+            node={(
+              <SankeyNode
+                containerWidth={1200}
+                onNodeClick={(idx) =>
+                  setSelectedNode((prev) => (prev === idx ? null : idx))
+                }
+                selectedNodeIndex={selectedNode}
+              />
+            )}
+            link={<SankeyLink selectedNodeIndex={selectedNode} />}
             nodePadding={14}
             nodeWidth={10}
+            iterations={0}
             margin={{ top: 16, right: 220, bottom: 16, left: 220 }}
           >
             <Tooltip
@@ -1457,6 +1589,130 @@ const PublisherSankey = ({ publisherSankey }) => {
           </Sankey>
         </ResponsiveContainer>
       </div>
+
+      {/* Detail breakdown table for the clicked publisher */}
+      {detail && (
+        <div
+          className="mt-4 p-4"
+          style={{
+            background: PALETTE.cream,
+            borderLeft: `3px solid ${detail.anchorIsSeedSide ? PALETTE.navy : PALETTE.burgundy}`,
+            fontFamily: FONT_BODY,
+            fontSize: 13,
+            color: PALETTE.charcoal,
+          }}
+        >
+          <div
+            className="mb-1 uppercase"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 9,
+              letterSpacing: '0.16em',
+              color: PALETTE.muted,
+            }}
+          >
+            {detail.anchorIsSeedSide
+              ? 'Seed publisher · outgoing citations'
+              : 'Cited publisher · incoming citations'}
+          </div>
+          <div className="mb-3" style={{ lineHeight: 1.5 }}>
+            <strong style={{
+              color: detail.anchorIsSeedSide ? PALETTE.navy : PALETTE.burgundy,
+              fontSize: 15,
+            }}>
+              {detail.anchor.name}
+            </strong>{' '}
+            {detail.anchorIsSeedSide
+              ? 'Thai 2025 papers contribute'
+              : 'is on the receiving end of'}{' '}
+            <strong style={{ color: PALETTE.ink, fontFamily: FONT_MONO }}>
+              {fmtFull(detail.total)}
+            </strong>{' '}
+            citations.{' '}
+            {detail.anchorIsSeedSide
+              ? 'The breakdown below shows where those citations land.'
+              : 'The breakdown below shows where those citations come from.'}
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+              <thead>
+                <tr
+                  style={{
+                    fontFamily: FONT_MONO,
+                    fontSize: 10,
+                    letterSpacing: '0.12em',
+                    color: PALETTE.muted,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  <th style={cellHead}>
+                    {detail.anchorIsSeedSide ? 'Cited publisher' : 'Seed publisher'}
+                  </th>
+                  <th style={{ ...cellHead, width: 120, textAlign: 'right' }}>
+                    Citations
+                  </th>
+                  <th style={{ ...cellHead, width: 90, textAlign: 'right' }}>
+                    Share
+                  </th>
+                  <th style={{ ...cellHead, width: '50%' }}>Bar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detail.rows.map((r) => (
+                  <tr
+                    key={r.otherIdx}
+                    style={{ borderTop: `1px solid ${PALETTE.rule}` }}
+                  >
+                    <td style={cellBody}>
+                      <span style={{
+                        color: r.otherIsOther ? PALETTE.muted : PALETTE.ink,
+                        fontStyle: r.otherIsOther ? 'italic' : 'normal',
+                        fontWeight: r.otherIsOther ? 400 : 500,
+                      }}>
+                        {r.otherName}
+                      </span>
+                    </td>
+                    <td style={{
+                      ...cellBody,
+                      textAlign: 'right',
+                      fontFamily: FONT_MONO,
+                    }}>
+                      {fmtFull(r.value)}
+                    </td>
+                    <td style={{
+                      ...cellBody,
+                      textAlign: 'right',
+                      fontFamily: FONT_MONO,
+                      fontWeight: 600,
+                      color: PALETTE.ink,
+                    }}>
+                      {r.pct_of_node.toFixed(1)}%
+                    </td>
+                    <td style={cellBody}>
+                      <CoverageBar
+                        value={r.pct_of_node}
+                        color={detail.anchorIsSeedSide ? PALETTE.burgundy : PALETTE.navy}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div
+            className="mt-3"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 9,
+              letterSpacing: '0.1em',
+              color: PALETTE.muted,
+              textTransform: 'uppercase',
+            }}
+          >
+            Share is computed against {detail.anchor.name}'s {fmtFull(detail.total)} {detail.anchorIsSeedSide ? 'outgoing' : 'incoming'} citations.
+          </div>
+        </div>
+      )}
 
       {m.n_links_dropped > 0 && (
         <div
@@ -1649,6 +1905,18 @@ const InstitutionOverlapHeatmap = ({ institutionOverlap, currentView }) => {
           mode === 'list' && selectedSelf
             ? `Who shares citations with ${selectedSelf.name}`
             : 'How much do Thai institutions cite the same literature'
+        }
+        totalN={
+          mode === 'list' && selectedSelf
+            ? selectedSelf.self_count
+            : labels.length > 0
+            ? labels.length
+            : null
+        }
+        totalLabel={
+          mode === 'list' && selectedSelf
+            ? `distinct cited works by ${selectedSelf.name}`
+            : 'institutions in the matrix'
         }
         hint={
           mode === 'list' && selectedSelf
@@ -2156,10 +2424,12 @@ const ByYearPanel = ({ byYear, view }) => {
           icon={Calendar}
           kicker="Time horizon"
           title="When are the cited works from"
+          totalN={total}
+          totalLabel="citations"
           hint={
             isFiltered
               ? `Each year as a percentage of total citations, so this institution and All Thailand are directly comparable. The Thailand area sits behind in muted gold; the selected institution sits on top in burgundy.`
-              : `Distribution of ${fmtFull(total)} citations by the publication year of the cited work. Pre-1990 collapsed in the chart; the table view shows every year.`
+              : `Distribution by the publication year of the cited work. Pre-1990 collapsed in the chart; the table view shows every year.`
           }
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
@@ -2311,6 +2581,10 @@ const ByTypePanel = ({ byType, view }) => {
     [items],
   );
   const total = useMemo(() => chartData.reduce((s, r) => s + r.edges, 0), [chartData]);
+  // Total across ALL types (for the n= header), not just the chart-visible
+  // ones — the chart filters out tiny types but the n should reflect the
+  // full denominator.
+  const totalAll = useMemo(() => items.reduce((s, r) => s + r.edges, 0), [items]);
 
   return (
     <Card className="p-5">
@@ -2319,6 +2593,8 @@ const ByTypePanel = ({ byType, view }) => {
           icon={FileText}
           kicker="Material types"
           title="What kinds of works are being cited"
+          totalN={totalAll}
+          totalLabel="citations"
           hint="OpenAlex work-type classification. The chart filters out types with fewer than 100 citations; the table view shows everything."
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
@@ -2442,6 +2718,8 @@ const TopPublishersPanel = ({ byPublisher, summary, view }) => {
           icon={BookOpen}
           kicker="Publisher concentration"
           title="Which publishers' journals get cited most"
+          totalN={totalView}
+          totalLabel="citations"
           hint={
             isFiltered
               ? "Each publisher's share of this institution's citations (burgundy, primary) compared with its share of all-Thailand citations (muted gold, reference). Helps you see whether this institution leans more or less than the country average on a given publisher."
@@ -2744,6 +3022,8 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
           icon={Building2}
           kicker="Institutional landscape"
           title="Which Thai institutions produce the most cited research"
+          totalN={institutions.length}
+          totalLabel="Thai institutions producing 2025 research"
           hint="Each institution's 2025 publications (navy, primary, top axis) and the citations those publications make (muted burgundy, bottom axis), shown on independent scales. Institution names are colored by type. Click a type pill to filter to the type-aggregate; click a single bar or row to filter to that institution."
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
@@ -3018,6 +3298,8 @@ const InstitutionTypesPanel = ({ institutionTypes }) => {
           icon={Tag}
           kicker="Sector mix"
           title="Citations by institution type"
+          totalN={totalEdges}
+          totalLabel="citations"
           hint="OpenAlex institutional classification. Citations counted across all author affiliations."
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
@@ -3541,7 +3823,7 @@ export default function Dashboard() {
       <main className="mx-auto max-w-[1400px] px-6 py-8">
         <div className="space-y-6">
           {/* Panoramic panels: do NOT depend on the institution filter */}
-          <OverlapHeatmap overlap={data.overlap} meta={data.meta} />
+          <OverlapHeatmap overlap={data.overlap} meta={data.meta} summary={data.summary} />
           <PublisherSankey publisherSankey={data.publisher_sankey} />
           <TopInstitutionsPanel
             institutions={data.institutions}
@@ -3599,7 +3881,11 @@ export default function Dashboard() {
             summary={data.summary}
             view={effectiveView}
           />
-          <CoverageTable coverage={data.coverage} view={effectiveView} />
+          <CoverageTable
+            coverage={data.coverage}
+            summary={data.summary}
+            view={effectiveView}
+          />
         </div>
       </main>
       <Footer />
