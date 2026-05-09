@@ -74,25 +74,40 @@ function useDataFiles() {
     by_publisher: null,
     institutions: null,
     institution_types: null,
+    institution_overlap: null,
   });
 
   useEffect(() => {
     const base = `${import.meta.env.BASE_URL}data/`;
-    const files = [
+    // Required files: dashboard cannot render without these
+    const requiredFiles = [
       'meta', 'summary', 'coverage', 'overlap',
       'by_year', 'by_type', 'by_publisher',
       'institutions', 'institution_types',
     ];
-    Promise.all(
-      files.map((f) =>
+    // Optional files: load if present, ignore 404 silently
+    const optionalFiles = ['institution_overlap'];
+
+    const loadRequired = Promise.all(
+      requiredFiles.map((f) =>
         fetch(`${base}${f}.json`).then((r) => {
           if (!r.ok) throw new Error(`Failed to load ${f}.json (${r.status})`);
           return r.json().then((j) => [f, j]);
         }),
       ),
-    )
-      .then((entries) => {
-        const result = Object.fromEntries(entries);
+    );
+
+    const loadOptional = Promise.all(
+      optionalFiles.map((f) =>
+        fetch(`${base}${f}.json`)
+          .then((r) => (r.ok ? r.json().then((j) => [f, j]) : [f, null]))
+          .catch(() => [f, null]),
+      ),
+    );
+
+    Promise.all([loadRequired, loadOptional])
+      .then(([req, opt]) => {
+        const result = Object.fromEntries([...req, ...opt]);
         setState({ status: 'ready', error: null, ...result });
       })
       .catch((err) => {
@@ -1210,6 +1225,391 @@ const OverlapHeatmap = ({ overlap, meta }) => {
           ▮ Full text
         </span>
         <span>Row → column · Click any cell for details</span>
+      </div>
+    </Card>
+  );
+};
+
+// ============================================================
+// INSTITUTION CITATION OVERLAP HEATMAP
+// ============================================================
+// Pairwise heatmap showing what fraction of one Thai institution's
+// cited works are also cited by another, EXCLUDING citations from
+// papers the two co-authored together. Co-authored papers would
+// inflate every cell artificially: those edges contribute the same
+// cited works to both institutions by definition. Removing them
+// tests whether two institutions independently arrive at citing
+// similar literature.
+//
+// The matrix is asymmetric: cell (i, j) shows the share of i's
+// distinct cited works (after removing seeds co-authored with j)
+// that j also cites. So row i sums to <= 100%; cell (j, i) shows
+// the same overlap from j's perspective and is generally a different
+// percentage because the denominators differ.
+//
+// We reuse INST_TYPE_COLORS for the type filter pills and the row /
+// column header labels, matching the institutional-landscape colors.
+const InstitutionOverlapHeatmap = ({ institutionOverlap }) => {
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [selectedCell, setSelectedCell] = useState(null);
+
+  // We compute everything against the data even when it might be missing,
+  // so React always sees the same hook order across renders. The null
+  // guard lives at the bottom of the function (just before JSX).
+  const o = institutionOverlap;
+  const insts = (o && o.institutions) || [];
+
+  // Apply institution-type filter to rows AND columns. We keep
+  // matrix entries by index, so filtered indices are projected
+  // through the original matrix.
+  const { labels, matrixOv, matrixA, types, ids, indices } = useMemo(() => {
+    let idx = insts.map((_, i) => i);
+    if (typeFilter !== 'all') {
+      idx = idx.filter((i) => (insts[i].type || 'other') === typeFilter);
+    }
+    if (!o) {
+      return { labels: [], matrixOv: [], matrixA: [], types: [], ids: [], indices: [] };
+    }
+    return {
+      labels: idx.map((i) => insts[i].name
+        .replace(/^King Mongkut's /, "KMUT-")
+        .replace(/^King Mongkut /, "KMUT-")),
+      matrixOv: idx.map((i) => idx.map((j) => o.matrix_overlap[i][j])),
+      matrixA: idx.map((i) => idx.map((j) => o.matrix_a_count[i][j])),
+      types: idx.map((i) => insts[i].type || 'other'),
+      ids: idx.map((i) => insts[i].id),
+      indices: idx,
+    };
+  }, [insts, o, typeFilter]);
+
+  // Available types (only those that appear in the matrix)
+  const availableTypes = useMemo(() => {
+    const seen = new Set();
+    for (const r of insts) seen.add(r.type || 'other');
+    return INST_TYPE_FILTER_ORDER.filter((t) => seen.has(t));
+  }, [insts]);
+
+  const pctMatrix = useMemo(() => {
+    return matrixOv.map((row, i) =>
+      row.map((v, j) => {
+        const denom = matrixA[i][j] || 1;
+        return (v / denom) * 100;
+      }),
+    );
+  }, [matrixOv, matrixA]);
+
+  // Reset cell selection when the type filter changes (the previously
+  // selected indices may not exist in the new matrix)
+  useEffect(() => {
+    setSelectedCell(null);
+  }, [typeFilter]);
+
+  // Null check goes AFTER all hooks so hook order stays stable across
+  // renders (React requires the same hooks be called in the same order
+  // every render).
+  if (!institutionOverlap) return null;
+
+  // Cell color: same scheme as database overlap. Diagonal in gold.
+  const colorFor = (pct, isDiag, isSelected) => {
+    if (isSelected) return PALETTE.ink;
+    if (isDiag) return PALETTE.gold;
+    if (pct === 0) return PALETTE.cream;
+    // Quintile bins of burgundy
+    if (pct < 5) return PALETTE.burgundy + '20';
+    if (pct < 15) return PALETTE.burgundy + '50';
+    if (pct < 30) return PALETTE.burgundy + '80';
+    if (pct < 50) return PALETTE.burgundy + 'b0';
+    return PALETTE.burgundy;
+  };
+
+  return (
+    <Card className="p-5">
+      <SectionTitle
+        icon={Building2}
+        kicker="Institutional citation overlap"
+        title="How much do Thai institutions cite the same literature"
+        hint="For each ordered pair (row → column), the cell shows what share of the row institution's distinct cited works are also cited by the column institution. Citations from papers the two institutions co-authored are excluded — without that exclusion, co-authorship alone would inflate every cell. Use the type filter to compare institutions within a category. Click any cell for the underlying counts."
+      />
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            letterSpacing: '0.16em',
+            color: PALETTE.muted,
+            textTransform: 'uppercase',
+            marginRight: 6,
+          }}
+        >
+          Filter by type
+        </span>
+        <FilterPill
+          label="All"
+          active={typeFilter === 'all'}
+          onClick={() => setTypeFilter('all')}
+        />
+        {availableTypes.map((t) => (
+          <FilterPill
+            key={t}
+            label={t.charAt(0).toUpperCase() + t.slice(1)}
+            active={typeFilter === t}
+            color={INST_TYPE_COLORS[t]}
+            onClick={() => setTypeFilter(t)}
+          />
+        ))}
+      </div>
+
+      {labels.length < 2 ? (
+        <div
+          className="p-6 text-center"
+          style={{
+            fontFamily: FONT_BODY,
+            fontSize: 13,
+            color: PALETTE.muted,
+            background: PALETTE.cream,
+            border: `1px dashed ${PALETTE.rule}`,
+          }}
+        >
+          Only one institution matches this type filter, so there's no overlap to show.
+          Try a different type or select All.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table
+            style={{
+              borderCollapse: 'collapse',
+              fontFamily: FONT_MONO,
+              fontSize: 10,
+              margin: '0 auto',
+            }}
+          >
+            <thead>
+              <tr>
+                <th style={{ padding: 4 }}></th>
+                {labels.map((label, i) => (
+                  <th
+                    key={i}
+                    style={{
+                      padding: '4px 2px',
+                      height: 180,
+                      verticalAlign: 'bottom',
+                      textAlign: 'left',
+                      color: INST_TYPE_COLORS[types[i]] || PALETTE.charcoal,
+                      fontWeight: 500,
+                      minWidth: 28,
+                    }}
+                  >
+                    <div
+                      style={{
+                        writingMode: 'vertical-rl',
+                        transform: 'rotate(180deg)',
+                        whiteSpace: 'nowrap',
+                        letterSpacing: '0.04em',
+                        maxHeight: 170,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                      title={label}
+                    >
+                      {label}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {labels.map((rowLabel, i) => (
+                <tr key={i}>
+                  <th
+                    style={{
+                      padding: '4px 8px',
+                      textAlign: 'right',
+                      fontWeight: 500,
+                      color: INST_TYPE_COLORS[types[i]] || PALETTE.charcoal,
+                      whiteSpace: 'nowrap',
+                      maxWidth: 220,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                    title={rowLabel}
+                  >
+                    {rowLabel}
+                  </th>
+                  {labels.map((_, j) => {
+                    const pct = pctMatrix[i][j];
+                    const isDiag = i === j;
+                    const isSelected =
+                      selectedCell && selectedCell.i === i && selectedCell.j === j;
+                    return (
+                      <td
+                        key={j}
+                        onClick={() => setSelectedCell({ i, j })}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          background: colorFor(pct, isDiag, isSelected),
+                          border: `1px solid ${PALETTE.paper}`,
+                          textAlign: 'center',
+                          color:
+                            isSelected
+                              ? PALETTE.paper
+                              : isDiag
+                              ? PALETTE.ink
+                              : pct >= 30
+                              ? PALETTE.paper
+                              : PALETTE.charcoal,
+                          fontFamily: FONT_MONO,
+                          fontSize: 9,
+                          cursor: 'pointer',
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        {isDiag ? '—' : pct >= 0.5 ? pct.toFixed(0) : ''}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Detail panel for the currently selected cell */}
+      {selectedCell && (
+        <div
+          className="mt-4 p-4"
+          style={{
+            background: PALETTE.cream,
+            borderLeft: `3px solid ${PALETTE.burgundy}`,
+            fontFamily: FONT_BODY,
+            fontSize: 13,
+            lineHeight: 1.5,
+            color: PALETTE.charcoal,
+          }}
+        >
+          {(() => {
+            const { i, j } = selectedCell;
+            const isDiag = i === j;
+            const a_name = labels[i];
+            const b_name = labels[j];
+            const a_type = types[i];
+            const b_type = types[j];
+            const a_count = matrixA[i][j];
+            const b_count = matrixA[j][i];
+            const ov = matrixOv[i][j];
+            const pct_ij = pctMatrix[i][j];
+            const pct_ji = pctMatrix[j][i];
+            if (isDiag) {
+              return (
+                <>
+                  <div
+                    className="mb-1 uppercase"
+                    style={{
+                      fontFamily: FONT_MONO,
+                      fontSize: 9,
+                      letterSpacing: '0.16em',
+                      color: PALETTE.muted,
+                    }}
+                  >
+                    Selected diagonal cell
+                  </div>
+                  <div>
+                    <strong style={{ color: INST_TYPE_COLORS[a_type] || PALETTE.ink }}>
+                      {a_name}
+                    </strong>{' '}
+                    cites{' '}
+                    <strong style={{ color: PALETTE.ink, fontFamily: FONT_MONO }}>
+                      {fmtFull(a_count)}
+                    </strong>{' '}
+                    distinct works in 2025. The diagonal is always 100% by definition.
+                  </div>
+                </>
+              );
+            }
+            return (
+              <>
+                <div
+                  className="mb-1 uppercase"
+                  style={{
+                    fontFamily: FONT_MONO,
+                    fontSize: 9,
+                    letterSpacing: '0.16em',
+                    color: PALETTE.muted,
+                  }}
+                >
+                  Selected pair · row → column
+                </div>
+                <div className="mb-1">
+                  <strong style={{ color: INST_TYPE_COLORS[a_type] || PALETTE.ink }}>
+                    {a_name}
+                  </strong>{' '}
+                  cites{' '}
+                  <strong style={{ color: PALETTE.ink, fontFamily: FONT_MONO }}>
+                    {fmtFull(a_count)}
+                  </strong>{' '}
+                  distinct works (excluding seeds co-authored with{' '}
+                  <strong>{b_name}</strong>).{' '}
+                  <strong style={{ color: PALETTE.burgundy, fontFamily: FONT_MONO }}>
+                    {fmtFull(ov)} ({pct_ij.toFixed(1)}%)
+                  </strong>{' '}
+                  of those are also cited by{' '}
+                  <strong style={{ color: INST_TYPE_COLORS[b_type] || PALETTE.ink }}>
+                    {b_name}
+                  </strong>
+                  .
+                </div>
+                <div style={{ color: PALETTE.muted, fontSize: 12 }}>
+                  From the other direction:{' '}
+                  <strong style={{ color: PALETTE.ink, fontFamily: FONT_MONO }}>
+                    {fmtFull(b_count)}
+                  </strong>{' '}
+                  distinct works for {b_name},{' '}
+                  <strong style={{ color: PALETTE.burgundy, fontFamily: FONT_MONO }}>
+                    {pct_ji.toFixed(1)}%
+                  </strong>{' '}
+                  also cited by {a_name}.
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
+      <div
+        className="mt-4 flex items-center gap-4 flex-wrap"
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: 9,
+          letterSpacing: '0.12em',
+          color: PALETTE.muted,
+          textTransform: 'uppercase',
+        }}
+      >
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span
+            style={{
+              display: 'inline-block',
+              width: 12,
+              height: 12,
+              background: PALETTE.gold,
+            }}
+          />
+          Diagonal (self)
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span
+            style={{
+              display: 'inline-block',
+              width: 12,
+              height: 12,
+              background: PALETTE.burgundy,
+            }}
+          />
+          Pairwise overlap (% from row's perspective)
+        </span>
+        <span>Co-authored seeds excluded · Click any cell for details</span>
       </div>
     </Card>
   );
@@ -2664,6 +3064,9 @@ export default function Dashboard() {
             onSelectInstitution={setView}
             currentView={effectiveView}
             typeViews={typeViews}
+          />
+          <InstitutionOverlapHeatmap
+            institutionOverlap={data.institution_overlap}
           />
 
           {/* Filter bar: readout + reset button */}
