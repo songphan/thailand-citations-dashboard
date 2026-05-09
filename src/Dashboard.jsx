@@ -973,7 +973,7 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
         hint={
           'Each cell shows what percentage of one database\'s coverage (the row) is also covered by another database (the column). ' +
           'Numbers are based on the public title lists of each database, not on any specific institution\'s subscriptions. ' +
-          'Click a cell to see the underlying counts. This panel reflects all-Thailand citations and does not change with the institution filter below.'
+          'Click a cell to see the underlying counts. This panel reflects all-Thailand citations and does not change with the institution filter.'
         }
       />
 
@@ -3523,12 +3523,39 @@ const Header = ({ generatedAt }) => (
       >
         Where Thai researchers' 2025 citations land across major academic
         databases. Use this to understand citation patterns, database coverage,
-        and overlaps for consortium-level decisions. The first two panels
-        below show the consortium-wide picture; use the institution filter
-        further down to drill into a specific Thai institution.
+        and overlaps for consortium-level decisions. Start with the
+        institutional landscape below to filter the dashboard to a specific
+        institution or sector. Country-wide reference views (database overlap
+        and publisher flow) sit at the bottom of the page for the times you
+        need them.
       </p>
 
       <div className="mt-5 flex flex-wrap items-center gap-4">
+        <a
+          href="#country-context"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 transition-colors"
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 10,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            background: 'transparent',
+            color: PALETTE.muted,
+            border: `1px solid ${PALETTE.rule}`,
+            textDecoration: 'none',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = PALETTE.ink;
+            e.currentTarget.style.color = PALETTE.ink;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = PALETTE.rule;
+            e.currentTarget.style.color = PALETTE.muted;
+          }}
+          title="Jump to the All-Thailand database overlap and publisher flow"
+        >
+          ↓ Country context
+        </a>
         <div
           style={{
             fontFamily: FONT_MONO,
@@ -3661,6 +3688,79 @@ const FilterBar = ({ view, onViewChange, viewLabel }) => {
     </div>
   );
 };
+
+// ============================================================
+// COUNTRY-LEVEL CONTEXT SECTION
+// ============================================================
+// A clearly-marked section break for the panels that describe
+// Thailand's overall publishing landscape (database overlap and
+// publisher Sankey). The hr + kicker + framing paragraph signal
+// "you're now leaving the institution-specific analysis and entering
+// reference material that doesn't change with the filter." The
+// section has id="country-context" so the header anchor link can
+// jump readers here directly.
+const CountryContextSection = ({ children }) => (
+  <section
+    id="country-context"
+    style={{
+      // Tall top margin makes the break feel intentional rather than
+      // like the next adjacent panel.
+      marginTop: 56,
+      paddingTop: 32,
+      borderTop: `2px solid ${PALETTE.ink}`,
+      // Each panel inside this section already brings its own Card
+      // background, so we layer on a subtle wash to mark the section
+      // boundary without competing with the panels themselves.
+    }}
+  >
+    <div className="mb-8">
+      <div
+        className="mb-2 flex items-center gap-2 uppercase"
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: 10,
+          letterSpacing: '0.18em',
+          color: PALETTE.muted,
+        }}
+      >
+        <span>Section II · Country context</span>
+      </div>
+      <h2
+        style={{
+          fontFamily: FONT_DISPLAY,
+          fontSize: 32,
+          fontWeight: 500,
+          lineHeight: 1.1,
+          color: PALETTE.ink,
+          letterSpacing: '-0.01em',
+          marginBottom: 8,
+        }}
+      >
+        The all-Thailand publishing landscape
+      </h2>
+      <p
+        style={{
+          fontFamily: FONT_BODY,
+          fontSize: 14,
+          color: PALETTE.charcoal,
+          lineHeight: 1.55,
+          maxWidth: 760,
+        }}
+      >
+        These two views describe the structural shape of Thailand's 2025
+        publishing relationships and do not change with the institution
+        filter above. They are reference material for the times when the
+        country-wide picture is what's wanted. Database overlap shows
+        which subscription resources cover similar literature; publisher
+        flow shows where Thai-published research goes when it cites
+        other work.
+      </p>
+    </div>
+    <div className="space-y-6">
+      {children}
+    </div>
+  </section>
+);
 
 const Footer = () => (
   <footer
@@ -3821,9 +3921,10 @@ export default function Dashboard() {
       <Header generatedAt={data.meta?.generated_at} />
       <main className="mx-auto max-w-[1400px] px-6 py-8">
         <div className="space-y-6">
-          {/* Panoramic panels: do NOT depend on the institution filter */}
-          <OverlapHeatmap overlap={data.overlap} meta={data.meta} summary={data.summary} />
-          <PublisherSankey publisherSankey={data.publisher_sankey} />
+          {/* Institutional landscape: panoramic, but it's the entry point
+              for the rest of the dashboard (clicking an institution or
+              type pill drives the global filter). It belongs above the
+              filter bar even though it's not itself filter-dependent. */}
           <TopInstitutionsPanel
             institutions={data.institutions}
             onSelectInstitution={setView}
@@ -3888,6 +3989,22 @@ export default function Dashboard() {
             summary={data.summary}
             view={effectiveView}
           />
+
+          {/* Country-level structural context. These two views describe
+              the publishing landscape of Thailand 2025 as a whole; they
+              do not change with the institution filter. They live below
+              the action-driven panels because most users come here to
+              drill into a specific institution. The panels themselves
+              stay scrollable for the times when the country-wide picture
+              is what's wanted. */}
+          <CountryContextSection>
+            <OverlapHeatmap
+              overlap={data.overlap}
+              meta={data.meta}
+              summary={data.summary}
+            />
+            <PublisherSankey publisherSankey={data.publisher_sankey} />
+          </CountryContextSection>
         </div>
       </main>
       <Footer />
