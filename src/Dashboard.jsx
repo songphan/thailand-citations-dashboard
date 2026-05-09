@@ -3272,11 +3272,21 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
 // ============================================================
 // INSTITUTION TYPE BREAKDOWN  (clarified parentheses)
 // ============================================================
-const InstitutionTypesPanel = ({ institutionTypes }) => {
+const InstitutionTypesPanel = ({ institutionTypes, view }) => {
   const [mode, setMode] = useState('chart');
-  if (!institutionTypes) return null;
+  // Two data shapes are supported:
+  //   1. New (view-keyed):  { all_thailand: [...], I158708052: [...], type:education: [...] }
+  //   2. Legacy (flat array): [...]   (pre-v2.4 data, treated as all_thailand)
+  // The legacy fallback lets old data files keep working while the user
+  // regenerates with the new pipeline.
+  const items = useMemo(() => {
+    if (!institutionTypes) return null;
+    if (Array.isArray(institutionTypes)) return institutionTypes;
+    return institutionTypes[view] || institutionTypes.all_thailand || null;
+  }, [institutionTypes, view]);
+
   const data = useMemo(
-    () => institutionTypes
+    () => (items || [])
       .map((r) => ({
         type: r.type,
         n_edges: r.n_edges,
@@ -3284,12 +3294,17 @@ const InstitutionTypesPanel = ({ institutionTypes }) => {
         n_institutions: r.n_institutions,
       }))
       .sort((a, b) => b.n_edges - a.n_edges),
-    [institutionTypes],
+    [items],
   );
   const totalEdges = useMemo(
     () => data.reduce((s, r) => s + r.n_edges, 0),
     [data],
   );
+
+  // Null check goes after all hooks
+  if (!items) return null;
+
+  const isFiltered = view && view !== 'all_thailand';
 
   return (
     <Card className="p-5">
@@ -3297,10 +3312,18 @@ const InstitutionTypesPanel = ({ institutionTypes }) => {
         <SectionTitle
           icon={Tag}
           kicker="Sector mix"
-          title="Citations by institution type"
+          title={
+            isFiltered
+              ? 'Co-author institution types'
+              : 'Citations by institution type'
+          }
           totalN={totalEdges}
           totalLabel="citations"
-          hint="OpenAlex institutional classification. Citations counted across all author affiliations."
+          hint={
+            isFiltered
+              ? 'How citations break down by the type of institution that co-authored each paper. A paper with co-authors from multiple sectors counts once for each represented type, so totals across types are larger than the citation count for the view itself. This view shows the institutional collaboration footprint.'
+              : 'OpenAlex institutional classification. Citations counted across all author affiliations. A paper with co-authors from multiple sectors counts once for each represented type.'
+          }
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
@@ -3868,7 +3891,10 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ByTypePanel byType={data.by_type} view={effectiveView} />
-            <InstitutionTypesPanel institutionTypes={data.institution_types} />
+            <InstitutionTypesPanel
+              institutionTypes={data.institution_types}
+              view={effectiveView}
+            />
           </div>
 
           <InstitutionOverlapHeatmap
