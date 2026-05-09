@@ -3204,7 +3204,7 @@ const Header = ({ generatedAt }) => (
           maxWidth: 900,
         }}
       >
-        Thailand Citations and Databases Dashboard
+        Thailand 2025 Citations and Database Coverage Snapshot
       </h1>
 
       <p
