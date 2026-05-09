@@ -165,12 +165,21 @@ function useDataFiles() {
 // ============================================================
 // LAYOUT PRIMITIVES
 // ============================================================
-const Card = ({ children, className = '', style = {} }) => (
+// Card is the standard panel wrapper. The optional `filtered` prop
+// adds a thin burgundy left-border accent that signals "this panel
+// reflects the current filter." It pairs with the breadcrumb above:
+// the breadcrumb tells you WHAT the filter is, the accent shows
+// WHICH panels actually respond to it. The accent is only visible
+// when filtered=true, so it disappears entirely on All Thailand.
+const Card = ({ children, className = '', style = {}, filtered = false }) => (
   <section
     className={`border ${className}`}
     style={{
       background: PALETTE.paper,
       borderColor: PALETTE.rule,
+      ...(filtered && {
+        borderLeft: `3px solid ${PALETTE.burgundy}`,
+      }),
       ...style,
     }}
   >
@@ -484,7 +493,7 @@ const TopStats = ({ summary, view, viewLabel }) => {
   const vsPct = (thPct) => `TH: ${fmtPct(thPct)}`;
 
   return (
-    <Card className="p-0">
+    <Card className="p-0" filtered={isFiltered}>
       <div
         className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
         style={{ borderColor: PALETTE.rule }}
@@ -697,7 +706,7 @@ const CoverageTable = ({ coverage, summary, view }) => {
   }, [data, typeFilter]);
 
   return (
-    <Card className="p-5">
+    <Card className="p-5" filtered={isFiltered}>
       <SectionTitle
         icon={Database}
         kicker="Database coverage"
@@ -1593,7 +1602,7 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
   const m = data.meta || {};
 
   return (
-    <Card className="p-5">
+    <Card className="p-5" filtered={isFiltered}>
       <SectionTitle
         icon={GitBranch}
         kicker="Publisher flow"
@@ -2032,8 +2041,13 @@ const InstitutionOverlapHeatmap = ({ institutionOverlap, currentView }) => {
     return PALETTE.burgundy;
   };
 
+  // True when the global filter is active (any non-all_thailand view).
+  // Drives the burgundy left-border accent that ties this panel to the
+  // breadcrumb above.
+  const isFiltered = currentView && currentView !== 'all_thailand';
+
   return (
-    <Card className="p-5">
+    <Card className="p-5" filtered={isFiltered}>
       <SectionTitle
         icon={Building2}
         kicker="Institutional citation overlap"
@@ -2554,7 +2568,7 @@ const ByYearPanel = ({ byYear, view }) => {
   }, [raw, thailand]);
 
   return (
-    <Card className="p-5">
+    <Card className="p-5" filtered={isFiltered}>
       <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
         <SectionTitle
           icon={Calendar}
@@ -2721,9 +2735,10 @@ const ByTypePanel = ({ byType, view }) => {
   // ones — the chart filters out tiny types but the n should reflect the
   // full denominator.
   const totalAll = useMemo(() => items.reduce((s, r) => s + r.edges, 0), [items]);
+  const isFiltered = view !== 'all_thailand';
 
   return (
-    <Card className="p-5">
+    <Card className="p-5" filtered={isFiltered}>
       <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
         <SectionTitle
           icon={FileText}
@@ -2903,7 +2918,7 @@ const TopPublishersPanel = ({ byPublisher, summary, view }) => {
   const rowHeight = isFiltered ? 36 : 26;
 
   return (
-    <Card className="p-5">
+    <Card className="p-5" filtered={isFiltered}>
       <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
         <SectionTitle
           icon={BookOpen}
@@ -3243,10 +3258,10 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
         <SectionTitle
           icon={Building2}
           kicker="Institutional landscape"
-          title="Which Thai institutions produce the most cited research"
+          title="Thai institutions by 2025 publication output and citation activity"
           totalN={institutions.length}
           totalLabel="Thai institutions producing 2025 research"
-          hint="Each institution's 2025 publications (navy, primary, top axis) and the citations those publications make (muted burgundy, bottom axis), shown on independent scales. Institution names are colored by type. Click a type pill to filter to the type-aggregate; click a single bar or row to filter to that institution."
+          hint="Each institution's 2025 publications (navy, primary, top axis) and the citations those publications make to other works (muted burgundy, bottom axis), shown on independent scales. Both axes describe what the institution produced and the outgoing references in those publications, not how often the institution is cited. Institution names are colored by type. Click a type pill to filter to the type-aggregate; click a single bar or row to filter to that institution."
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
@@ -3535,7 +3550,7 @@ const InstitutionTypesPanel = ({ institutionTypes, view }) => {
   const isFiltered = view && view !== 'all_thailand';
 
   return (
-    <Card className="p-5">
+    <Card className="p-5" filtered={isFiltered}>
       <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
         <SectionTitle
           icon={Tag}
@@ -3910,8 +3925,18 @@ const Header = ({ generatedAt }) => (
 // ============================================================
 // FILTER BAR  (its own section between panoramic and filtered panels)
 // ============================================================
-const FilterBar = ({ view, onViewChange, viewLabel }) => {
-  const isFiltered = view !== 'all_thailand';
+// Breadcrumb-style filter bar. Replaces the prior single-label filter
+// indicator with a navigable chain (All Thailand › Education sector ›
+// Chulalongkorn University) showing the user's current filter context,
+// plus a one-line note describing which panels respond to it. Sticks
+// to the top of the viewport while scrolling so the user always knows
+// what filter is active.
+//
+// Each chain segment is clickable to jump to that level of the
+// hierarchy. The full chain is reconstructed in the parent component
+// based on the current view and passed in as `breadcrumbs`.
+const FilterBar = ({ breadcrumbs, onViewChange, affectedPanelCount }) => {
+  const isFiltered = breadcrumbs.length > 1;
   return (
     <div
       style={{
@@ -3923,12 +3948,10 @@ const FilterBar = ({ view, onViewChange, viewLabel }) => {
         zIndex: 20,
         marginTop: 8,
         marginBottom: 8,
-        // Subtle shadow gives the impression of depth when sticky;
-        // looks fine when not stuck too.
         boxShadow: '0 2px 6px rgba(26,22,18,0.05)',
       }}
     >
-      <div className="px-5 py-2.5 flex flex-wrap items-center gap-3">
+      <div className="px-5 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <div
           className="uppercase"
           style={{
@@ -3939,23 +3962,136 @@ const FilterBar = ({ view, onViewChange, viewLabel }) => {
             whiteSpace: 'nowrap',
           }}
         >
-          Filtered to
+          {isFiltered ? 'Filter' : 'View'}
         </div>
-        <div
-          style={{
-            fontFamily: FONT_DISPLAY,
-            fontSize: 18,
-            fontWeight: 500,
-            color: isFiltered ? PALETTE.burgundy : PALETTE.ink,
-            letterSpacing: '-0.01em',
-            lineHeight: 1.1,
-          }}
+
+        {/* Breadcrumb chain. Each segment is a clickable link except
+            the last one (which is the current location). Separators
+            are slim chevrons in the muted color. */}
+        <nav
+          className="flex flex-wrap items-center gap-x-2 gap-y-1"
+          aria-label="Filter breadcrumb"
         >
-          {viewLabel}
-        </div>
-        {isFiltered && (
+          {breadcrumbs.map((crumb, i) => {
+            const isLast = i === breadcrumbs.length - 1;
+            return (
+              <React.Fragment key={crumb.viewKey}>
+                {i > 0 && (
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      color: PALETTE.muted,
+                      fontFamily: FONT_BODY,
+                      fontSize: 14,
+                      lineHeight: 1,
+                    }}
+                  >
+                    ›
+                  </span>
+                )}
+                {isLast ? (
+                  <span
+                    style={{
+                      fontFamily: FONT_DISPLAY,
+                      fontSize: 18,
+                      fontWeight: 500,
+                      color: isFiltered ? PALETTE.burgundy : PALETTE.ink,
+                      letterSpacing: '-0.01em',
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {crumb.label}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => onViewChange(crumb.viewKey)}
+                    style={{
+                      fontFamily: FONT_BODY,
+                      fontSize: 13,
+                      color: PALETTE.muted,
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      textDecoration: 'underline dotted',
+                      textUnderlineOffset: 3,
+                      textDecorationColor: PALETTE.rule,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = PALETTE.ink;
+                      e.currentTarget.style.textDecorationColor = PALETTE.ink;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = PALETTE.muted;
+                      e.currentTarget.style.textDecorationColor = PALETTE.rule;
+                    }}
+                    title={`Go to ${crumb.label}`}
+                  >
+                    {crumb.label}
+                  </button>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </nav>
+
+        {/* Right-side controls and affected-panel hint */}
+        <div className="flex items-center gap-2 ml-auto flex-wrap">
+          {isFiltered && (
+            <div
+              className="hidden md:flex items-center gap-1.5"
+              style={{
+                fontFamily: FONT_BODY,
+                fontSize: 11,
+                color: PALETTE.muted,
+                lineHeight: 1.4,
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  display: 'inline-block',
+                  width: 10,
+                  height: 10,
+                  borderLeft: `3px solid ${PALETTE.burgundy}`,
+                  marginRight: 2,
+                }}
+              />
+              <span>
+                Reflects in {affectedPanelCount} panels below (marked with the
+                burgundy edge)
+              </span>
+            </div>
+          )}
+          {isFiltered && (
+            <button
+              onClick={() => onViewChange('all_thailand')}
+              className="px-2.5 py-1 transition-colors"
+              style={{
+                fontFamily: FONT_MONO,
+                fontSize: 10,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                background: 'transparent',
+                color: PALETTE.muted,
+                border: `1px solid ${PALETTE.rule}`,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = PALETTE.ink;
+                e.currentTarget.style.color = PALETTE.ink;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = PALETTE.rule;
+                e.currentTarget.style.color = PALETTE.muted;
+              }}
+            >
+              ✕ Reset
+            </button>
+          )}
           <button
-            onClick={() => onViewChange('all_thailand')}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="px-2.5 py-1 transition-colors"
             style={{
               fontFamily: FONT_MONO,
@@ -3977,47 +4113,8 @@ const FilterBar = ({ view, onViewChange, viewLabel }) => {
               e.currentTarget.style.color = PALETTE.muted;
             }}
           >
-            Reset
+            ↑ Top
           </button>
-        )}
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="px-2.5 py-1 transition-colors"
-          style={{
-            fontFamily: FONT_MONO,
-            fontSize: 10,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            background: 'transparent',
-            color: PALETTE.muted,
-            border: `1px solid ${PALETTE.rule}`,
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = PALETTE.ink;
-            e.currentTarget.style.color = PALETTE.ink;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = PALETTE.rule;
-            e.currentTarget.style.color = PALETTE.muted;
-          }}
-        >
-          ↑ Top
-        </button>
-        <div
-          className="flex-1 text-right hidden md:block"
-          style={{
-            fontFamily: FONT_BODY,
-            fontSize: 11,
-            color: PALETTE.muted,
-            lineHeight: 1.4,
-            minWidth: 180,
-          }}
-        >
-          {isFiltered
-            ? 'Scroll up to choose a different institution.'
-            : 'Click an institution in the landscape chart to filter.'}
         </div>
       </div>
     </div>
@@ -4201,6 +4298,60 @@ export default function Dashboard() {
     return view;
   }, [view, institutionViews, data.institutions]);
 
+  // Build the breadcrumb chain for the current view. Each crumb has a
+  // viewKey (so clicking it navigates back to that level) and a label.
+  // Examples:
+  //   view='all_thailand'      → [All Thailand]
+  //   view='type:education'    → [All Thailand, Education sector]
+  //   view='I158708052' (CU)   → [All Thailand, Education sector, Chulalongkorn University]
+  //
+  // For an institution view we look up its type from institution_views
+  // (or the institutions panel as a fallback) so the chain shows the
+  // user "this institution belongs to the Education sector." If we
+  // can't resolve the type, we fall back to a 2-level chain.
+  const breadcrumbs = useMemo(() => {
+    const crumbs = [{ viewKey: 'all_thailand', label: 'All Thailand' }];
+    if (view === 'all_thailand') return crumbs;
+    if (view.startsWith('type:')) {
+      const t = view.slice(5);
+      const cap = t.charAt(0).toUpperCase() + t.slice(1);
+      crumbs.push({ viewKey: view, label: `${cap} sector` });
+      return crumbs;
+    }
+    // Institution view. Try to find its type so the chain reads
+    // "All Thailand › <Type> sector › <Institution>".
+    let instType = null;
+    let instName = view;
+    const fromMeta = institutionViews.find((iv) => iv.id === view);
+    if (fromMeta) {
+      instType = fromMeta.type;
+      instName = fromMeta.name;
+    } else if (data.institutions) {
+      const fromList = data.institutions.find(
+        (r) => (r.id || '').replace('https://openalex.org/', '') === view,
+      );
+      if (fromList) {
+        instType = fromList.type;
+        instName = fromList.name;
+      }
+    }
+    // Only insert the type level if we have a known type AND it's
+    // also represented in the type_views list (so clicking it
+    // actually navigates somewhere meaningful).
+    const typeInList = typeViews.some(
+      (tv) => (typeof tv === 'string' ? tv === instType : tv?.type === instType),
+    );
+    if (instType && typeInList) {
+      const cap = instType.charAt(0).toUpperCase() + instType.slice(1);
+      crumbs.push({
+        viewKey: `type:${instType}`,
+        label: `${cap} sector`,
+      });
+    }
+    crumbs.push({ viewKey: view, label: instName });
+    return crumbs;
+  }, [view, institutionViews, typeViews, data.institutions]);
+
   if (data.status === 'loading') {
     return (
       <div
@@ -4269,11 +4420,19 @@ export default function Dashboard() {
             typeViews={typeViews}
           />
 
-          {/* Filter bar: readout + reset button */}
+          {/* Breadcrumb-style sticky filter bar. Shows the current
+              filter chain (All Thailand → Type sector → Institution),
+              describes how many panels respond to it, and provides a
+              quick reset. The 8 affected panels are: Top stats, Time
+              horizon, Material types, Sector composition, Institutional
+              citation overlap, Publisher concentration, Publisher flow,
+              and Database coverage. The Database catalog overlap at
+              the bottom is filter-INDEPENDENT and intentionally not
+              counted here. */}
           <FilterBar
-            view={effectiveView}
+            breadcrumbs={breadcrumbs}
             onViewChange={setView}
-            viewLabel={viewLabel}
+            affectedPanelCount={8}
           />
 
           {!viewExists && view !== 'all_thailand' && (
