@@ -1403,25 +1403,7 @@ const PublisherSankey = ({ publisherSankey }) => {
     if (!hasData) return { nodes: [], links: [] };
     return {
       nodes: data.nodes.map((n) => ({ ...n })),
-      // Sort by (source, target) ascending — required because we use
-      // iterations={0} on the Recharts Sankey to preserve the proportion
-      // ordering of nodes. d3-sankey's reorderLinks step (which would
-      // normally sort each node's sourceLinks/targetLinks by the y
-      // position of their counterpart) ONLY runs inside the iterations
-      // loop, so with iterations=0 it's skipped. Links within each node
-      // then stack in input-array order. The pipeline emits links sorted
-      // by value descending, which means the top-of-column-to-top-of-
-      // column band (e.g., Elsevier→Elsevier) ends up at the wrong y
-      // position because it's not first in either node's link list.
-      // Sorting by (source, target) here means: within each source
-      // node's outgoing links, they're in target-index order (top
-      // target first); within each target node's incoming links, they're
-      // in source-index order (top source first). With nodes already
-      // ordered by proportion on both sides, this aligns the bands so
-      // top-of-left connects to top-of-right cleanly.
-      links: data.links
-        .map((l) => ({ ...l }))
-        .sort((a, b) => a.source - b.source || a.target - b.target),
+      links: data.links.map((l) => ({ ...l })),
     };
   }, [data, hasData]);
 
@@ -1575,7 +1557,6 @@ const PublisherSankey = ({ publisherSankey }) => {
             link={<SankeyLink selectedNodeIndex={selectedNode} />}
             nodePadding={14}
             nodeWidth={10}
-            iterations={0}
             margin={{ top: 16, right: 220, bottom: 16, left: 220 }}
           >
             <Tooltip
