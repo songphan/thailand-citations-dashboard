@@ -3,6 +3,7 @@ import {
   Database, Network, AlertCircle, Loader2,
   Calendar, FileText, Building2, BookOpen, Tag,
   BarChart3, Table as TableIcon, GitBranch,
+  FlaskConical, Microscope, Languages,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -119,6 +120,11 @@ function useDataFiles() {
     institution_types: null,
     institution_overlap: null,
     publisher_sankey: null,
+    by_field: null,
+    by_subfield: null,
+    by_language: null,
+    field_sankey: null,
+    subfield_sankey: null,
   });
 
   useEffect(() => {
@@ -129,8 +135,15 @@ function useDataFiles() {
       'by_year', 'by_type', 'by_publisher',
       'institutions', 'institution_types',
     ];
-    // Optional files: load if present, ignore 404 silently
-    const optionalFiles = ['institution_overlap', 'publisher_sankey'];
+    // Optional files: load if present, ignore 404 silently. The
+    // disciplinary files (by_field/by_subfield/by_language and the
+    // discipline Sankeys) are optional because they require the
+    // enrichment step and may not be present on older builds.
+    const optionalFiles = [
+      'institution_overlap', 'publisher_sankey',
+      'by_field', 'by_subfield', 'by_language',
+      'field_sankey', 'subfield_sankey',
+    ];
 
     const loadRequired = Promise.all(
       requiredFiles.map((f) =>
@@ -1884,6 +1897,205 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
 // Pairwise heatmap showing what fraction of one Thai institution's
 // cited works are also cited by another, EXCLUDING citations from
 // papers the two co-authored together. Co-authored papers would
+// ============================================================
+//  DisciplineSankey — field/subfield seed-to-cited flow
+// ============================================================
+//
+// Renders the citing-side primary_field/subfield to cited-side
+// primary_field/subfield flow as a Sankey diagram. Reuses the same
+// visual vocabulary as PublisherSankey (navy seed nodes, burgundy
+// cited nodes, value-sorted link painting) for consistency. Two
+// instances are mounted in the dashboard: one for fields, one for
+// subfields, distinguished by the `level` prop.
+//
+// Data shape (from the pipeline's _compute_discipline_sankey):
+//   { nodes: [{name, side, total}, ...],
+//     links: [{source, target, value}, ...],
+//     meta:  {coverage_pct, n_seed_shown, n_cited_shown, level, ...} }
+//
+// This is intentionally lighter than PublisherSankey: no click-to-detail
+// table (the field/subfield space is small enough that the diagram
+// itself answers most questions), no per-publisher OA badge, no
+// hover deep-dive table. If user interest grows we can promote it.
+const DisciplineSankey = ({ sankey, view, viewLabel, isFiltered, level }) => {
+  const data = useMemo(() => {
+    if (!sankey) return null;
+    if (Array.isArray(sankey.nodes)) return sankey;
+    return sankey[view] || sankey.all_thailand || null;
+  }, [sankey, view]);
+
+  const hasData = data && Array.isArray(data.nodes) && data.nodes.length > 0
+    && Array.isArray(data.links) && data.links.length > 0;
+
+  // Sort links by value ascending so SVG painters render large bands
+  // on top (same trick as PublisherSankey).
+  const sankeyData = useMemo(() => {
+    if (!hasData) return { nodes: [], links: [] };
+    return {
+      nodes: data.nodes.map((n) => ({ ...n })),
+      links: data.links
+        .map((l) => ({ ...l }))
+        .sort((a, b) => a.value - b.value),
+    };
+  }, [data, hasData]);
+
+  if (!sankey) {
+    return (
+      <EnrichmentPlaceholder
+        icon={GitBranch}
+        kicker={`${level === 'field' ? 'Field' : 'Subfield'} flow`}
+        title={`${level === 'field' ? 'Field' : 'Subfield'}-to-${level} citation flow`}
+        message={`Sankey diagram of citation flow from citing-side to cited-side OpenAlex ${level}s.`}
+      />
+    );
+  }
+
+  if (!hasData) {
+    return (
+      <Card className="p-5">
+        <SectionTitle
+          icon={GitBranch}
+          kicker={`${level === 'field' ? 'Field' : 'Subfield'} flow`}
+          title={`${level === 'field' ? 'Field' : 'Subfield'}-to-${level} citation flow`}
+          hint={`Not enough ${level} metadata in this view to render a Sankey.`}
+        />
+      </Card>
+    );
+  }
+
+  const m = data.meta || {};
+  const titleVerb = isFiltered && viewLabel
+    ? `${level === 'field' ? 'Fields' : 'Subfields'} of 2025 papers by ${viewLabel} and the ${level}s they cite`
+    : `${level === 'field' ? 'Fields' : 'Subfields'} of Thai 2025 papers and the ${level}s they cite`;
+
+  return (
+    <Card className="p-5" filtered={isFiltered}>
+      <SectionTitle
+        icon={GitBranch}
+        kicker={`${level === 'field' ? 'Field' : 'Subfield'} flow`}
+        title={titleVerb}
+        totalN={m.total_edges_with_both}
+        totalLabel={`citations with ${level} metadata on both sides (${m.coverage_pct || 0}% of this view's citations)`}
+        hint={
+          level === 'field'
+            ? `Each strand is a flow from a citing-side primary field (left, navy) to a cited-side primary field (right, burgundy); thickness is proportional to the number of citation edges. Top ${(m.n_seed_shown || 1) - 1} fields on each side are shown by name; the rest aggregate into "Other fields". Diagonal flows (a field citing itself) are usually the dominant bands.`
+            : `Each strand is a flow from a citing-side subfield to a cited-side subfield. Top ${(m.n_seed_shown || 1) - 1} subfields on each side are shown; everything outside the top is rolled into "Other subfields". The subfield space is much larger than fields, so the "Other" bucket typically holds a substantial fraction of total flow.`
+        }
+      />
+
+      <div
+        className="mb-4 flex flex-wrap items-center gap-3"
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: 9,
+          letterSpacing: '0.12em',
+          color: PALETTE.muted,
+          textTransform: 'uppercase',
+        }}
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <span style={{
+            display: 'inline-block', width: 14, height: 9,
+            background: PALETTE.navy,
+          }} />
+          Citing side ({level})
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span style={{
+            display: 'inline-block', width: 14, height: 9,
+            background: PALETTE.burgundy,
+          }} />
+          Cited side ({level})
+        </span>
+      </div>
+
+      <div style={{ width: '100%', height: 540 }}>
+        <ResponsiveContainer>
+          <Sankey
+            data={sankeyData}
+            sort={false}
+            nodePadding={level === 'subfield' ? 4 : 8}
+            nodeWidth={12}
+            margin={{ top: 10, right: 220, bottom: 10, left: 220 }}
+            link={{ stroke: PALETTE.muted, strokeOpacity: 0.18, fill: PALETTE.muted, fillOpacity: 0.18 }}
+            node={(props) => {
+              const { x, y, width, height, payload } = props;
+              const isSeedSide = payload.side === 'seed';
+              return (
+                <g>
+                  <Rectangle
+                    x={x}
+                    y={y}
+                    width={width}
+                    height={height}
+                    fill={isSeedSide ? PALETTE.navy : PALETTE.burgundy}
+                    fillOpacity={1}
+                    stroke="none"
+                  />
+                  <text
+                    x={isSeedSide ? x - 8 : x + width + 8}
+                    y={y + height / 2}
+                    textAnchor={isSeedSide ? 'end' : 'start'}
+                    dominantBaseline="middle"
+                    style={{
+                      fontFamily: FONT_BODY,
+                      fontSize: level === 'subfield' ? 10 : 11,
+                      fill: PALETTE.charcoal,
+                    }}
+                  >
+                    {payload.name}
+                  </text>
+                </g>
+              );
+            }}
+          >
+            <Tooltip
+              contentStyle={{
+                background: PALETTE.paper,
+                border: `1px solid ${PALETTE.ink}`,
+                fontFamily: FONT_BODY,
+                fontSize: 12,
+                borderRadius: 0,
+              }}
+              formatter={(value, name, props) => {
+                const p = props.payload;
+                if (p && p.source && p.target) {
+                  return [
+                    `${fmtFull(p.value)} citations`,
+                    `${p.source.name} → ${p.target.name}`,
+                  ];
+                }
+                return [`${fmtFull(value)} citations`, name];
+              }}
+            />
+          </Sankey>
+        </ResponsiveContainer>
+      </div>
+
+      {m.n_links_dropped > 0 && (
+        <div
+          className="mt-2"
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            color: PALETTE.muted,
+            letterSpacing: '0.06em',
+          }}
+        >
+          {m.n_links_dropped} small link{m.n_links_dropped === 1 ? '' : 's'} hidden
+          ({fmt(m.edges_dropped)} citations, threshold = {fmt(m.min_link_threshold)})
+        </div>
+      )}
+    </Card>
+  );
+};
+
+
+// ============================================================
+//  InstitutionOverlapHeatmap
+// ============================================================
+//
+// Pairwise citation overlap among the top N Thai institutions, with
 // inflate every cell artificially: those edges contribute the same
 // cited works to both institutions by definition. Removing them
 // tests whether two institutions independently arrive at citing
@@ -2879,6 +3091,517 @@ const PublisherYTick = ({ x, y, payload }) => {
     </g>
   );
 };
+
+// ============================================================
+//  Disciplinary panels (field, subfield, language)
+// ============================================================
+//
+// All three follow the same shape as ByTypePanel: a horizontal bar chart
+// of the citing-side distribution for the current view, with a chart/table
+// toggle and a clickable bar that drills into the corresponding view
+// (field:X or subfield:X). Bars use navy by default and burgundy for the
+// top entry; the active filter (if any) gets a bold burgundy outline.
+//
+// These panels render an "enrichment needed" placeholder if the data
+// file is missing, so the dashboard still works when the topic
+// enrichment hasn't been run yet.
+
+// Shared placeholder UI for a panel when its data source is missing.
+const EnrichmentPlaceholder = ({ icon: Icon, kicker, title, message }) => (
+  <Card className="p-5">
+    <SectionTitle
+      icon={Icon}
+      kicker={kicker}
+      title={title}
+      hint={message}
+    />
+    <div
+      className="p-6 text-center mt-3"
+      style={{
+        fontFamily: FONT_BODY,
+        fontSize: 13,
+        color: PALETTE.muted,
+        background: PALETTE.cream,
+        border: `1px dashed ${PALETTE.rule}`,
+      }}
+    >
+      Run the topic and language enrichment, then re-run the pipeline
+      to populate this panel.
+    </div>
+  </Card>
+);
+
+const ByFieldPanel = ({ byField, view, currentView, onViewChange }) => {
+  const [mode, setMode] = useState('chart');
+
+  if (!byField) {
+    return (
+      <EnrichmentPlaceholder
+        icon={FlaskConical}
+        kicker="Disciplinary distribution"
+        title="Citing publications by primary field"
+        message="Distribution of citing publications across OpenAlex's ~25 primary fields."
+      />
+    );
+  }
+  if (!byField[view]) return null;
+
+  const items = byField[view] || [];
+  const total = useMemo(() => items.reduce((s, r) => s + r.edges, 0), [items]);
+  const chartData = useMemo(
+    () => items.map((r) => ({
+      field: r.field,
+      edges: r.edges,
+      n_seeds: r.n_seeds,
+      pct: total ? (r.edges / total) * 100 : 0,
+    })),
+    [items, total],
+  );
+
+  // Active discipline filter — used to highlight the matching bar.
+  const activeField = currentView && currentView.startsWith('field:')
+    ? currentView.slice(6)
+    : null;
+
+  const isFiltered = view !== 'all_thailand';
+
+  // Click-to-filter: jumping to a field view is the natural drill-down.
+  // Skips the '(unknown)' bucket since it isn't a real filter target.
+  const handleClick = (data) => {
+    if (!data || !data.activePayload || !data.activePayload[0]) return;
+    const f = data.activePayload[0].payload.field;
+    if (!f || f === '(unknown)') return;
+    if (onViewChange) onViewChange(`field:${f}`);
+  };
+
+  return (
+    <Card className="p-5" filtered={isFiltered}>
+      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+        <SectionTitle
+          icon={FlaskConical}
+          kicker="Disciplinary distribution"
+          title="Citing publications by primary field"
+          totalN={total}
+          totalLabel="citations from these fields"
+          hint="Each citing publication's primary OpenAlex field, summed by reference count. Click a bar to filter the dashboard to that field."
+        />
+        <ChartTableToggle mode={mode} onChange={setMode} />
+      </div>
+
+      {mode === 'chart' ? (
+        <div style={{ width: '100%', height: Math.max(260, chartData.length * 26) }}>
+          <ResponsiveContainer>
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              margin={{ top: 4, right: 60, bottom: 4, left: 220 }}
+              onClick={handleClick}
+            >
+              <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
+              <XAxis
+                type="number"
+                tickFormatter={fmt}
+                tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+                stroke={PALETTE.rule}
+              />
+              <YAxis
+                type="category"
+                dataKey="field"
+                tick={{ fontSize: 11, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
+                stroke={PALETTE.rule}
+                width={220}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: PALETTE.paper,
+                  border: `1px solid ${PALETTE.ink}`,
+                  fontFamily: FONT_BODY,
+                  fontSize: 12,
+                  borderRadius: 0,
+                }}
+                labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
+                formatter={(value, _name, props) => [
+                  `${fmtFull(value)} (${props.payload.pct.toFixed(1)}%)`,
+                  'Citations',
+                ]}
+              />
+              <Bar dataKey="edges" cursor="pointer">
+                {chartData.map((d, i) => (
+                  <Cell
+                    key={i}
+                    fill={
+                      d.field === activeField
+                        ? PALETTE.burgundy
+                        : i === 0 && !activeField
+                          ? PALETTE.burgundy
+                          : PALETTE.navy
+                    }
+                    stroke={d.field === activeField ? PALETTE.ink : 'none'}
+                    strokeWidth={d.field === activeField ? 2 : 0}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <div className="mt-3 overflow-x-auto">
+          <table style={{ width: '100%', fontFamily: FONT_BODY, fontSize: 12 }}>
+            <thead>
+              <tr style={{ borderBottom: `2px solid ${PALETTE.ink}` }}>
+                <th style={{ textAlign: 'left', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Field</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Seeds</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Citations</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chartData.map((r) => (
+                <tr
+                  key={r.field}
+                  style={{
+                    borderBottom: `1px solid ${PALETTE.rule}`,
+                    cursor: r.field === '(unknown)' ? 'default' : 'pointer',
+                    background: r.field === activeField ? PALETTE.cream : 'transparent',
+                  }}
+                  onClick={() => {
+                    if (r.field !== '(unknown)' && onViewChange) {
+                      onViewChange(`field:${r.field}`);
+                    }
+                  }}
+                >
+                  <td style={{ padding: '6px 8px', color: PALETTE.charcoal }}>{r.field}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.muted }}>{fmt(r.n_seeds)}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.ink }}>{fmt(r.edges)}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.muted }}>{r.pct.toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+};
+
+const BySubfieldPanel = ({ bySubfield, view, currentView, onViewChange, subfieldViews }) => {
+  const [mode, setMode] = useState('chart');
+
+  if (!bySubfield) {
+    return (
+      <EnrichmentPlaceholder
+        icon={Microscope}
+        kicker="Subfield distribution"
+        title="Citing publications by primary subfield"
+        message="Distribution of citing publications across OpenAlex's ~250 subfields. Top 30 are shown individually; the rest roll up to '(other)'."
+      />
+    );
+  }
+  if (!bySubfield[view]) return null;
+
+  const items = bySubfield[view] || [];
+  const total = useMemo(() => items.reduce((s, r) => s + r.edges, 0), [items]);
+  const chartData = useMemo(
+    () => items.map((r) => ({
+      subfield: r.subfield,
+      edges: r.edges,
+      n_seeds: r.n_seeds,
+      pct: total ? (r.edges / total) * 100 : 0,
+      n_rolled_up: r.n_subfields_rolled_up || 0,
+    })),
+    [items, total],
+  );
+
+  const activeSubfield = currentView && currentView.startsWith('subfield:')
+    ? currentView.slice(9)
+    : null;
+  const isFiltered = view !== 'all_thailand';
+
+  // Subfield filter is only available for the top 50 subfields that
+  // were precomputed by the pipeline. Build a lookup so we can disable
+  // the click for subfields that don't have a precomputed view (and the
+  // '(other)' rollup, which is not a real subfield).
+  const filterableSubfields = useMemo(() => {
+    if (!subfieldViews) return new Set();
+    return new Set(subfieldViews.map((sv) => sv.subfield));
+  }, [subfieldViews]);
+
+  const handleClick = (data) => {
+    if (!data || !data.activePayload || !data.activePayload[0]) return;
+    const sf = data.activePayload[0].payload.subfield;
+    if (!sf || sf === '(unknown)' || sf === '(other)') return;
+    if (!filterableSubfields.has(sf)) return;
+    if (onViewChange) onViewChange(`subfield:${sf}`);
+  };
+
+  return (
+    <Card className="p-5" filtered={isFiltered}>
+      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+        <SectionTitle
+          icon={Microscope}
+          kicker="Subfield distribution"
+          title="Citing publications by primary subfield"
+          totalN={total}
+          totalLabel="citations from these subfields"
+          hint="Top 30 subfields by citation count, with the rest aggregated as '(other)'. Click a top subfield to filter, but only the top 50 subfields by overall citation activity have precomputed views."
+        />
+        <ChartTableToggle mode={mode} onChange={setMode} />
+      </div>
+
+      {mode === 'chart' ? (
+        <div style={{ width: '100%', height: Math.max(280, chartData.length * 22) }}>
+          <ResponsiveContainer>
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              margin={{ top: 4, right: 60, bottom: 4, left: 240 }}
+              onClick={handleClick}
+            >
+              <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
+              <XAxis
+                type="number"
+                tickFormatter={fmt}
+                tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+                stroke={PALETTE.rule}
+              />
+              <YAxis
+                type="category"
+                dataKey="subfield"
+                tick={{ fontSize: 10, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
+                stroke={PALETTE.rule}
+                width={240}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: PALETTE.paper,
+                  border: `1px solid ${PALETTE.ink}`,
+                  fontFamily: FONT_BODY,
+                  fontSize: 12,
+                  borderRadius: 0,
+                }}
+                labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
+                formatter={(value, _name, props) => [
+                  `${fmtFull(value)} (${props.payload.pct.toFixed(1)}%)`,
+                  props.payload.n_rolled_up
+                    ? `Citations (${props.payload.n_rolled_up} subfields rolled up)`
+                    : 'Citations',
+                ]}
+              />
+              <Bar dataKey="edges" cursor="pointer">
+                {chartData.map((d, i) => (
+                  <Cell
+                    key={i}
+                    fill={
+                      d.subfield === '(other)'
+                        ? PALETTE.muted
+                        : d.subfield === activeSubfield
+                          ? PALETTE.burgundy
+                          : i === 0 && !activeSubfield
+                            ? PALETTE.burgundy
+                            : PALETTE.navy
+                    }
+                    stroke={d.subfield === activeSubfield ? PALETTE.ink : 'none'}
+                    strokeWidth={d.subfield === activeSubfield ? 2 : 0}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <div className="mt-3 overflow-x-auto">
+          <table style={{ width: '100%', fontFamily: FONT_BODY, fontSize: 12 }}>
+            <thead>
+              <tr style={{ borderBottom: `2px solid ${PALETTE.ink}` }}>
+                <th style={{ textAlign: 'left', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Subfield</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Seeds</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Citations</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chartData.map((r) => {
+                const clickable =
+                  r.subfield !== '(unknown)' &&
+                  r.subfield !== '(other)' &&
+                  filterableSubfields.has(r.subfield);
+                return (
+                  <tr
+                    key={r.subfield}
+                    style={{
+                      borderBottom: `1px solid ${PALETTE.rule}`,
+                      cursor: clickable ? 'pointer' : 'default',
+                      background: r.subfield === activeSubfield ? PALETTE.cream : 'transparent',
+                    }}
+                    onClick={() => {
+                      if (clickable && onViewChange) {
+                        onViewChange(`subfield:${r.subfield}`);
+                      }
+                    }}
+                  >
+                    <td style={{ padding: '6px 8px', color: PALETTE.charcoal }}>
+                      {r.subfield}
+                      {r.n_rolled_up > 0 && (
+                        <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: PALETTE.muted, marginLeft: 6 }}>
+                          ({r.n_rolled_up} rolled up)
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.muted }}>{fmt(r.n_seeds)}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.ink }}>{fmt(r.edges)}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.muted }}>{r.pct.toFixed(1)}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+};
+
+// Display names for ISO-639-1 language codes seen in our corpus.
+// Anything not in this map renders as the raw code so unfamiliar
+// codes are still legible (and the curator can extend this as new
+// languages appear).
+const LANGUAGE_DISPLAY = {
+  en: 'English',
+  th: 'Thai',
+  zh: 'Chinese',
+  ja: 'Japanese',
+  ko: 'Korean',
+  fr: 'French',
+  de: 'German',
+  es: 'Spanish',
+  pt: 'Portuguese',
+  ru: 'Russian',
+  vi: 'Vietnamese',
+  id: 'Indonesian',
+  ar: 'Arabic',
+  it: 'Italian',
+  nl: 'Dutch',
+  '(unknown)': '(unknown)',
+};
+
+const ByLanguagePanel = ({ byLanguage, view }) => {
+  const [mode, setMode] = useState('chart');
+
+  if (!byLanguage) {
+    return (
+      <EnrichmentPlaceholder
+        icon={Languages}
+        kicker="Language"
+        title="Citing publications by language"
+        message="Language distribution of the citing Thai 2025 publications (ISO-639-1)."
+      />
+    );
+  }
+  if (!byLanguage[view]) return null;
+
+  const items = byLanguage[view] || [];
+  const total = useMemo(() => items.reduce((s, r) => s + r.edges, 0), [items]);
+  const chartData = useMemo(
+    () => items.map((r) => ({
+      code: r.language,
+      label: LANGUAGE_DISPLAY[r.language] || r.language,
+      edges: r.edges,
+      n_seeds: r.n_seeds,
+      pct: total ? (r.edges / total) * 100 : 0,
+    })),
+    [items, total],
+  );
+
+  const isFiltered = view !== 'all_thailand';
+
+  return (
+    <Card className="p-5" filtered={isFiltered}>
+      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+        <SectionTitle
+          icon={Languages}
+          kicker="Language"
+          title="Citing publications by language"
+          totalN={total}
+          totalLabel="citations"
+          hint="Language of the citing Thai 2025 publications, weighted by reference count. Languages other than English usually indicate domestic-audience journals; the share is a useful indicator of the corpus's local-versus-international visibility."
+        />
+        <ChartTableToggle mode={mode} onChange={setMode} />
+      </div>
+
+      {mode === 'chart' ? (
+        <div style={{ width: '100%', height: Math.max(180, chartData.length * 30) }}>
+          <ResponsiveContainer>
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              margin={{ top: 4, right: 60, bottom: 4, left: 130 }}
+            >
+              <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
+              <XAxis
+                type="number"
+                tickFormatter={fmt}
+                tick={{ fontSize: 10, fill: PALETTE.muted, fontFamily: FONT_MONO }}
+                stroke={PALETTE.rule}
+              />
+              <YAxis
+                type="category"
+                dataKey="label"
+                tick={{ fontSize: 11, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
+                stroke={PALETTE.rule}
+                width={130}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: PALETTE.paper,
+                  border: `1px solid ${PALETTE.ink}`,
+                  fontFamily: FONT_BODY,
+                  fontSize: 12,
+                  borderRadius: 0,
+                }}
+                labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
+                formatter={(value, _n, props) => [
+                  `${fmtFull(value)} (${props.payload.pct.toFixed(1)}%)`,
+                  'Citations',
+                ]}
+              />
+              <Bar dataKey="edges">
+                {chartData.map((d, i) => (
+                  <Cell key={i} fill={i === 0 ? PALETTE.burgundy : PALETTE.navy} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <div className="mt-3 overflow-x-auto">
+          <table style={{ width: '100%', fontFamily: FONT_BODY, fontSize: 12 }}>
+            <thead>
+              <tr style={{ borderBottom: `2px solid ${PALETTE.ink}` }}>
+                <th style={{ textAlign: 'left', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Language</th>
+                <th style={{ textAlign: 'left', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Code</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Seeds</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Citations</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chartData.map((r) => (
+                <tr key={r.code} style={{ borderBottom: `1px solid ${PALETTE.rule}` }}>
+                  <td style={{ padding: '6px 8px', color: PALETTE.charcoal }}>{r.label}</td>
+                  <td style={{ padding: '6px 8px', fontFamily: FONT_MONO, color: PALETTE.muted }}>{r.code}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.muted }}>{fmt(r.n_seeds)}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.ink }}>{fmt(r.edges)}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.muted }}>{r.pct.toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+};
+
 
 const TopPublishersPanel = ({ byPublisher, summary, view }) => {
   const [mode, setMode] = useState('chart');
@@ -4277,6 +5000,8 @@ export default function Dashboard() {
 
   const institutionViews = data.meta?.institution_views || [];
   const typeViews = data.meta?.type_views || [];
+  const fieldViews = data.meta?.field_views || [];
+  const subfieldViews = data.meta?.subfield_views || [];
   const viewLabel = useMemo(() => {
     if (view === 'all_thailand') return 'All Thailand';
     // Type-aggregate view (e.g. 'type:education')
@@ -4284,6 +5009,14 @@ export default function Dashboard() {
       const t = view.slice(5);
       const cap = t.charAt(0).toUpperCase() + t.slice(1);
       return `All ${cap} institutions`;
+    }
+    // Field view (e.g. 'field:Medicine')
+    if (view.startsWith('field:')) {
+      return `${view.slice(6)} (field)`;
+    }
+    // Subfield view (e.g. 'subfield:Cardiology')
+    if (view.startsWith('subfield:')) {
+      return `${view.slice(9)} (subfield)`;
     }
     // Lookup in the top-N (institution_views in meta.json)
     const fromMeta = institutionViews.find((iv) => iv.id === view);
@@ -4304,6 +5037,8 @@ export default function Dashboard() {
   //   view='all_thailand'      → [All Thailand]
   //   view='type:education'    → [All Thailand, Education sector]
   //   view='I158708052' (CU)   → [All Thailand, Education sector, Chulalongkorn University]
+  //   view='field:Medicine'    → [All Thailand, Medicine (field)]
+  //   view='subfield:Cardiology' → [All Thailand, Cardiology (subfield)]
   //
   // For an institution view we look up its type from institution_views
   // (or the institutions panel as a fallback) so the chain shows the
@@ -4316,6 +5051,16 @@ export default function Dashboard() {
       const t = view.slice(5);
       const cap = t.charAt(0).toUpperCase() + t.slice(1);
       crumbs.push({ viewKey: view, label: `${cap} sector` });
+      return crumbs;
+    }
+    if (view.startsWith('field:')) {
+      const f = view.slice(6);
+      crumbs.push({ viewKey: view, label: `${f} (field)` });
+      return crumbs;
+    }
+    if (view.startsWith('subfield:')) {
+      const sf = view.slice(9);
+      crumbs.push({ viewKey: view, label: `${sf} (subfield)` });
       return crumbs;
     }
     // Institution view. Try to find its type so the chain reads
@@ -4397,6 +5142,17 @@ export default function Dashboard() {
   const viewExists = data.summary && data.summary[view];
   const effectiveView = viewExists ? view : 'all_thailand';
 
+  // Flags that drive layout decisions:
+  //   isInstitutionFilter — institution OR type-sector view
+  //   isDisciplineFilter  — field OR subfield view
+  // The two are mutually exclusive (we don't combine them in v1), so
+  // we hide the institutional surfaces when discipline is active and
+  // vice versa is not needed (the disciplinary landscape stays visible
+  // because it works as both a distribution and a picker, even when
+  // the user is in an institution view).
+  const isDisciplineFilter =
+    effectiveView.startsWith('field:') || effectiveView.startsWith('subfield:');
+
   return (
     <div
       style={{
@@ -4410,29 +5166,41 @@ export default function Dashboard() {
       <main className="mx-auto max-w-[1400px] px-6 py-8">
         <div className="space-y-6">
           {/* Institutional landscape: panoramic, but it's the entry point
-              for the rest of the dashboard (clicking an institution or
-              type pill drives the global filter). It belongs above the
-              filter bar even though it's not itself filter-dependent. */}
-          <TopInstitutionsPanel
-            institutions={data.institutions}
-            onSelectInstitution={setView}
+              for the institution-side of the dashboard (clicking an
+              institution or type pill drives the global filter). It
+              belongs above the filter bar even though it's not itself
+              filter-dependent. Hidden when a field/subfield filter is
+              active because the institutional view doesn't combine with
+              the discipline view in v1. */}
+          {!isDisciplineFilter && (
+            <TopInstitutionsPanel
+              institutions={data.institutions}
+              onSelectInstitution={setView}
+              currentView={effectiveView}
+              typeViews={typeViews}
+            />
+          )}
+
+          {/* Disciplinary landscape: parallel to the institutional
+              landscape. The by-field panel doubles as the field picker
+              (clickable bars set the filter to field:X). It stays
+              visible regardless of the active filter — under an
+              institution filter it shows that institution's field
+              distribution, under a discipline filter it highlights the
+              active field, and on All Thailand it shows the country's
+              full disciplinary distribution. */}
+          <ByFieldPanel
+            byField={data.by_field}
+            view={effectiveView}
             currentView={effectiveView}
-            typeViews={typeViews}
+            onViewChange={setView}
           />
 
-          {/* Breadcrumb-style sticky filter bar. Shows the current
-              filter chain (All Thailand → Type sector → Institution),
-              describes how many panels respond to it, and provides a
-              quick reset. The 8 affected panels are: Top stats, Time
-              horizon, Material types, Sector composition, Institutional
-              citation overlap, Publisher concentration, Publisher flow,
-              and Database coverage. The Database catalog overlap at
-              the bottom is filter-INDEPENDENT and intentionally not
-              counted here. */}
+          {/* Breadcrumb-style sticky filter bar. */}
           <FilterBar
             breadcrumbs={breadcrumbs}
             onViewChange={setView}
-            affectedPanelCount={8}
+            affectedPanelCount={isDisciplineFilter ? 8 : 9}
           />
 
           {!viewExists && view !== 'all_thailand' && (
@@ -4447,9 +5215,9 @@ export default function Dashboard() {
                   color: PALETTE.charcoal,
                 }}
               >
-                Showing All Thailand because per-institution data has not been
-                exported yet. Re-run <code>python export_dashboard_v2.py</code>
-                to generate institution-specific views.
+                Showing All Thailand because per-view data has not been
+                exported yet for <code>{view}</code>. Re-run{' '}
+                <code>python export_dashboard_v2.py</code> to generate this view.
               </div>
             </Card>
           )}
@@ -4464,16 +5232,66 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ByTypePanel byType={data.by_type} view={effectiveView} />
-            <InstitutionTypesPanel
-              institutionTypes={data.institution_types}
-              view={effectiveView}
-            />
+            {/* Sector composition lives next to material types as the
+                pair of "what's being cited" distributions. Hidden under
+                discipline filter because institutional sector is not a
+                disciplinary attribute. */}
+            {!isDisciplineFilter && (
+              <InstitutionTypesPanel
+                institutionTypes={data.institution_types}
+                view={effectiveView}
+              />
+            )}
+            {isDisciplineFilter && (
+              <ByLanguagePanel
+                byLanguage={data.by_language}
+                view={effectiveView}
+              />
+            )}
           </div>
 
-          <InstitutionOverlapHeatmap
-            institutionOverlap={data.institution_overlap}
+          {/* Subfield distribution — appears in all views, but is most
+              informative when a field filter is active (it then shows
+              the subfields WITHIN that field) or on All Thailand. */}
+          <BySubfieldPanel
+            bySubfield={data.by_subfield}
+            view={effectiveView}
             currentView={effectiveView}
+            onViewChange={setView}
+            subfieldViews={subfieldViews}
           />
+
+          {/* Language distribution — only shown here (rather than next
+              to material types) when discipline filter is NOT active,
+              to keep the layout simple. Under discipline filter it
+              moved up next to material types instead. */}
+          {!isDisciplineFilter && (
+            <ByLanguagePanel
+              byLanguage={data.by_language}
+              view={effectiveView}
+            />
+          )}
+
+          {/* Institutional citation overlap heatmap. Hidden under
+              field/subfield filter because the matrix is computed
+              against all_thailand citations and isn't recomputed
+              per-discipline (would be prohibitively expensive); a
+              short note replaces it. */}
+          {!isDisciplineFilter ? (
+            <InstitutionOverlapHeatmap
+              institutionOverlap={data.institution_overlap}
+              currentView={effectiveView}
+            />
+          ) : (
+            <Card className="p-5">
+              <SectionTitle
+                icon={Building2}
+                kicker="Institutional citation overlap"
+                title="Hidden under disciplinary filter"
+                hint="The institutional citation overlap matrix is computed against the country-wide citation pattern. It does not re-aggregate by discipline. Switch to All Thailand or to a single institution to see the matrix."
+              />
+            </Card>
+          )}
 
           <TopPublishersPanel
             byPublisher={data.by_publisher}
@@ -4489,6 +5307,26 @@ export default function Dashboard() {
             viewLabel={viewLabel}
             isFiltered={effectiveView !== 'all_thailand'}
           />
+
+          {/* Discipline Sankeys: field-level and subfield-level
+              citation flow. The field Sankey is more readable; the
+              subfield one is denser but valuable for understanding
+              specific disciplinary cross-citation. */}
+          <DisciplineSankey
+            sankey={data.field_sankey}
+            view={effectiveView}
+            viewLabel={viewLabel}
+            isFiltered={effectiveView !== 'all_thailand'}
+            level="field"
+          />
+          <DisciplineSankey
+            sankey={data.subfield_sankey}
+            view={effectiveView}
+            viewLabel={viewLabel}
+            isFiltered={effectiveView !== 'all_thailand'}
+            level="subfield"
+          />
+
           <CoverageTable
             coverage={data.coverage}
             summary={data.summary}
