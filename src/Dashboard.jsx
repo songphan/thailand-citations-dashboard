@@ -3274,6 +3274,7 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
 // ============================================================
 const InstitutionTypesPanel = ({ institutionTypes, view }) => {
   const [mode, setMode] = useState('chart');
+  const [showSamples, setShowSamples] = useState(false);
   // Two data shapes are supported:
   //   1. New (view-keyed):  { all_thailand: [...], I158708052: [...], type:education: [...] }
   //   2. Legacy (flat array): [...]   (pre-v2.4 data, treated as all_thailand)
@@ -3292,12 +3293,17 @@ const InstitutionTypesPanel = ({ institutionTypes, view }) => {
         n_edges: r.n_edges,
         n_seeds: r.n_seeds,
         n_institutions: r.n_institutions,
+        sample_institutions: r.sample_institutions || [],
       }))
       .sort((a, b) => b.n_edges - a.n_edges),
     [items],
   );
   const totalEdges = useMemo(
     () => data.reduce((s, r) => s + r.n_edges, 0),
+    [data],
+  );
+  const hasSamples = useMemo(
+    () => data.some((r) => r.sample_institutions && r.sample_institutions.length > 0),
     [data],
   );
 
@@ -3311,18 +3317,14 @@ const InstitutionTypesPanel = ({ institutionTypes, view }) => {
       <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
         <SectionTitle
           icon={Tag}
-          kicker="Sector mix"
-          title={
-            isFiltered
-              ? 'Co-author institution types'
-              : 'Citations by institution type'
-          }
+          kicker="Sector composition"
+          title="Citing publications by institutional sector"
           totalN={totalEdges}
-          totalLabel="citations"
+          totalLabel="citations (fractionally weighted by sector composition)"
           hint={
             isFiltered
-              ? 'How citations break down by the type of institution that co-authored each paper. A paper with co-authors from multiple sectors counts once for each represented type, so totals across types are larger than the citation count for the view itself. This view shows the institutional collaboration footprint.'
-              : 'OpenAlex institutional classification. Citations counted across all author affiliations. A paper with co-authors from multiple sectors counts once for each represented type.'
+              ? "Each citing publication is split fractionally across the institutional types of its co-authors, then weighted by the citations that publication makes. A paper with two education co-authors and one healthcare co-author contributes 2/3 to education and 1/3 to healthcare. So this panel reflects the institutional composition of the publications behind the citations in this view, not how many institutions of each type exist. Click 'Show institutions' to ground-truth the classification."
+              : "Each Thai 2025 publication is split fractionally across the institutional types of its co-authors, then weighted by the citations it makes. A paper with two education co-authors and one healthcare co-author contributes 2/3 to education and 1/3 to healthcare. The result is the institutional composition of citing publications, not a count of distinct institutions. Click 'Show institutions' to ground-truth the classification."
           }
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
@@ -3421,6 +3423,118 @@ const InstitutionTypesPanel = ({ institutionTypes, view }) => {
               format: (_, r) => ((r.n_edges / totalEdges) * 100).toFixed(1) + '%' },
           ]}
         />
+      )}
+
+      {/* Sample institutions per type — collapsed by default. The list
+          serves two purposes: ground-truthing the OpenAlex classification
+          (does 'education' really mean universities?), and giving concrete
+          examples so the abstract type labels feel less abstract. */}
+      {hasSamples && (
+        <div
+          className="mt-4 pt-3"
+          style={{ borderTop: `1px solid ${PALETTE.rule}` }}
+        >
+          <button
+            onClick={() => setShowSamples(!showSamples)}
+            className="px-2.5 py-1 transition-colors"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 10,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              background: 'transparent',
+              color: PALETTE.muted,
+              border: `1px solid ${PALETTE.rule}`,
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = PALETTE.ink;
+              e.currentTarget.style.color = PALETTE.ink;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = PALETTE.rule;
+              e.currentTarget.style.color = PALETTE.muted;
+            }}
+          >
+            {showSamples ? '− Hide' : '+ Show'} institutions in each sector
+          </button>
+          {showSamples && (
+            <div className="mt-3 space-y-3">
+              <div
+                style={{
+                  fontFamily: FONT_BODY,
+                  fontSize: 12,
+                  color: PALETTE.muted,
+                  lineHeight: 1.5,
+                  marginBottom: 8,
+                }}
+              >
+                Top 10 institutions of each type contributing to this view,
+                ranked by citation count. Use this to verify the OpenAlex
+                classification matches your expectation.
+              </div>
+              {data.map((r) => (
+                <div
+                  key={r.type}
+                  style={{
+                    paddingLeft: 12,
+                    borderLeft: `3px solid ${INST_TYPE_COLORS[r.type] || PALETTE.rule}`,
+                  }}
+                >
+                  <div
+                    className="mb-1 flex items-center gap-2 flex-wrap"
+                    style={{ fontFamily: FONT_BODY }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: INST_TYPE_COLORS[r.type] || PALETTE.ink,
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {r.type}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: FONT_MONO,
+                        fontSize: 10,
+                        letterSpacing: '0.06em',
+                        color: PALETTE.muted,
+                      }}
+                    >
+                      {fmtFull(r.n_institutions)} institution{r.n_institutions === 1 ? '' : 's'}
+                      {r.sample_institutions.length < r.n_institutions
+                        ? ` · showing top ${r.sample_institutions.length}`
+                        : ''}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: FONT_BODY,
+                      fontSize: 12,
+                      color: PALETTE.charcoal,
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    {r.sample_institutions.length === 0
+                      ? <span style={{ color: PALETTE.muted, fontStyle: 'italic' }}>
+                          (no institutions of this type in scope)
+                        </span>
+                      : r.sample_institutions.map((s, i) => (
+                          <React.Fragment key={i}>
+                            {i > 0 && <span style={{ color: PALETTE.rule, margin: '0 6px' }}>·</span>}
+                            <span title={`${fmtFull(s.edges)} citations`}>
+                              {s.name}
+                            </span>
+                          </React.Fragment>
+                        ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </Card>
   );
