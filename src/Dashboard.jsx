@@ -1496,7 +1496,7 @@ const PublisherSankey = ({ publisherSankey }) => {
 //
 // We reuse INST_TYPE_COLORS for the type filter pills and the row /
 // column header labels, matching the institutional-landscape colors.
-const InstitutionOverlapHeatmap = ({ institutionOverlap }) => {
+const InstitutionOverlapHeatmap = ({ institutionOverlap, currentView }) => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [selectedCell, setSelectedCell] = useState(null);
 
@@ -1505,6 +1505,32 @@ const InstitutionOverlapHeatmap = ({ institutionOverlap }) => {
   // guard lives at the bottom of the function (just before JSX).
   const o = institutionOverlap;
   const insts = (o && o.institutions) || [];
+
+  // Three rendering modes, decided from the global filter:
+  //   matrix-all:   no global filter or all_thailand → full N×N heatmap
+  //   matrix-typed: global is type:X → heatmap restricted to type X
+  //   list:         global is an individual institution → coverage-style list
+  //                 of that institution's overlaps with each other
+  const mode = useMemo(() => {
+    if (!currentView || currentView === 'all_thailand') return 'matrix-all';
+    if (currentView.startsWith('type:')) return 'matrix-typed';
+    return 'list';
+  }, [currentView]);
+
+  // When the global view is type:X, force the local typeFilter to match
+  // so the matrix and pills stay in sync. The user can still freely set
+  // typeFilter in matrix-all mode and in list mode (where it filters
+  // the comparison institutions).
+  useEffect(() => {
+    if (currentView && currentView.startsWith('type:')) {
+      setTypeFilter(currentView.slice(5));
+    } else if (!currentView || currentView === 'all_thailand') {
+      // Reset back to 'all' when the user clears the filter
+      setTypeFilter('all');
+    }
+    // Individual-institution case: don't touch typeFilter — the user
+    // may have set it to narrow the comparison list.
+  }, [currentView]);
 
   // Apply institution-type filter to rows AND columns. We keep
   // matrix entries by index, so filtered indices are projected
@@ -1545,11 +1571,56 @@ const InstitutionOverlapHeatmap = ({ institutionOverlap }) => {
     );
   }, [matrixOv, matrixA]);
 
-  // Reset cell selection when the type filter changes (the previously
-  // selected indices may not exist in the new matrix)
+  // For 'list' mode: find which row in the (unfiltered) matrix
+  // corresponds to the globally-selected institution. -1 if it's not
+  // in the top-N matrix at all.
+  const selectedListIdx = useMemo(() => {
+    if (mode !== 'list') return -1;
+    return insts.findIndex((inst) => inst.id === currentView);
+  }, [insts, currentView, mode]);
+
+  // Build the coverage-list rows: for each OTHER institution, compute
+  // the overlap count and percentage from the selected institution's
+  // perspective. Apply local typeFilter and sort by percentage desc.
+  const listRows = useMemo(() => {
+    if (mode !== 'list' || selectedListIdx === -1 || !o) return [];
+    const i = selectedListIdx;
+    const rows = insts.map((inst, j) => {
+      if (j === i) return null;  // skip self
+      const ov = o.matrix_overlap[i][j];
+      const denom = o.matrix_a_count[i][j] || 1;
+      return {
+        id: inst.id,
+        name: inst.name,
+        type: inst.type || 'other',
+        overlap: ov,
+        a_count: denom,
+        pct: (ov / denom) * 100,
+      };
+    }).filter(Boolean);
+    const filtered = typeFilter === 'all'
+      ? rows
+      : rows.filter((r) => r.type === typeFilter);
+    return filtered.sort((a, b) => b.pct - a.pct);
+  }, [insts, o, mode, selectedListIdx, typeFilter]);
+
+  // The "self" row (the selected institution itself) — used as a
+  // reference at the top of the list to anchor the user.
+  const selectedSelf = useMemo(() => {
+    if (mode !== 'list' || selectedListIdx === -1 || !o) return null;
+    const inst = insts[selectedListIdx];
+    return {
+      id: inst.id,
+      name: inst.name,
+      type: inst.type || 'other',
+      self_count: o.matrix_overlap[selectedListIdx][selectedListIdx],
+    };
+  }, [insts, o, mode, selectedListIdx]);
+
+  // Reset cell selection when the type filter or mode changes
   useEffect(() => {
     setSelectedCell(null);
-  }, [typeFilter]);
+  }, [typeFilter, mode]);
 
   // Null check goes AFTER all hooks so hook order stays stable across
   // renders (React requires the same hooks be called in the same order
@@ -1574,40 +1645,57 @@ const InstitutionOverlapHeatmap = ({ institutionOverlap }) => {
       <SectionTitle
         icon={Building2}
         kicker="Institutional citation overlap"
-        title="How much do Thai institutions cite the same literature"
-        hint="For each ordered pair (row → column), the cell shows what share of the row institution's distinct cited works are also cited by the column institution. Citations from papers the two institutions co-authored are excluded — without that exclusion, co-authorship alone would inflate every cell. Use the type filter to compare institutions within a category. Click any cell for the underlying counts."
+        title={
+          mode === 'list' && selectedSelf
+            ? `Who shares citations with ${selectedSelf.name}`
+            : 'How much do Thai institutions cite the same literature'
+        }
+        hint={
+          mode === 'list' && selectedSelf
+            ? `For each top institution, the bar shows what share of ${selectedSelf.name}'s distinct cited works that institution also cites. Citations from papers the two institutions co-authored are excluded so the overlap reflects independent citation choices. Sorted by overlap percentage, descending.`
+            : mode === 'matrix-typed'
+            ? "Restricted to institutions of the type selected in the institutional landscape above. For each ordered pair (row → column), the cell shows what share of the row institution's distinct cited works are also cited by the column institution. Co-authored papers are excluded. Click any cell for details."
+            : "For each ordered pair (row → column), the cell shows what share of the row institution's distinct cited works are also cited by the column institution. Citations from papers the two institutions co-authored are excluded — without that exclusion, co-authorship alone would inflate every cell. Use the type filter to compare institutions within a category. Click any cell for the underlying counts."
+        }
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span
-          style={{
-            fontFamily: FONT_MONO,
-            fontSize: 9,
-            letterSpacing: '0.16em',
-            color: PALETTE.muted,
-            textTransform: 'uppercase',
-            marginRight: 6,
-          }}
-        >
-          Filter by type
-        </span>
-        <FilterPill
-          label="All"
-          active={typeFilter === 'all'}
-          onClick={() => setTypeFilter('all')}
-        />
-        {availableTypes.map((t) => (
+      {/* In matrix-typed mode the type is forced by the global filter,
+          so showing local pills would be misleading. In list mode and
+          matrix-all mode the user freely controls them. */}
+      {mode !== 'matrix-typed' && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 9,
+              letterSpacing: '0.16em',
+              color: PALETTE.muted,
+              textTransform: 'uppercase',
+              marginRight: 6,
+            }}
+          >
+            {mode === 'list' ? 'Limit comparisons to' : 'Filter by type'}
+          </span>
           <FilterPill
-            key={t}
-            label={t.charAt(0).toUpperCase() + t.slice(1)}
-            active={typeFilter === t}
-            color={INST_TYPE_COLORS[t]}
-            onClick={() => setTypeFilter(t)}
+            label="All"
+            active={typeFilter === 'all'}
+            onClick={() => setTypeFilter('all')}
           />
-        ))}
-      </div>
+          {availableTypes.map((t) => (
+            <FilterPill
+              key={t}
+              label={t.charAt(0).toUpperCase() + t.slice(1)}
+              active={typeFilter === t}
+              color={INST_TYPE_COLORS[t]}
+              onClick={() => setTypeFilter(t)}
+            />
+          ))}
+        </div>
+      )}
 
-      {labels.length < 2 ? (
+      {/* Matrix view: matrix-all and matrix-typed modes */}
+      {mode !== 'list' && (<>
+        {labels.length < 2 ? (
         <div
           className="p-6 text-center"
           style={{
@@ -1822,6 +1910,154 @@ const InstitutionOverlapHeatmap = ({ institutionOverlap }) => {
             );
           })()}
         </div>
+      )}
+      {/* end matrix mode */}
+      </>)}
+
+      {/* List view: individual-institution mode (coverage-style) */}
+      {mode === 'list' && (
+        selectedListIdx === -1 ? (
+          <div
+            className="p-6 text-center"
+            style={{
+              fontFamily: FONT_BODY,
+              fontSize: 13,
+              color: PALETTE.muted,
+              background: PALETTE.cream,
+              border: `1px dashed ${PALETTE.rule}`,
+            }}
+          >
+            The selected institution is not among the top {insts.length} institutions
+            in the overlap dataset, so we don't have pairwise data for it. Pick one
+            of the institutions visible in the institutional landscape chart above.
+          </div>
+        ) : (
+          <>
+            {selectedSelf && (
+              <div
+                className="mb-4 px-4 py-3"
+                style={{
+                  background: PALETTE.cream,
+                  borderLeft: `3px solid ${INST_TYPE_COLORS[selectedSelf.type] || PALETTE.ink}`,
+                  fontFamily: FONT_BODY,
+                  fontSize: 13,
+                  color: PALETTE.charcoal,
+                }}
+              >
+                <div
+                  className="mb-0.5 uppercase"
+                  style={{
+                    fontFamily: FONT_MONO,
+                    fontSize: 9,
+                    letterSpacing: '0.16em',
+                    color: PALETTE.muted,
+                  }}
+                >
+                  Anchor institution
+                </div>
+                <div>
+                  <strong style={{ color: INST_TYPE_COLORS[selectedSelf.type] || PALETTE.ink }}>
+                    {selectedSelf.name}
+                  </strong>{' '}
+                  cites{' '}
+                  <strong style={{ color: PALETTE.ink, fontFamily: FONT_MONO }}>
+                    {fmtFull(selectedSelf.self_count)}
+                  </strong>{' '}
+                  distinct works in 2025. Each row below shows what share of those
+                  works the named institution also cites (after excluding co-authored seeds).
+                </div>
+              </div>
+            )}
+            {listRows.length === 0 ? (
+              <div
+                className="p-6 text-center"
+                style={{
+                  fontFamily: FONT_BODY,
+                  fontSize: 13,
+                  color: PALETTE.muted,
+                  background: PALETTE.cream,
+                  border: `1px dashed ${PALETTE.rule}`,
+                }}
+              >
+                No comparison institutions match the selected type. Try a different
+                type or select All.
+              </div>
+            ) : (
+              <div className="overflow-x-auto" style={{ fontFamily: FONT_BODY, fontSize: 13 }}>
+                <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr
+                      style={{
+                        fontFamily: FONT_MONO,
+                        fontSize: 10,
+                        letterSpacing: '0.12em',
+                        color: PALETTE.muted,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      <th style={cellHead}>Institution</th>
+                      <th style={{ ...cellHead, width: 110 }}>Type</th>
+                      <th style={{ ...cellHead, width: 110, textAlign: 'right' }}>
+                        Shared works
+                      </th>
+                      <th style={{ ...cellHead, width: '46%' }}>Overlap with anchor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {listRows.map((r) => (
+                      <tr
+                        key={r.id}
+                        style={{ borderTop: `1px solid ${PALETTE.rule}` }}
+                      >
+                        <td style={cellBody}>
+                          <span
+                            style={{
+                              color: INST_TYPE_COLORS[r.type] || PALETTE.ink,
+                              fontWeight: 500,
+                            }}
+                          >
+                            {r.name}
+                          </span>
+                        </td>
+                        <td style={cellBody}>
+                          <span
+                            style={{
+                              fontFamily: FONT_MONO,
+                              fontSize: 9,
+                              letterSpacing: '0.08em',
+                              textTransform: 'uppercase',
+                              color: INST_TYPE_COLORS[r.type] || PALETTE.charcoal,
+                              padding: '2px 6px',
+                              border: `1px solid ${INST_TYPE_COLORS[r.type] || PALETTE.rule}`,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {r.type}
+                          </span>
+                        </td>
+                        <td
+                          style={{
+                            ...cellBody,
+                            textAlign: 'right',
+                            fontFamily: FONT_MONO,
+                          }}
+                        >
+                          {fmtFull(r.overlap)}
+                        </td>
+                        <td style={cellBody}>
+                          <CoverageBar
+                            value={r.pct}
+                            color={INST_TYPE_COLORS[r.type] || PALETTE.burgundy}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )
       )}
 
       <div
@@ -3313,9 +3549,6 @@ export default function Dashboard() {
             currentView={effectiveView}
             typeViews={typeViews}
           />
-          <InstitutionOverlapHeatmap
-            institutionOverlap={data.institution_overlap}
-          />
 
           {/* Filter bar: readout + reset button */}
           <FilterBar
@@ -3355,6 +3588,11 @@ export default function Dashboard() {
             <ByTypePanel byType={data.by_type} view={effectiveView} />
             <InstitutionTypesPanel institutionTypes={data.institution_types} />
           </div>
+
+          <InstitutionOverlapHeatmap
+            institutionOverlap={data.institution_overlap}
+            currentView={effectiveView}
+          />
 
           <TopPublishersPanel
             byPublisher={data.by_publisher}
