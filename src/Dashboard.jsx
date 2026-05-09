@@ -35,6 +35,48 @@ const FONT_DISPLAY = "'Fraunces', 'Iowan Old Style', Georgia, serif";
 const FONT_BODY = "'IBM Plex Sans', system-ui, sans-serif";
 const FONT_MONO = "'IBM Plex Mono', ui-monospace, monospace";
 
+// Databases that are hidden in coverage and overlap panels because
+// they're substantively redundant with another database in the list.
+// ScienceDirect (CU) and ScienceDirect Standard share most of their
+// title list; the diff is mostly which titles CU has full-text access
+// to versus discoverability-only. Keeping both makes the overlap
+// heatmap noisy without adding insight, so we hide the CU view in
+// the dashboard. The data is still computed and stays in the JSON
+// for the SQL playground or other tools that want it.
+const HIDDEN_DATABASE_KEYS = new Set([
+  'sciencedirect_cu',
+]);
+
+// Publishers whose journals are predominantly or entirely open access,
+// meaning Thai institutions don't need a subscription to read them.
+// The list is intentionally conservative — only publishers where the
+// vast majority of their output is gold OA. Hybrid publishers
+// (Elsevier, Springer Nature, Wiley) are NOT included even though
+// they have OA journals, because most of their content still sits
+// behind paywalls. Match is by lowercased substring of the publisher
+// name from OpenAlex.
+const OA_ONLY_PUBLISHER_PATTERNS = [
+  'mdpi',
+  'frontiers',
+  'public library of science',
+  'plos',
+  'hindawi',
+  'biomed central',
+  'bmc',
+  'copernicus',
+  'elife',
+  'f1000',
+  'peerj',
+  'beilstein-institut',
+  'ubiquity press',
+  'open access',
+];
+const isOAOnlyPublisher = (publisherName) => {
+  if (!publisherName) return false;
+  const lower = publisherName.toLowerCase();
+  return OA_ONLY_PUBLISHER_PATTERNS.some((p) => lower.includes(p));
+};
+
 const useFonts = () => {
   useEffect(() => {
     if (document.querySelector('link[data-oar-fonts]')) return;
@@ -642,9 +684,10 @@ const CoverageTable = ({ coverage, summary, view }) => {
   }, [coverage, isFiltered]);
 
   const dbs = useMemo(() => {
+    const visible = data.databases.filter((d) => !HIDDEN_DATABASE_KEYS.has(d.key));
     const filtered = typeFilter === 'all'
-      ? data.databases
-      : data.databases.filter((d) => d.type === typeFilter);
+      ? visible
+      : visible.filter((d) => d.type === typeFilter);
     return [...filtered].sort((a, b) => {
       // Open access sorts first within its type group; otherwise by edges_pct
       if (a.type === 'open_access' && b.type !== 'open_access') return -1;
@@ -895,16 +938,21 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
   // Filter by database type using meta.databases lookup. When showing
   // all types, group databases by type (open access → index → full text)
   // so visually similar databases sit next to each other in the matrix.
+  // Also filter out HIDDEN_DATABASE_KEYS (e.g., ScienceDirect (CU))
+  // because they're substantively redundant with another database in
+  // the list, which makes the overlap heatmap noisier without adding
+  // insight.
   const { labels, matrix, dbKeys } = useMemo(() => {
     const typeByKey = {};
     if (meta && meta.databases) {
       for (const d of meta.databases) typeByKey[d.key] = d.type;
     }
-    let indices = o.databases.map((_, i) => i);
+    // First, drop hidden databases entirely from consideration.
+    let indices = o.databases
+      .map((k, i) => (HIDDEN_DATABASE_KEYS.has(k) ? -1 : i))
+      .filter((i) => i !== -1);
     if (typeFilter !== 'all') {
-      indices = o.databases
-        .map((k, i) => (typeByKey[k] === typeFilter ? i : -1))
-        .filter((i) => i !== -1);
+      indices = indices.filter((i) => typeByKey[o.databases[i]] === typeFilter);
     } else {
       // Sort by type group, then by label within each group
       const TYPE_ORDER = { open_access: 0, abstract_index: 1, full_text: 2 };
@@ -1351,7 +1399,7 @@ const SankeyNode = ({
 // scaled to draw the eye toward thicker flows.
 const SankeyLink = (props) => {
   const { sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX,
-    linkWidth, index, payload, selectedNodeIndex } = props;
+    linkWidth, index, payload, selectedNodeName, selectedNodeSide } = props;
   // Cubic bezier path between the source and target points.
   const path = `
     M${sourceX},${sourceY}
@@ -1359,23 +1407,23 @@ const SankeyLink = (props) => {
      ${targetControlX},${targetY}
      ${targetX},${targetY}
   `;
-  const anySelected = selectedNodeIndex != null;
-  const sourceIdx = payload?.source?.index ?? payload?.source;
-  const targetIdx = payload?.target?.index ?? payload?.target;
-  const isConnected =
-    selectedNodeIndex === sourceIdx || selectedNodeIndex === targetIdx;
+  // Match by name+side, not by index. Recharts strips the integer
+  // source/target indices from the link payload and replaces them
+  // with the source/target NODE OBJECTS, which don't carry an
+  // .index property — so any code that read payload.source.index
+  // got undefined and isConnected was always false. Each link's
+  // source is always a 'seed' node and target always 'cited', so
+  // we just check the appropriate side based on the selection.
+  const anySelected = selectedNodeName != null;
+  const isConnected = anySelected && (
+    (selectedNodeSide === 'seed' && payload?.source?.name === selectedNodeName) ||
+    (selectedNodeSide === 'cited' && payload?.target?.name === selectedNodeName)
+  );
   // When nothing is selected: every band at moderate opacity.
-  // When something IS selected: connected bands pop to full opacity,
-  // unconnected ones fade almost to nothing so the selected
-  // publisher's flows are unmistakable. The 0.04 floor keeps the
-  // shape of the diagram visible (so users can see the connections
-  // they're NOT looking at as ghosts) without competing with the
-  // highlighted bands.
+  // When something IS selected: connected bands pop to full opacity
+  // and the gradient saturates; unconnected ones fade almost to
+  // nothing so the selected publisher's flows are unmistakable.
   const opacity = !anySelected ? 0.7 : (isConnected ? 1.0 : 0.04);
-  // Connected bands also get a subtle dark stroke outline at high
-  // resolutions to make them visually distinct from any neighboring
-  // bands at the same y position. The outline disappears for non-
-  // connected bands (they're already faded out).
   return (
     <Layer key={`sankey-link-${index}`}>
       <defs>
@@ -1404,13 +1452,32 @@ const SankeyLink = (props) => {
   );
 };
 
-const PublisherSankey = ({ publisherSankey }) => {
+const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
+  // Resolve the per-view sankey from the data file. Two shapes are
+  // supported for backward compatibility:
+  //   1. New (view-keyed): { all_thailand: {nodes,links,meta}, I158708052: {...}, type:education: {...} }
+  //   2. Legacy (flat object with nodes/links/meta directly)
+  // The legacy fallback lets old data files keep working while the user
+  // regenerates with the new pipeline.
+  const data = useMemo(() => {
+    if (!publisherSankey) return null;
+    // Heuristic: if it has a top-level `nodes` array, it's the legacy
+    // flat shape. Otherwise it's view-keyed.
+    if (Array.isArray(publisherSankey.nodes)) return publisherSankey;
+    return publisherSankey[view] || publisherSankey.all_thailand || null;
+  }, [publisherSankey, view]);
+
   // Hooks always run; null guard is below them.
-  const data = publisherSankey;
   const hasData = data && Array.isArray(data.nodes) && data.nodes.length > 0
     && Array.isArray(data.links) && data.links.length > 0;
 
   const [selectedNode, setSelectedNode] = useState(null);
+  // Reset selection when the view changes, so a stale selectedNode
+  // index from a different view's nodes array doesn't point at the
+  // wrong publisher.
+  useEffect(() => {
+    setSelectedNode(null);
+  }, [view]);
 
   // Recharts mutates the data it's given, so we deep-clone via JSON
   // round-trip. Cheap (a few hundred objects) and avoids subtle bugs
@@ -1505,6 +1572,22 @@ const PublisherSankey = ({ publisherSankey }) => {
     );
   }
 
+  // The view-keyed pipeline returns an empty stub for views with no
+  // matching edges (rare but possible for very narrow institution
+  // scopes). Show a friendly note instead of a blank panel.
+  if (data.meta && data.meta.empty) {
+    return (
+      <Card className="p-5">
+        <SectionTitle
+          icon={GitBranch}
+          kicker="Publisher flow"
+          title="Citations from Thai publications to cited publishers"
+          hint="No publisher metadata is available for the publications in the current filter."
+        />
+      </Card>
+    );
+  }
+
   if (!hasData) return null;
 
   const m = data.meta || {};
@@ -1514,11 +1597,17 @@ const PublisherSankey = ({ publisherSankey }) => {
       <SectionTitle
         icon={GitBranch}
         kicker="Publisher flow"
-        title="Citations from Thai publications to cited publishers"
+        title={
+          isFiltered && viewLabel
+            ? `Citations from ${viewLabel} to cited publishers`
+            : 'Citations from Thai publications to cited publishers'
+        }
         totalN={m.total_edges_with_both_publishers}
-        totalLabel={`citations with publisher metadata on both sides (${m.coverage_pct}% of total)`}
+        totalLabel={`citations with publisher metadata on both sides (${m.coverage_pct}% of this view's citations)`}
         hint={
-          `Each strand is a flow from one seed publisher (left, navy) to one cited publisher (right, burgundy); thickness is proportional to the number of citation edges between them. Top ${m.n_seed_publishers_shown - 1} publishers on each side are shown by name; the rest are aggregated into "Other publishers" buckets. Click any publisher label to see its detailed flow breakdown. Hover a strand for exact counts.`
+          (isFiltered
+            ? `For the publications in the current filter, each strand is a flow from one seed publisher (left, navy) to one cited publisher (right, burgundy); thickness is proportional to the number of citation edges. The top ${Math.max(0, (m.n_seed_publishers_shown || 1) - 1)} publishers on each side ARE COMPUTED PER VIEW so they reflect this institution's or sector's actual top journals — not the country-wide list. Everything outside the top is rolled into "Other publishers". Click any publisher label to see its detailed flow breakdown.`
+            : `Each strand is a flow from one seed publisher (left, navy) to one cited publisher (right, burgundy); thickness is proportional to the number of citation edges between them. Top ${Math.max(0, (m.n_seed_publishers_shown || 1) - 1)} publishers on each side are shown by name; the rest are aggregated into "Other publishers" buckets. Click any publisher label to see its detailed flow breakdown. Hover a strand for exact counts.`)
         }
       />
 
@@ -1580,7 +1669,20 @@ const PublisherSankey = ({ publisherSankey }) => {
                 selectedNodeIndex={selectedNode}
               />
             )}
-            link={<SankeyLink selectedNodeIndex={selectedNode} />}
+            link={(
+              <SankeyLink
+                selectedNodeName={
+                  selectedNode != null
+                    ? sankeyData.nodes[selectedNode]?.name ?? null
+                    : null
+                }
+                selectedNodeSide={
+                  selectedNode != null
+                    ? sankeyData.nodes[selectedNode]?.side ?? null
+                    : null
+                }
+              />
+            )}
             nodePadding={14}
             nodeWidth={10}
             // sort={false} prevents Recharts from reordering nodes within
@@ -2708,6 +2810,61 @@ const ByTypePanel = ({ byType, view }) => {
 // ============================================================
 // TOP PUBLISHERS
 // ============================================================
+// Custom Y-axis tick for the publisher concentration chart that
+// renders the publisher name plus a small "OA" badge for publishers
+// that are predominantly open access (no subscription needed). The
+// badge is placed inline at the start of the label so it reads as a
+// quick visual marker without competing with the bars themselves.
+const PublisherYTick = ({ x, y, payload }) => {
+  const name = payload?.value ?? '';
+  const isOA = isOAOnlyPublisher(name);
+  // The Recharts default tick anchors text at the end (right edge),
+  // since labels sit on the left side of the chart. We render the
+  // text with the same anchor and dy as default; the badge sits to
+  // the left of the text so it doesn't overlap the bars.
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        dy={4}
+        textAnchor="end"
+        style={{
+          fontFamily: FONT_BODY,
+          fontSize: 10.5,
+          fill: PALETTE.charcoal,
+        }}
+      >
+        {name}
+      </text>
+      {isOA && (
+        <g transform={`translate(${-name.length * 5.6 - 30}, -8)`}>
+          <rect
+            width={20}
+            height={12}
+            fill={PALETTE.gold}
+            fillOpacity={0.18}
+            stroke={PALETTE.gold}
+            strokeWidth={0.6}
+          />
+          <text
+            x={10}
+            y={9}
+            textAnchor="middle"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 8,
+              fill: PALETTE.ink,
+              letterSpacing: '0.05em',
+              fontWeight: 600,
+            }}
+          >
+            OA
+          </text>
+        </g>
+      )}
+    </g>
+  );
+};
+
 const TopPublishersPanel = ({ byPublisher, summary, view }) => {
   const [mode, setMode] = useState('chart');
   const [showCount, setShowCount] = useState(15);
@@ -2783,7 +2940,7 @@ const TopPublishersPanel = ({ byPublisher, summary, view }) => {
                 <YAxis
                   type="category"
                   dataKey="publisher"
-                  tick={{ fontSize: 10.5, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
+                  tick={<PublisherYTick />}
                   stroke={PALETTE.rule}
                   width={200}
                 />
@@ -2855,6 +3012,33 @@ const TopPublishersPanel = ({ byPublisher, summary, view }) => {
                   Showing top {showCount} of {allData.length}
                 </span>
               )}
+              {/* OA badge legend, always visible since the badge appears in
+                  both filtered and unfiltered modes. */}
+              <span
+                className="inline-flex items-center gap-1.5"
+                style={{ color: PALETTE.muted }}
+              >
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 20,
+                    height: 12,
+                    background: PALETTE.gold,
+                    backgroundColor: 'rgba(190, 152, 57, 0.18)',
+                    border: `0.6px solid ${PALETTE.gold}`,
+                    fontFamily: FONT_MONO,
+                    fontSize: 7.5,
+                    fontWeight: 600,
+                    color: PALETTE.ink,
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  OA
+                </span>
+                Open access publisher (no subscription required)
+              </span>
             </div>
             <div className="flex gap-1">
               {[10, 15, 25, 50].map((n) => (
@@ -2893,6 +3077,8 @@ const TopPublishersPanel = ({ byPublisher, summary, view }) => {
             : allData}
           columns={isFiltered ? [
             { key: 'publisher', label: 'Publisher', align: 'left', maxWidth: 320 },
+            { key: '_access', label: 'Access', align: 'left', mono: true,
+              format: (_, r) => isOAOnlyPublisher(r.publisher) ? 'Open access' : '—' },
             { key: 'edges', label: 'Citations', align: 'right', mono: true,
               format: (v) => fmtFull(v) },
             { key: 'pct', label: 'Share', align: 'right', mono: true,
@@ -2907,6 +3093,8 @@ const TopPublishersPanel = ({ byPublisher, summary, view }) => {
               } },
           ] : [
             { key: 'publisher', label: 'Publisher', align: 'left', maxWidth: 360 },
+            { key: '_access', label: 'Access', align: 'left', mono: true,
+              format: (_, r) => isOAOnlyPublisher(r.publisher) ? 'Open access' : '—' },
             { key: 'edges', label: 'Citations', align: 'right', mono: true,
               format: (v) => fmtFull(v) },
             { key: 'unique', label: 'Unique works', align: 'right', mono: true,
@@ -3673,9 +3861,8 @@ const Header = ({ generatedAt }) => (
         databases. Use this to understand citation patterns, database coverage,
         and overlaps for consortium-level decisions. Start with the
         institutional landscape below to filter the dashboard to a specific
-        institution or sector. Country-wide reference views (database overlap
-        and publisher flow) sit at the bottom of the page for the times you
-        need them.
+        institution or sector. A reference view of database catalog overlap
+        sits at the bottom of the page for the times you need it.
       </p>
 
       <div className="mt-5 flex flex-wrap items-center gap-4">
@@ -3700,9 +3887,9 @@ const Header = ({ generatedAt }) => (
             e.currentTarget.style.borderColor = PALETTE.rule;
             e.currentTarget.style.color = PALETTE.muted;
           }}
-          title="Jump to the All-Thailand database overlap and publisher flow"
+          title="Jump to the database catalog overlap reference"
         >
-          ↓ Country context
+          ↓ Database catalogs
         </a>
         <div
           style={{
@@ -3847,6 +4034,13 @@ const FilterBar = ({ view, onViewChange, viewLabel }) => {
 // reference material that doesn't change with the filter." The
 // section has id="country-context" so the header anchor link can
 // jump readers here directly.
+// The bottom-of-page reference section. It originally held both the
+// Database overlap and the Publisher flow Sankey under a "Country
+// context" heading, but Publisher flow has moved into the filtered
+// panels above. The section now contains only the Database overlap,
+// which describes a property of the databases themselves (their
+// title catalogs), not anything Thailand-specific — so the title
+// has been updated to reflect that.
 const CountryContextSection = ({ children }) => (
   <section
     id="country-context"
@@ -3856,9 +4050,6 @@ const CountryContextSection = ({ children }) => (
       marginTop: 56,
       paddingTop: 32,
       borderTop: `2px solid ${PALETTE.ink}`,
-      // Each panel inside this section already brings its own Card
-      // background, so we layer on a subtle wash to mark the section
-      // boundary without competing with the panels themselves.
     }}
   >
     <div className="mb-8">
@@ -3871,7 +4062,7 @@ const CountryContextSection = ({ children }) => (
           color: PALETTE.muted,
         }}
       >
-        <span>Section II · Country context</span>
+        <span>Section II · Database catalogs</span>
       </div>
       <h2
         style={{
@@ -3884,7 +4075,7 @@ const CountryContextSection = ({ children }) => (
           marginBottom: 8,
         }}
       >
-        The all-Thailand publishing landscape
+        How major databases overlap with each other
       </h2>
       <p
         style={{
@@ -3895,13 +4086,11 @@ const CountryContextSection = ({ children }) => (
           maxWidth: 760,
         }}
       >
-        These two views describe the structural shape of Thailand's 2025
-        publishing relationships and do not change with the institution
-        filter above. They are reference material for the times when the
-        country-wide picture is what's wanted. Database overlap shows
-        which subscription resources cover similar literature; publisher
-        flow shows where Thai-published research goes when it cites
-        other work.
+        This view describes a property of the database catalogs themselves
+        rather than anything specific to Thailand. It compares the public
+        title lists of major academic databases to show how much
+        redundancy exists between them, which is useful for thinking
+        about subscription decisions and consortium-level coverage.
       </p>
     </div>
     <div className="space-y-6">
@@ -4132,26 +4321,31 @@ export default function Dashboard() {
             summary={data.summary}
             view={effectiveView}
           />
+          {/* Publisher flow Sankey: now reactive to the global filter,
+              so it sits with the other filtered panels right after
+              publisher concentration (its conceptual neighbor). */}
+          <PublisherSankey
+            publisherSankey={data.publisher_sankey}
+            view={effectiveView}
+            viewLabel={viewLabel}
+            isFiltered={effectiveView !== 'all_thailand'}
+          />
           <CoverageTable
             coverage={data.coverage}
             summary={data.summary}
             view={effectiveView}
           />
 
-          {/* Country-level structural context. These two views describe
-              the publishing landscape of Thailand 2025 as a whole; they
-              do not change with the institution filter. They live below
-              the action-driven panels because most users come here to
-              drill into a specific institution. The panels themselves
-              stay scrollable for the times when the country-wide picture
-              is what's wanted. */}
+          {/* Database catalog reference. The database overlap panel
+              describes a property of the database catalogs themselves
+              (which titles each one indexes), not anything Thai-specific.
+              It lives at the bottom as reference material. */}
           <CountryContextSection>
             <OverlapHeatmap
               overlap={data.overlap}
               meta={data.meta}
               summary={data.summary}
             />
-            <PublisherSankey publisherSankey={data.publisher_sankey} />
           </CountryContextSection>
         </div>
       </main>
