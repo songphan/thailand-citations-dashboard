@@ -4606,7 +4606,19 @@ const TopInstitutionsPanel = ({
             active={subcategoryFilter === 'all'}
             onClick={() => handleSubcategoryClick('all')}
           />
-          {subcategoryViews.map((sv) => {
+          {subcategoryViews
+            // Skip subcategories with fewer than 2 institutions: a
+            // single-institution subcategory triggers a Recharts
+            // band-scale bug where the bar renders with height=0.
+            // The institution(s) in the skipped subcategory still
+            // appear in the institutional landscape (colored by
+            // their subcategory) and in their breadcrumb, so the
+            // classification stays visible — we just don't surface
+            // the subcategory as a clickable filter pill since
+            // filtering to a 1-institution view would just show that
+            // single institution with no comparative value.
+            .filter((sv) => (sv.n_institutions || 0) >= 2)
+            .map((sv) => {
             const sc = sv.subcategory;
             const cap = sc.charAt(0).toUpperCase() + sc.slice(1);
             return (
