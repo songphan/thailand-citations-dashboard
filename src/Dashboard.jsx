@@ -5582,27 +5582,6 @@ export default function Dashboard() {
             />
           )}
 
-          {/* Institutional citation overlap heatmap. Hidden under
-              field/domain filter because the matrix is computed
-              against all_thailand citations and isn't recomputed
-              per-discipline (would be prohibitively expensive); a
-              short note replaces it. */}
-          {!isDisciplineFilter ? (
-            <InstitutionOverlapHeatmap
-              institutionOverlap={data.institution_overlap}
-              currentView={effectiveView}
-            />
-          ) : (
-            <Card className="p-5">
-              <SectionTitle
-                icon={Building2}
-                kicker="Institutional citation overlap"
-                title="Hidden under disciplinary filter"
-                hint="The institutional citation overlap matrix is computed against the country-wide citation pattern. It does not re-aggregate by discipline. Switch to All Thailand or to a single institution to see the matrix."
-              />
-            </Card>
-          )}
-
           <TopPublishersPanel
             byPublisher={data.by_publisher}
             summary={data.summary}
@@ -5621,6 +5600,27 @@ export default function Dashboard() {
             summary={data.summary}
             view={effectiveView}
           />
+
+          {/* Institutional citation overlap heatmap. Now sits after the
+              Database coverage table. Hidden under field/domain filter
+              because the matrix is computed against all_thailand
+              citations and isn't recomputed per-discipline (would be
+              prohibitively expensive); a short note replaces it. */}
+          {!isDisciplineFilter ? (
+            <InstitutionOverlapHeatmap
+              institutionOverlap={data.institution_overlap}
+              currentView={effectiveView}
+            />
+          ) : (
+            <Card className="p-5">
+              <SectionTitle
+                icon={Building2}
+                kicker="Institutional citation overlap"
+                title="Hidden under disciplinary filter"
+                hint="The institutional citation overlap matrix is computed against the country-wide citation pattern. It does not re-aggregate by discipline. Switch to All Thailand or to a single institution to see the matrix."
+              />
+            </Card>
+          )}
 
           {/* Database catalog reference. */}
           <CountryContextSection>
