@@ -3217,6 +3217,7 @@ const ByTypePanel = ({ byType, view }) => {
                   tick={{ fontSize: 11, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
                   stroke={PALETTE.rule}
                   width={110}
+                  interval={0}
                 />
                 <Tooltip
                   contentStyle={{
@@ -3451,6 +3452,7 @@ const ByFieldPanel = ({ byField, view, currentView, onViewChange }) => {
                 tick={{ fontSize: 11, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
                 stroke={PALETTE.rule}
                 width={220}
+                interval={0}
               />
               <Tooltip
                 contentStyle={{
@@ -3614,6 +3616,7 @@ const ByDomainPanel = ({ byDomain, view, currentView, onViewChange }) => {
                 tick={{ fontSize: 12, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
                 stroke={PALETTE.rule}
                 width={200}
+                interval={0}
               />
               <Tooltip
                 contentStyle={{
@@ -3809,6 +3812,7 @@ const ByLanguagePanel = ({ byLanguage, view }) => {
                 tick={{ fontSize: 11, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
                 stroke={PALETTE.rule}
                 width={180}
+                interval={0}
               />
               <Tooltip
                 contentStyle={{
@@ -3944,6 +3948,12 @@ const TopPublishersPanel = ({ byPublisher, summary, view }) => {
                   tick={<PublisherYTick />}
                   stroke={PALETTE.rule}
                   width={200}
+                  // Force every tick to render. Without this, Recharts
+                  // auto-skips alternating ticks when it estimates the
+                  // labels won't fit, leaving rows with bars but no
+                  // label. Our custom <PublisherYTick> handles
+                  // truncation, so we'd rather show every name.
+                  interval={0}
                 />
                 <Tooltip
                   contentStyle={{
@@ -4330,6 +4340,7 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
                   tick={ColoredYTick}
                   stroke={PALETTE.rule}
                   width={220}
+                  interval={0}
                 />
                 <Tooltip
                   contentStyle={{
@@ -5483,30 +5494,11 @@ export default function Dashboard() {
           )}
 
           {/* Disciplinary landscape: parallel to the institutional
-              landscape. The by-field panel doubles as the field
-              picker (clickable bars set the filter to field:X). */}
-          <ByFieldPanel
-            byField={data.by_field}
-            view={effectiveView}
-            currentView={effectiveView}
-            onViewChange={setView}
-          />
-
-          {/* Field flow Sankey directly follows the disciplinary
-              distribution so the user can immediately see WHERE the
-              fields' citations land (cited side) after seeing how
-              the citing-side breaks down. */}
-          <DisciplineSankey
-            sankey={data.field_sankey}
-            view={effectiveView}
-            viewLabel={viewLabel}
-            isFiltered={effectiveView !== 'all_thailand'}
-            level="field"
-          />
-
-          {/* Domain distribution sits right after the field flow,
-              giving the broadest disciplinary cut (4 domains) — the
-              policy-friendly summary level. */}
+              landscape. Order is broadest-first: domain (4 buckets)
+              gives the executive-summary cut, then field (26 buckets)
+              the more granular view. Both panels double as filter
+              pickers (clickable bars set the filter to domain:X or
+              field:X). */}
           <ByDomainPanel
             byDomain={data.by_domain}
             view={effectiveView}
@@ -5515,15 +5507,35 @@ export default function Dashboard() {
           />
 
           {/* Domain flow Sankey directly follows the domain
-              distribution, mirroring the field/field-flow pairing.
-              With only 4 domains on each side, this Sankey is the
-              easiest to read of the three. */}
+              distribution. With only 4 domains on each side, this
+              Sankey is the cleanest summary of cross-domain citation
+              flow in the dashboard. */}
           <DisciplineSankey
             sankey={data.domain_sankey}
             view={effectiveView}
             viewLabel={viewLabel}
             isFiltered={effectiveView !== 'all_thailand'}
             level="domain"
+          />
+
+          {/* Field distribution: more granular cut at 26 fields. */}
+          <ByFieldPanel
+            byField={data.by_field}
+            view={effectiveView}
+            currentView={effectiveView}
+            onViewChange={setView}
+          />
+
+          {/* Field flow Sankey directly follows the field
+              distribution, so the user can see WHERE each field's
+              citations land after seeing how the citing-side
+              breaks down. */}
+          <DisciplineSankey
+            sankey={data.field_sankey}
+            view={effectiveView}
+            viewLabel={viewLabel}
+            isFiltered={effectiveView !== 'all_thailand'}
+            level="field"
           />
 
           {/* Time horizon */}
