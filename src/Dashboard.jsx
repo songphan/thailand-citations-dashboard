@@ -2350,8 +2350,14 @@ const DisciplineSankey = ({ sankey, view, viewLabel, isFiltered, level }) => {
 //
 // We reuse INST_TYPE_COLORS for the type filter pills and the row /
 // column header labels, matching the institutional-landscape colors.
-const InstitutionOverlapHeatmap = ({ institutionOverlap, currentView }) => {
+const InstitutionOverlapHeatmap = ({
+  institutionOverlap, currentView,
+  institutionSubcategory,
+}) => {
   const [typeFilter, setTypeFilter] = useState('all');
+  // Subcategory filter for client-side narrowing. Synced with global
+  // view when the user is on a subcategory:* view.
+  const [subcategoryFilter, setSubcategoryFilter] = useState('all');
   const [selectedCell, setSelectedCell] = useState(null);
 
   // We compute everything against the data even when it might be missing,
@@ -2360,39 +2366,54 @@ const InstitutionOverlapHeatmap = ({ institutionOverlap, currentView }) => {
   const o = institutionOverlap;
   const insts = (o && o.institutions) || [];
 
-  // Three rendering modes, decided from the global filter:
-  //   matrix-all:   no global filter or all_thailand → full N×N heatmap
-  //   matrix-typed: global is type:X → heatmap restricted to type X
-  //   list:         global is an individual institution → coverage-style list
-  //                 of that institution's overlaps with each other
+  // Four rendering modes, decided from the global filter:
+  //   matrix-all:    no global filter or all_thailand → full N×N heatmap
+  //   matrix-typed:  global is type:X → heatmap restricted to type X
+  //   matrix-subcat: global is subcategory:X → matrix restricted to that
+  //                  subcategory (treated visually like matrix-typed)
+  //   list:          global is an individual institution → coverage-style
+  //                  list of that institution's overlaps with each other
   const mode = useMemo(() => {
     if (!currentView || currentView === 'all_thailand') return 'matrix-all';
     if (currentView.startsWith('type:')) return 'matrix-typed';
+    if (currentView.startsWith('subcategory:')) return 'matrix-subcat';
     return 'list';
   }, [currentView]);
 
-  // When the global view is type:X, force the local typeFilter to match
-  // so the matrix and pills stay in sync. The user can still freely set
-  // typeFilter in matrix-all mode and in list mode (where it filters
-  // the comparison institutions).
+  // When the global view is type:X / subcategory:X, force the local
+  // filters to match so the matrix and pills stay in sync. The user
+  // can still freely set typeFilter in matrix-all mode and in list
+  // mode (where it filters the comparison institutions).
   useEffect(() => {
     if (currentView && currentView.startsWith('type:')) {
       setTypeFilter(currentView.slice(5));
+      setSubcategoryFilter('all');
+    } else if (currentView && currentView.startsWith('subcategory:')) {
+      // Subcategory implies education-type
+      setTypeFilter('education');
+      setSubcategoryFilter(currentView.slice(12));
     } else if (!currentView || currentView === 'all_thailand') {
       // Reset back to 'all' when the user clears the filter
       setTypeFilter('all');
+      setSubcategoryFilter('all');
     }
-    // Individual-institution case: don't touch typeFilter — the user
-    // may have set it to narrow the comparison list.
+    // Individual-institution case: don't touch filters — the user
+    // may have set them to narrow the comparison list.
   }, [currentView]);
 
-  // Apply institution-type filter to rows AND columns. We keep
-  // matrix entries by index, so filtered indices are projected
+  // Apply institution-type AND subcategory filters to rows AND columns.
+  // Keep matrix entries by index, so filtered indices are projected
   // through the original matrix.
   const { labels, matrixOv, matrixA, types, ids, indices } = useMemo(() => {
     let idx = insts.map((_, i) => i);
     if (typeFilter !== 'all') {
       idx = idx.filter((i) => (insts[i].type || 'other') === typeFilter);
+    }
+    if (subcategoryFilter !== 'all' && institutionSubcategory) {
+      idx = idx.filter((i) => {
+        const id = (insts[i].id || '').replace('https://openalex.org/', '');
+        return institutionSubcategory[id] === subcategoryFilter;
+      });
     }
     if (!o) {
       return { labels: [], matrixOv: [], matrixA: [], types: [], ids: [], indices: [] };
@@ -2407,7 +2428,7 @@ const InstitutionOverlapHeatmap = ({ institutionOverlap, currentView }) => {
       ids: idx.map((i) => insts[i].id),
       indices: idx,
     };
-  }, [insts, o, typeFilter]);
+  }, [insts, o, typeFilter, subcategoryFilter, institutionSubcategory]);
 
   // Available types (only those that appear in the matrix)
   const availableTypes = useMemo(() => {
@@ -2526,14 +2547,17 @@ const InstitutionOverlapHeatmap = ({ institutionOverlap, currentView }) => {
             ? `For each top institution, the bar shows what share of ${selectedSelf.name}'s distinct cited works that institution also cites. Citations from papers the two institutions co-authored are excluded so the overlap reflects independent citation choices. Sorted by overlap percentage, descending.`
             : mode === 'matrix-typed'
             ? "Restricted to institutions of the type selected in the institutional landscape above. For each ordered pair (row → column), the cell shows what share of the row institution's distinct cited works are also cited by the column institution. Co-authored papers are excluded. Click any cell for details."
+            : mode === 'matrix-subcat'
+            ? "Restricted to education-type institutions in the selected subcategory (Public, Rajabhat, Rajamangala, Private, etc.). For each ordered pair (row → column), the cell shows what share of the row institution's distinct cited works are also cited by the column institution. Co-authored papers are excluded. Click any cell for details."
             : "For each ordered pair (row → column), the cell shows what share of the row institution's distinct cited works are also cited by the column institution. Citations from papers the two institutions co-authored are excluded — without that exclusion, co-authorship alone would inflate every cell. Use the type filter to compare institutions within a category. Click any cell for the underlying counts."
         }
       />
 
-      {/* In matrix-typed mode the type is forced by the global filter,
-          so showing local pills would be misleading. In list mode and
-          matrix-all mode the user freely controls them. */}
-      {mode !== 'matrix-typed' && (
+      {/* In matrix-typed and matrix-subcat modes the filter is forced
+          by the global filter, so showing local pills would be
+          misleading. In list mode and matrix-all mode the user freely
+          controls them. */}
+      {mode !== 'matrix-typed' && mode !== 'matrix-subcat' && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span
             style={{
@@ -4149,12 +4173,24 @@ const INST_TYPE_FILTER_ORDER = [
   'nonprofit', 'funder', 'company', 'archive', 'other',
 ];
 
-const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, typeViews }) => {
+const TopInstitutionsPanel = ({
+  institutions, onSelectInstitution, currentView, typeViews,
+  subcategoryViews, institutionSubcategory,
+}) => {
   const [mode, setMode] = useState('chart');
   const [showCount, setShowCount] = useState(20);
   // Initialize typeFilter from currentView if it's a type:* view
   const [typeFilter, setTypeFilter] = useState(() => {
     if (currentView && currentView.startsWith('type:')) return currentView.slice(5);
+    return 'all';
+  });
+  // Subcategory filter: a sub-classification of education-type
+  // institutions (public, rajabhat, etc.). Initialized from
+  // currentView when it's a subcategory:* view.
+  const [subcategoryFilter, setSubcategoryFilter] = useState(() => {
+    if (currentView && currentView.startsWith('subcategory:')) {
+      return currentView.slice(12);
+    }
     return 'all';
   });
 
@@ -4164,8 +4200,14 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
   useEffect(() => {
     if (!currentView || currentView === 'all_thailand') {
       setTypeFilter('all');
+      setSubcategoryFilter('all');
     } else if (currentView.startsWith('type:')) {
       setTypeFilter(currentView.slice(5));
+      setSubcategoryFilter('all');
+    } else if (currentView.startsWith('subcategory:')) {
+      // A subcategory view implies education-type; mirror that.
+      setTypeFilter('education');
+      setSubcategoryFilter(currentView.slice(12));
     }
   }, [currentView]);
 
@@ -4184,11 +4226,25 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
     return set;
   }, [typeViews]);
 
+  // Subcategory pills are only meaningful when the viewer is looking
+  // at education-type institutions (the only type with subcategories).
+  // We show the pill row when typeFilter is 'all' (which includes
+  // education) or 'education' specifically.
+  const showSubcategoryPills = (typeFilter === 'all' || typeFilter === 'education')
+    && subcategoryViews && subcategoryViews.length > 0;
+
   const filtered = useMemo(() => {
-    return typeFilter === 'all'
+    let result = typeFilter === 'all'
       ? institutions
       : institutions.filter((r) => (r.type || 'other') === typeFilter);
-  }, [institutions, typeFilter]);
+    if (subcategoryFilter !== 'all' && institutionSubcategory) {
+      result = result.filter((r) => {
+        const id = (r.id || '').replace('https://openalex.org/', '');
+        return institutionSubcategory[id] === subcategoryFilter;
+      });
+    }
+    return result;
+  }, [institutions, typeFilter, subcategoryFilter, institutionSubcategory]);
 
   const chartData = useMemo(
     () => filtered.slice(0, showCount).map((r) => ({
@@ -4250,6 +4306,7 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
   // of the dashboard to the type aggregate.
   const handleTypeClick = (t) => {
     setTypeFilter(t);
+    setSubcategoryFilter('all');  // type pill clears any subcategory pill
     if (!onSelectInstitution) return;
     if (t === 'all') {
       onSelectInstitution('all_thailand');
@@ -4258,6 +4315,30 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
     }
     // If the type doesn't have an aggregate view (rare), we still
     // narrow the chart but leave the global filter alone.
+  };
+
+  // Subcategory pill click. Drives the global filter to the
+  // corresponding subcategory:* view, and forces the type pill to
+  // 'education' since all subcategories are sub-classifications of
+  // education.
+  const handleSubcategoryClick = (sc) => {
+    setSubcategoryFilter(sc);
+    if (sc === 'all') {
+      // Drop back to the type-level view (or all_thailand if the
+      // user is already at all). If type was implicitly 'education'
+      // because of a subcategory selection, return to type:education
+      // since they still want to be in that scope.
+      if (typeFilter === 'education' && typeViewSet.has('education')) {
+        if (onSelectInstitution) onSelectInstitution('type:education');
+      } else if (typeFilter === 'all') {
+        if (onSelectInstitution) onSelectInstitution('all_thailand');
+      }
+    } else {
+      // Activate this subcategory. Force the type filter to education
+      // for visual consistency with the chart.
+      setTypeFilter('education');
+      if (onSelectInstitution) onSelectInstitution(`subcategory:${sc}`);
+    }
   };
 
   return (
@@ -4303,6 +4384,47 @@ const TopInstitutionsPanel = ({ institutions, onSelectInstitution, currentView, 
           />
         ))}
       </div>
+
+      {/* Subcategory filter row: only rendered when we're looking at
+          education (or All). Sub-classifies the 56 education-type
+          institutions into Public, Rajabhat, Rajamangala, Private,
+          etc. The "All" pill clears the subcategory back to whatever
+          the type pill says (education or all). Each subcategory pill
+          maps to a precomputed subcategory:<key> view so the rest of
+          the dashboard responds in lockstep. */}
+      {showSubcategoryPills && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 9,
+              letterSpacing: '0.16em',
+              color: PALETTE.muted,
+              textTransform: 'uppercase',
+              marginRight: 6,
+            }}
+          >
+            Education subcategory
+          </span>
+          <FilterPill
+            label="All"
+            active={subcategoryFilter === 'all'}
+            onClick={() => handleSubcategoryClick('all')}
+          />
+          {subcategoryViews.map((sv) => {
+            const sc = sv.subcategory;
+            const cap = sc.charAt(0).toUpperCase() + sc.slice(1);
+            return (
+              <FilterPill
+                key={sc}
+                label={cap}
+                active={subcategoryFilter === sc}
+                onClick={() => handleSubcategoryClick(sc)}
+              />
+            );
+          })}
+        </div>
+      )}
 
       {mode === 'chart' ? (
         chartData.length === 0 ? (
@@ -5288,6 +5410,13 @@ export default function Dashboard() {
   const typeViews = data.meta?.type_views || [];
   const fieldViews = data.meta?.field_views || [];
   const domainViews = data.meta?.domain_views || [];
+  // Subcategory data: a list of available subcategory views (for
+  // rendering filter pills) and an OpenAlex-ID → subcategory map
+  // (for tagging individual institutions in the landscape and the
+  // overlap matrix). Both are empty if the pipeline didn't see the
+  // institution_subcategory_mapping.csv.
+  const subcategoryViews = data.meta?.subcategory_views || [];
+  const institutionSubcategory = data.meta?.institution_subcategory || {};
   const viewLabel = useMemo(() => {
     if (view === 'all_thailand') return 'All Thailand';
     // Type-aggregate view (e.g. 'type:education')
@@ -5303,6 +5432,13 @@ export default function Dashboard() {
     // Domain view (e.g. 'domain:Health Sciences')
     if (view.startsWith('domain:')) {
       return `${view.slice(7)} (domain)`;
+    }
+    // Subcategory view (e.g. 'subcategory:rajabhat'). Capitalize for
+    // readability since the pipeline emits lowercase keys.
+    if (view.startsWith('subcategory:')) {
+      const sc = view.slice(12);
+      const cap = sc.charAt(0).toUpperCase() + sc.slice(1);
+      return `${cap} (subcategory)`;
     }
     // Lookup in the top-N (institution_views in meta.json)
     const fromMeta = institutionViews.find((iv) => iv.id === view);
@@ -5349,6 +5485,16 @@ export default function Dashboard() {
       crumbs.push({ viewKey: view, label: `${d} (domain)` });
       return crumbs;
     }
+    // Subcategory view: chain reads
+    //   "All Thailand › Education sector › Rajabhat (subcategory)"
+    // since all subcategories are sub-classifications of education.
+    if (view.startsWith('subcategory:')) {
+      crumbs.push({ viewKey: 'type:education', label: 'Education sector' });
+      const sc = view.slice(12);
+      const cap = sc.charAt(0).toUpperCase() + sc.slice(1);
+      crumbs.push({ viewKey: view, label: `${cap} (subcategory)` });
+      return crumbs;
+    }
     // Institution view. Try to find its type so the chain reads
     // "All Thailand › <Type> sector › <Institution>".
     let instType = null;
@@ -5379,9 +5525,26 @@ export default function Dashboard() {
         label: `${cap} sector`,
       });
     }
+    // For education-type institutions, insert the subcategory crumb
+    // between the sector and the institution name when we have a
+    // mapping for it. The subcategory crumb is only clickable if
+    // a corresponding subcategory_view exists (so we don't link to
+    // a view that doesn't have data).
+    if (instType === 'education') {
+      const sc = institutionSubcategory[view];
+      if (sc) {
+        const scInList = subcategoryViews.some((sv) => sv.subcategory === sc);
+        const cap = sc.charAt(0).toUpperCase() + sc.slice(1);
+        crumbs.push({
+          viewKey: scInList ? `subcategory:${sc}` : view,
+          label: `${cap} (subcategory)`,
+        });
+      }
+    }
     crumbs.push({ viewKey: view, label: instName });
     return crumbs;
-  }, [view, institutionViews, typeViews, data.institutions]);
+  }, [view, institutionViews, typeViews, data.institutions,
+      institutionSubcategory, subcategoryViews]);
 
   if (data.status === 'loading') {
     return (
@@ -5502,6 +5665,8 @@ export default function Dashboard() {
               onSelectInstitution={setView}
               currentView={effectiveView}
               typeViews={typeViews}
+              subcategoryViews={subcategoryViews}
+              institutionSubcategory={institutionSubcategory}
             />
           )}
 
@@ -5610,6 +5775,7 @@ export default function Dashboard() {
             <InstitutionOverlapHeatmap
               institutionOverlap={data.institution_overlap}
               currentView={effectiveView}
+              institutionSubcategory={institutionSubcategory}
             />
           ) : (
             <Card className="p-5">
