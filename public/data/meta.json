@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-10T09:30:05",
+  "generated_at": "2026-05-10T15:11:39",
   "pipeline_version": "v2.6",
   "views": [
     "all_thailand",
@@ -1291,6 +1291,72 @@
     {
       "key": "ebsco_asu_ft",
       "label": "EBSCO ASU full text",
+      "type": "full_text",
+      "subscribed": true
+    },
+    {
+      "key": "bmj_global",
+      "label": "BMJ Global",
+      "type": "full_text",
+      "subscribed": true
+    },
+    {
+      "key": "cambridge_journals",
+      "label": "Cambridge Journals",
+      "type": "full_text",
+      "subscribed": true
+    },
+    {
+      "key": "emerald_journals",
+      "label": "Emerald Journals",
+      "type": "full_text",
+      "subscribed": true
+    },
+    {
+      "key": "ieee_xplore",
+      "label": "IEEE Xplore",
+      "type": "full_text",
+      "subscribed": true
+    },
+    {
+      "key": "ovid_global",
+      "label": "Ovid Global",
+      "type": "full_text",
+      "subscribed": true
+    },
+    {
+      "key": "acm",
+      "label": "ACM (periodicals + proceedings)",
+      "type": "full_text",
+      "subscribed": true
+    },
+    {
+      "key": "brill_journals",
+      "label": "Brill Journals",
+      "type": "full_text",
+      "subscribed": true
+    },
+    {
+      "key": "tandf_journals",
+      "label": "Taylor & Francis Journals",
+      "type": "full_text",
+      "subscribed": true
+    },
+    {
+      "key": "duke_journals",
+      "label": "Duke Journals",
+      "type": "full_text",
+      "subscribed": true
+    },
+    {
+      "key": "springer_journals",
+      "label": "Springer Nature Journals",
+      "type": "full_text",
+      "subscribed": true
+    },
+    {
+      "key": "jstor",
+      "label": "JSTOR",
       "type": "full_text",
       "subscribed": true
     }
