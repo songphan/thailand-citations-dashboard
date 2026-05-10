@@ -151,10 +151,10 @@ function useDataFiles() {
     institution_overlap: null,
     publisher_sankey: null,
     by_field: null,
-    by_subfield: null,
+    by_domain: null,
     by_language: null,
     field_sankey: null,
-    subfield_sankey: null,
+    domain_sankey: null,
   });
 
   useEffect(() => {
@@ -166,13 +166,13 @@ function useDataFiles() {
       'institutions', 'institution_types',
     ];
     // Optional files: load if present, ignore 404 silently. The
-    // disciplinary files (by_field/by_subfield/by_language and the
+    // disciplinary files (by_field/by_domain/by_language and the
     // discipline Sankeys) are optional because they require the
     // enrichment step and may not be present on older builds.
     const optionalFiles = [
       'institution_overlap', 'publisher_sankey',
-      'by_field', 'by_subfield', 'by_language',
-      'field_sankey', 'subfield_sankey',
+      'by_field', 'by_domain', 'by_language',
+      'field_sankey', 'domain_sankey',
     ];
 
     const loadRequired = Promise.all(
@@ -1378,10 +1378,9 @@ const SankeyNode = ({
   const baseColor = payload.side === 'seed' ? PALETTE.navy : PALETTE.burgundy;
   const isSelected = selectedNodeIndex === index;
   // Recognize the rollup bucket. Any of the labels in `otherNames`
-  // (set by the calling Sankey to support different domains —
-  // "Other publishers", "Other fields", "Other subfields") trigger
-  // the muted/italic styling so the rollup is visually distinct
-  // from real categories.
+  // (set by the calling Sankey to support different categories —
+  // "Other publishers", "Other fields") trigger the muted/italic
+  // styling so the rollup is visually distinct from real categories.
   const otherSet = otherNames || ['Other publishers'];
   const isOther = otherSet.includes(payload.name);
   // Selected node gets full saturation + stroke; non-selected fade
@@ -1934,16 +1933,17 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
 // cited works are also cited by another, EXCLUDING citations from
 // papers the two co-authored together. Co-authored papers would
 // ============================================================
-//  DisciplineSankey — field/subfield seed-to-cited flow
+//  DisciplineSankey — field/domain seed-to-cited flow
 // ============================================================
 //
-// Renders the citing-side primary_field/subfield to cited-side
-// primary_field/subfield flow as a Sankey diagram. Uses the exact
+// Renders the citing-side primary_field/domain to cited-side
+// primary_field/domain flow as a Sankey diagram. Uses the exact
 // same interaction model as PublisherSankey: click a node to
 // highlight its connected bands and open a detail table showing
-// where that field/subfield's flow goes (or comes from). The
-// `level` prop ("field" or "subfield") parameterizes labels and
-// the "Other" rollup name.
+// where that field/domain's flow goes (or comes from). The
+// `level` prop ("field" or "domain") parameterizes labels and
+// the "Other" rollup name. Domain has only 4 buckets so no
+// rollup applies in practice.
 //
 // Data shape (from the pipeline's _compute_discipline_sankey):
 //   { nodes: [{name, side, total}, ...],
@@ -1964,7 +1964,7 @@ const DisciplineSankey = ({ sankey, view, viewLabel, isFiltered, level }) => {
   const [selectedNode, setSelectedNode] = useState(null);
   // Reset the selection whenever the view or level changes so a
   // stale node index from a different dataset doesn't point at the
-  // wrong field/subfield.
+  // wrong field/domain.
   useEffect(() => {
     setSelectedNode(null);
   }, [view, level]);
@@ -1985,7 +1985,7 @@ const DisciplineSankey = ({ sankey, view, viewLabel, isFiltered, level }) => {
   // Build the click-detail breakdown for the selected node, using
   // the same approach as PublisherSankey: walk all links and pick
   // those touching the node, then aggregate by the OTHER side.
-  const otherLabel = level === 'field' ? 'Other fields' : 'Other subfields';
+  const otherLabel = level === 'field' ? 'Other fields' : 'Other domains';
   const detail = useMemo(() => {
     if (!hasData || selectedNode == null) return null;
     const nodes = data.nodes;
@@ -2028,8 +2028,8 @@ const DisciplineSankey = ({ sankey, view, viewLabel, isFiltered, level }) => {
     return (
       <EnrichmentPlaceholder
         icon={GitBranch}
-        kicker={`${level === 'field' ? 'Field' : 'Subfield'} flow`}
-        title={`${level === 'field' ? 'Field' : 'Subfield'}-to-${level} citation flow`}
+        kicker={`${level === 'field' ? 'Field' : 'Domain'} flow`}
+        title={`${level === 'field' ? 'Field' : 'Domain'}-to-${level} citation flow`}
         message={`Sankey diagram of citation flow from citing-side to cited-side OpenAlex ${level}s.`}
       />
     );
@@ -2039,8 +2039,8 @@ const DisciplineSankey = ({ sankey, view, viewLabel, isFiltered, level }) => {
       <Card className="p-5">
         <SectionTitle
           icon={GitBranch}
-          kicker={`${level === 'field' ? 'Field' : 'Subfield'} flow`}
-          title={`${level === 'field' ? 'Field' : 'Subfield'}-to-${level} citation flow`}
+          kicker={`${level === 'field' ? 'Field' : 'Domain'} flow`}
+          title={`${level === 'field' ? 'Field' : 'Domain'}-to-${level} citation flow`}
           hint={`Not enough ${level} metadata in this view to render a Sankey.`}
         />
       </Card>
@@ -2049,22 +2049,22 @@ const DisciplineSankey = ({ sankey, view, viewLabel, isFiltered, level }) => {
 
   const m = data.meta || {};
   const titleVerb = isFiltered && viewLabel
-    ? `${level === 'field' ? 'Fields' : 'Subfields'} of 2025 papers by ${viewLabel} and the ${level}s they cite`
-    : `${level === 'field' ? 'Fields' : 'Subfields'} of Thai 2025 papers and the ${level}s they cite`;
+    ? `${level === 'field' ? 'Fields' : 'Domains'} of 2025 papers by ${viewLabel} and the ${level}s they cite`
+    : `${level === 'field' ? 'Fields' : 'Domains'} of Thai 2025 papers and the ${level}s they cite`;
   const otherSet = [otherLabel];
 
   return (
     <Card className="p-5" filtered={isFiltered}>
       <SectionTitle
         icon={GitBranch}
-        kicker={`${level === 'field' ? 'Field' : 'Subfield'} flow`}
+        kicker={`${level === 'field' ? 'Field' : 'Domain'} flow`}
         title={titleVerb}
         totalN={m.total_edges_with_both}
         totalLabel={`citations with ${level} metadata on both sides (${m.coverage_pct || 0}% of this view's citations)`}
         hint={
           level === 'field'
-            ? `Each strand is a flow from a citing-side primary field (left, navy) to a cited-side primary field (right, burgundy); thickness is proportional to the number of citation edges. Top ${(m.n_seed_shown || 1) - 1} fields on each side are shown by name; the rest aggregate into "Other fields". Click any field label to see its detailed flow breakdown. Diagonal flows (a field citing itself) are usually the dominant bands.`
-            : `Each strand is a flow from a citing-side subfield to a cited-side subfield. Top ${(m.n_seed_shown || 1) - 1} subfields on each side are shown; everything outside the top is rolled into "Other subfields". Click any subfield label to see its detailed flow breakdown. The subfield space is much larger than fields, so the "Other" bucket typically holds a substantial fraction of total flow.`
+            ? `Each strand is a flow from a citing-side primary field (left, navy) to a cited-side primary field (right, burgundy); thickness is proportional to the number of citation edges. All 26 OpenAlex fields are shown by name on each side; no aggregation is applied. Click any field label to see its detailed flow breakdown. Diagonal flows (a field citing itself) are usually the dominant bands.`
+            : `The 4-domain view is the broadest disciplinary cut of citation flow: where Health, Life, Physical, and Social Sciences direct their citations. Each strand is a flow from a citing-side primary domain (left, navy) to a cited-side primary domain (right, burgundy); thickness is proportional to citation edges. Click any domain label for the detailed flow breakdown.`
         }
       />
 
@@ -2113,7 +2113,7 @@ const DisciplineSankey = ({ sankey, view, viewLabel, isFiltered, level }) => {
         )}
       </div>
 
-      <div style={{ width: '100%', height: level === 'subfield' ? 600 : 540 }}>
+      <div style={{ width: '100%', height: level === 'domain' ? 380 : 720 }}>
         <ResponsiveContainer>
           <Sankey
             data={sankeyData}
@@ -2141,7 +2141,7 @@ const DisciplineSankey = ({ sankey, view, viewLabel, isFiltered, level }) => {
                 }
               />
             )}
-            nodePadding={level === 'subfield' ? 6 : 12}
+            nodePadding={level === 'domain' ? 24 : 8}
             nodeWidth={10}
             sort={false}
             margin={{ top: 16, right: 220, bottom: 16, left: 220 }}
@@ -2174,7 +2174,7 @@ const DisciplineSankey = ({ sankey, view, viewLabel, isFiltered, level }) => {
         </ResponsiveContainer>
       </div>
 
-      {/* Detail breakdown table for the clicked field/subfield */}
+      {/* Detail breakdown table for the clicked field/domain */}
       {detail && (
         <div
           className="mt-4 p-4"
@@ -3325,13 +3325,13 @@ const PublisherYTick = ({ x, y, payload }) => {
 };
 
 // ============================================================
-//  Disciplinary panels (field, subfield, language)
+//  Disciplinary panels (field, domain, language)
 // ============================================================
 //
 // All three follow the same shape as ByTypePanel: a horizontal bar chart
 // of the citing-side distribution for the current view, with a chart/table
 // toggle and a clickable bar that drills into the corresponding view
-// (field:X or subfield:X). Bars use navy by default and burgundy for the
+// (field:X or domain:X). Bars use navy by default and burgundy for the
 // top entry; the active filter (if any) gets a bold burgundy outline.
 //
 // These panels render an "enrichment needed" placeholder if the data
@@ -3525,84 +3525,80 @@ const ByFieldPanel = ({ byField, view, currentView, onViewChange }) => {
   );
 };
 
-const BySubfieldPanel = ({ bySubfield, view, currentView, onViewChange, subfieldViews }) => {
+const ByDomainPanel = ({ byDomain, view, currentView, onViewChange }) => {
   const [mode, setMode] = useState('chart');
 
   // Hooks always run; null handling happens after the hook block.
+  // Even though there are only 4 domain values, we still apply the
+  // placeholder reorder helper to push '(unknown)' to the end if it
+  // shows up.
   const items = useMemo(
     () => pushPlaceholdersLast(
-      (bySubfield && bySubfield[view]) || [],
-      (r) => r.subfield,
+      (byDomain && byDomain[view]) || [],
+      (r) => r.domain,
     ),
-    [bySubfield, view],
+    [byDomain, view],
   );
   const total = useMemo(() => items.reduce((s, r) => s + r.edges, 0), [items]);
   const chartData = useMemo(
     () => items.map((r) => ({
-      subfield: r.subfield,
+      domain: r.domain,
       edges: r.edges,
       n_seeds: r.n_seeds,
       pct: total ? (r.edges / total) * 100 : 0,
-      n_rolled_up: r.n_subfields_rolled_up || 0,
     })),
     [items, total],
   );
 
-  const activeSubfield = currentView && currentView.startsWith('subfield:')
-    ? currentView.slice(9)
+  // Active discipline filter at domain granularity. Mirrors the
+  // by-field bar-highlight behavior.
+  const activeDomain = currentView && currentView.startsWith('domain:')
+    ? currentView.slice(7)
     : null;
   const isFiltered = view !== 'all_thailand';
 
-  // Subfield filter is only available for the top 50 subfields that
-  // were precomputed by the pipeline. Build a lookup so we can disable
-  // the click for subfields that don't have a precomputed view (and the
-  // '(other)' rollup, which is not a real subfield).
-  const filterableSubfields = useMemo(() => {
-    if (!subfieldViews) return new Set();
-    return new Set(subfieldViews.map((sv) => sv.subfield));
-  }, [subfieldViews]);
-
+  // Click-to-filter: jump to a domain view. Skips the '(unknown)'
+  // bucket since it isn't a real filter target.
   const handleClick = (data) => {
     if (!data || !data.activePayload || !data.activePayload[0]) return;
-    const sf = data.activePayload[0].payload.subfield;
-    if (!sf || sf === '(unknown)' || sf === '(other)') return;
-    if (!filterableSubfields.has(sf)) return;
-    if (onViewChange) onViewChange(`subfield:${sf}`);
+    const d = data.activePayload[0].payload.domain;
+    if (!d || d === '(unknown)') return;
+    if (onViewChange) onViewChange(`domain:${d}`);
   };
 
-  if (!bySubfield) {
+  if (!byDomain) {
     return (
       <EnrichmentPlaceholder
         icon={Microscope}
-        kicker="Subfield distribution"
-        title="Citing publications by primary subfield"
-        message="Distribution of citing publications across OpenAlex's ~250 subfields. Top 30 are shown individually; the rest roll up to '(other)'."
+        kicker="Domain distribution"
+        title="Citing publications by primary domain"
+        message="Distribution of citing publications across the four OpenAlex domains: Health Sciences, Life Sciences, Physical Sciences, and Social Sciences."
       />
     );
   }
-  if (!bySubfield[view]) return null;
+  if (!byDomain[view]) return null;
 
   return (
     <Card className="p-5" filtered={isFiltered}>
       <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
         <SectionTitle
           icon={Microscope}
-          kicker="Subfield distribution"
-          title="Citing publications by primary subfield"
+          kicker="Domain distribution"
+          title="Citing publications by primary domain"
           totalN={total}
-          totalLabel="citations from these subfields"
-          hint="Top 30 subfields by citation count, with the rest aggregated as '(other)'. Click a top subfield to filter, but only the top 50 subfields by overall citation activity have precomputed views."
+          totalLabel="citations from these domains"
+          hint="The broadest disciplinary cut: Health Sciences, Life Sciences, Physical Sciences, Social Sciences. Suitable for executive summaries where 25 fields would be too granular. Click a bar to filter the dashboard to that domain."
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
 
       {mode === 'chart' ? (
-        <div style={{ width: '100%', height: Math.max(280, chartData.length * 22) }}>
+        <div style={{ width: '100%', height: Math.max(220, chartData.length * 48) }}>
           <ResponsiveContainer>
             <BarChart
               data={chartData}
               layout="vertical"
-              margin={{ top: 4, right: 60, bottom: 4, left: 240 }}
+              margin={{ top: 4, right: 60, bottom: 4, left: 200 }}
               onClick={handleClick}
             >
               <CartesianGrid stroke={PALETTE.rule} horizontal={false} />
@@ -3614,10 +3610,10 @@ const BySubfieldPanel = ({ bySubfield, view, currentView, onViewChange, subfield
               />
               <YAxis
                 type="category"
-                dataKey="subfield"
-                tick={{ fontSize: 10, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
+                dataKey="domain"
+                tick={{ fontSize: 12, fill: PALETTE.charcoal, fontFamily: FONT_BODY }}
                 stroke={PALETTE.rule}
-                width={240}
+                width={200}
               />
               <Tooltip
                 contentStyle={{
@@ -3630,9 +3626,7 @@ const BySubfieldPanel = ({ bySubfield, view, currentView, onViewChange, subfield
                 labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
                 formatter={(value, _name, props) => [
                   `${fmtFull(value)} (${props.payload.pct.toFixed(1)}%)`,
-                  props.payload.n_rolled_up
-                    ? `Citations (${props.payload.n_rolled_up} subfields rolled up)`
-                    : 'Citations',
+                  'Citations',
                 ]}
               />
               <Bar dataKey="edges" cursor="pointer">
@@ -3640,16 +3634,14 @@ const BySubfieldPanel = ({ bySubfield, view, currentView, onViewChange, subfield
                   <Cell
                     key={i}
                     fill={
-                      d.subfield === '(other)'
-                        ? PALETTE.muted
-                        : d.subfield === activeSubfield
+                      d.domain === activeDomain
+                        ? PALETTE.burgundy
+                        : i === 0 && !activeDomain
                           ? PALETTE.burgundy
-                          : i === 0 && !activeSubfield
-                            ? PALETTE.burgundy
-                            : PALETTE.navy
+                          : PALETTE.navy
                     }
-                    stroke={d.subfield === activeSubfield ? PALETTE.ink : 'none'}
-                    strokeWidth={d.subfield === activeSubfield ? 2 : 0}
+                    stroke={d.domain === activeDomain ? PALETTE.ink : 'none'}
+                    strokeWidth={d.domain === activeDomain ? 2 : 0}
                   />
                 ))}
               </Bar>
@@ -3661,46 +3653,33 @@ const BySubfieldPanel = ({ bySubfield, view, currentView, onViewChange, subfield
           <table style={{ width: '100%', fontFamily: FONT_BODY, fontSize: 12 }}>
             <thead>
               <tr style={{ borderBottom: `2px solid ${PALETTE.ink}` }}>
-                <th style={{ textAlign: 'left', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Subfield</th>
+                <th style={{ textAlign: 'left', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Domain</th>
                 <th style={{ textAlign: 'right', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Seeds</th>
                 <th style={{ textAlign: 'right', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Citations</th>
                 <th style={{ textAlign: 'right', padding: '6px 8px', fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '0.08em', color: PALETTE.muted, textTransform: 'uppercase' }}>Share</th>
               </tr>
             </thead>
             <tbody>
-              {chartData.map((r) => {
-                const clickable =
-                  r.subfield !== '(unknown)' &&
-                  r.subfield !== '(other)' &&
-                  filterableSubfields.has(r.subfield);
-                return (
-                  <tr
-                    key={r.subfield}
-                    style={{
-                      borderBottom: `1px solid ${PALETTE.rule}`,
-                      cursor: clickable ? 'pointer' : 'default',
-                      background: r.subfield === activeSubfield ? PALETTE.cream : 'transparent',
-                    }}
-                    onClick={() => {
-                      if (clickable && onViewChange) {
-                        onViewChange(`subfield:${r.subfield}`);
-                      }
-                    }}
-                  >
-                    <td style={{ padding: '6px 8px', color: PALETTE.charcoal }}>
-                      {r.subfield}
-                      {r.n_rolled_up > 0 && (
-                        <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: PALETTE.muted, marginLeft: 6 }}>
-                          ({r.n_rolled_up} rolled up)
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.muted }}>{fmt(r.n_seeds)}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.ink }}>{fmt(r.edges)}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.muted }}>{r.pct.toFixed(1)}%</td>
-                  </tr>
-                );
-              })}
+              {chartData.map((r) => (
+                <tr
+                  key={r.domain}
+                  style={{
+                    borderBottom: `1px solid ${PALETTE.rule}`,
+                    cursor: r.domain === '(unknown)' ? 'default' : 'pointer',
+                    background: r.domain === activeDomain ? PALETTE.cream : 'transparent',
+                  }}
+                  onClick={() => {
+                    if (r.domain !== '(unknown)' && onViewChange) {
+                      onViewChange(`domain:${r.domain}`);
+                    }
+                  }}
+                >
+                  <td style={{ padding: '6px 8px', color: PALETTE.charcoal }}>{r.domain}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.muted }}>{fmt(r.n_seeds)}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.ink }}>{fmt(r.edges)}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: FONT_MONO, color: PALETTE.muted }}>{r.pct.toFixed(1)}%</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -5285,7 +5264,7 @@ export default function Dashboard() {
   const institutionViews = data.meta?.institution_views || [];
   const typeViews = data.meta?.type_views || [];
   const fieldViews = data.meta?.field_views || [];
-  const subfieldViews = data.meta?.subfield_views || [];
+  const domainViews = data.meta?.domain_views || [];
   const viewLabel = useMemo(() => {
     if (view === 'all_thailand') return 'All Thailand';
     // Type-aggregate view (e.g. 'type:education')
@@ -5298,9 +5277,9 @@ export default function Dashboard() {
     if (view.startsWith('field:')) {
       return `${view.slice(6)} (field)`;
     }
-    // Subfield view (e.g. 'subfield:Cardiology')
-    if (view.startsWith('subfield:')) {
-      return `${view.slice(9)} (subfield)`;
+    // Domain view (e.g. 'domain:Health Sciences')
+    if (view.startsWith('domain:')) {
+      return `${view.slice(7)} (domain)`;
     }
     // Lookup in the top-N (institution_views in meta.json)
     const fromMeta = institutionViews.find((iv) => iv.id === view);
@@ -5322,7 +5301,7 @@ export default function Dashboard() {
   //   view='type:education'    → [All Thailand, Education sector]
   //   view='I158708052' (CU)   → [All Thailand, Education sector, Chulalongkorn University]
   //   view='field:Medicine'    → [All Thailand, Medicine (field)]
-  //   view='subfield:Cardiology' → [All Thailand, Cardiology (subfield)]
+  //   view='domain:Health Sciences' → [All Thailand, Health Sciences (domain)]
   //
   // For an institution view we look up its type from institution_views
   // (or the institutions panel as a fallback) so the chain shows the
@@ -5342,9 +5321,9 @@ export default function Dashboard() {
       crumbs.push({ viewKey: view, label: `${f} (field)` });
       return crumbs;
     }
-    if (view.startsWith('subfield:')) {
-      const sf = view.slice(9);
-      crumbs.push({ viewKey: view, label: `${sf} (subfield)` });
+    if (view.startsWith('domain:')) {
+      const d = view.slice(7);
+      crumbs.push({ viewKey: view, label: `${d} (domain)` });
       return crumbs;
     }
     // Institution view. Try to find its type so the chain reads
@@ -5428,14 +5407,14 @@ export default function Dashboard() {
 
   // Flags that drive layout decisions:
   //   isInstitutionFilter — institution OR type-sector view
-  //   isDisciplineFilter  — field OR subfield view
+  //   isDisciplineFilter  — field OR domain view
   // The two are mutually exclusive (we don't combine them in v1), so
   // we hide the institutional surfaces when discipline is active and
   // vice versa is not needed (the disciplinary landscape stays visible
   // because it works as both a distribution and a picker, even when
   // the user is in an institution view).
   const isDisciplineFilter =
-    effectiveView.startsWith('field:') || effectiveView.startsWith('subfield:');
+    effectiveView.startsWith('field:') || effectiveView.startsWith('domain:');
 
   return (
     <div
@@ -5451,7 +5430,7 @@ export default function Dashboard() {
         <div className="space-y-6">
           {/* Breadcrumb-style sticky filter bar — promoted to the very
               top of the main column. With multiple filter pathways
-              (institution, type sector, field, subfield), the user
+              (institution, type sector, field, domain), the user
               needs the breadcrumb visible at all times to know which
               filter is active before they read any panel. */}
           <FilterBar
@@ -5491,7 +5470,7 @@ export default function Dashboard() {
 
           {/* Institutional landscape: panoramic, doubles as the
               institution picker (clicking an institution or type pill
-              drives the global filter). Hidden when a field/subfield
+              drives the global filter). Hidden when a field/domain
               filter is active because the institutional view doesn't
               combine with the discipline view in v1. */}
           {!isDisciplineFilter && (
@@ -5525,25 +5504,26 @@ export default function Dashboard() {
             level="field"
           />
 
-          {/* Subfield distribution sits right after the field flow,
-              so the user moves naturally from field-level to
-              subfield-level granularity. */}
-          <BySubfieldPanel
-            bySubfield={data.by_subfield}
+          {/* Domain distribution sits right after the field flow,
+              giving the broadest disciplinary cut (4 domains) — the
+              policy-friendly summary level. */}
+          <ByDomainPanel
+            byDomain={data.by_domain}
             view={effectiveView}
             currentView={effectiveView}
             onViewChange={setView}
-            subfieldViews={subfieldViews}
           />
 
-          {/* Subfield flow Sankey directly follows the subfield
-              distribution, mirroring the field/field-flow pairing. */}
+          {/* Domain flow Sankey directly follows the domain
+              distribution, mirroring the field/field-flow pairing.
+              With only 4 domains on each side, this Sankey is the
+              easiest to read of the three. */}
           <DisciplineSankey
-            sankey={data.subfield_sankey}
+            sankey={data.domain_sankey}
             view={effectiveView}
             viewLabel={viewLabel}
             isFiltered={effectiveView !== 'all_thailand'}
-            level="subfield"
+            level="domain"
           />
 
           {/* Time horizon */}
@@ -5579,7 +5559,7 @@ export default function Dashboard() {
           )}
 
           {/* Institutional citation overlap heatmap. Hidden under
-              field/subfield filter because the matrix is computed
+              field/domain filter because the matrix is computed
               against all_thailand citations and isn't recomputed
               per-discipline (would be prohibitively expensive); a
               short note replaces it. */}
