@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-10T18:44:18",
-  "pipeline_version": "v2.7",
+  "generated_at": "2026-05-10T19:47:23",
+  "pipeline_version": "v2.8",
   "views": [
     "all_thailand",
     "type:education",
@@ -12,6 +12,11 @@
     "type:funder",
     "type:company",
     "type:archive",
+    "subcategory:public",
+    "subcategory:private",
+    "subcategory:rajamangala",
+    "subcategory:rajabhat",
+    "subcategory:other",
     "I158708052",
     "I25399158",
     "I48076826",
@@ -116,8 +121,8 @@
     "field:Nursing",
     "field:Neuroscience",
     "field:Pharmacology, Toxicology and Pharmaceutics",
-    "field:Dentistry",
     "field:Earth and Planetary Sciences",
+    "field:Dentistry",
     "field:Decision Sciences",
     "field:Arts and Humanities",
     "field:Chemical Engineering",
@@ -696,6 +701,92 @@
       "n_edges": 1002
     }
   ],
+  "subcategory_views": [
+    {
+      "id": "subcategory:public",
+      "subcategory": "public",
+      "n_institutions": 28,
+      "n_edges": 1387744
+    },
+    {
+      "id": "subcategory:private",
+      "subcategory": "private",
+      "n_institutions": 7,
+      "n_edges": 77332
+    },
+    {
+      "id": "subcategory:rajamangala",
+      "subcategory": "rajamangala",
+      "n_institutions": 8,
+      "n_edges": 65647
+    },
+    {
+      "id": "subcategory:rajabhat",
+      "subcategory": "rajabhat",
+      "n_institutions": 8,
+      "n_edges": 40566
+    },
+    {
+      "id": "subcategory:other",
+      "subcategory": "other",
+      "n_institutions": 1,
+      "n_edges": 21139
+    }
+  ],
+  "institution_subcategory": {
+    "I158708052": "public",
+    "I25399158": "public",
+    "I48076826": "public",
+    "I198105771": "public",
+    "I131868736": "public",
+    "I179193067": "public",
+    "I108108428": "public",
+    "I96916377": "public",
+    "I82828225": "public",
+    "I91538806": "public",
+    "I60837268": "public",
+    "I82475049": "public",
+    "I123096312": "public",
+    "I86677382": "public",
+    "I34002243": "public",
+    "I66200439": "public",
+    "I129488602": "public",
+    "I76920116": "public",
+    "I38538140": "other",
+    "I1285782058": "rajamangala",
+    "I4210090662": "public",
+    "I10245363": "rajamangala",
+    "I89226531": "private",
+    "I181635417": "private",
+    "I4210153049": "private",
+    "I3132067926": "private",
+    "I72091625": "public",
+    "I190734841": "public",
+    "I4210159985": "rajabhat",
+    "I55913730": "private",
+    "I279583474": "public",
+    "I159665162": "public",
+    "I79246082": "public",
+    "I4210094798": "rajamangala",
+    "I4210105946": "rajabhat",
+    "I73683852": "rajamangala",
+    "I115748381": "private",
+    "I2799959951": "public",
+    "I4210160017": "rajabhat",
+    "I117277806": "public",
+    "I4210139698": "rajabhat",
+    "I4210129057": "rajabhat",
+    "I58196637": "public",
+    "I4210092041": "rajabhat",
+    "I73668669": "rajamangala",
+    "I13590829": "private",
+    "I178764607": "rajabhat",
+    "I4210130206": "public",
+    "I4210118263": "rajamangala",
+    "I4210088080": "rajamangala",
+    "I4210130811": "rajamangala",
+    "I4210151714": "rajabhat"
+  },
   "field_views": [
     {
       "id": "field:Medicine",
@@ -812,15 +903,15 @@
       "n_edges": 14901
     },
     {
-      "id": "field:Dentistry",
-      "field": "Dentistry",
-      "n_seeds": 380,
-      "n_edges": 14625
-    },
-    {
       "id": "field:Earth and Planetary Sciences",
       "field": "Earth and Planetary Sciences",
       "n_seeds": 280,
+      "n_edges": 14625
+    },
+    {
+      "id": "field:Dentistry",
+      "field": "Dentistry",
+      "n_seeds": 380,
       "n_edges": 14625
     },
     {
