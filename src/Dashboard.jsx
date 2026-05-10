@@ -758,8 +758,8 @@ const CoverageTable = ({ coverage, summary, view }) => {
         totalLabel="citations"
         hint={
           isFiltered
-            ? 'Matched on normalized ISSN against the public title list of each database. The gold marker on each bar shows the All Thailand baseline for that database, so you can see whether this institution leans on a database more or less than Thailand as a whole.'
-            : 'Matched on normalized ISSN against the public title list of each database. This shows the technical coverage potential of each database, not whether a particular library subscribes to it.'
+            ? 'Matched on normalized ISSN against the public title list of each database. Coverage is computed over journal articles only; conference proceedings, books, and book chapters are excluded because they use ISBN rather than ISSN identifiers and most database title lists do not enumerate them in a way that allows a clean ISSN match. The gold marker on each bar shows the All Thailand baseline for that database, so you can see whether this institution leans on a database more or less than Thailand as a whole.'
+            : 'Matched on normalized ISSN against the public title list of each database. Coverage is computed over journal articles only; conference proceedings, books, and book chapters are excluded because they use ISBN rather than ISSN identifiers and most database title lists do not enumerate them in a way that allows a clean ISSN match. This shows the technical coverage potential of each database, not whether a particular library subscribes to it.'
         }
       />
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -1372,7 +1372,7 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
 // chart area so long publisher names don't overlap the bars.
 const SankeyNode = ({
   x, y, width, height, index, payload, containerWidth,
-  onNodeClick, selectedNodeIndex, otherNames,
+  onNodeClick, selectedNodeIndex, otherNames, showCount = true,
 }) => {
   const isLeft = x < containerWidth / 2;
   const baseColor = payload.side === 'seed' ? PALETTE.navy : PALETTE.burgundy;
@@ -1431,23 +1431,29 @@ const SankeyNode = ({
       >
         {payload.name}
       </text>
-      {/* Total count under each label, in monospace */}
-      <text
-        x={isLeft ? x - 6 : x + width + 6}
-        y={y + height / 2 + 14}
-        textAnchor={isLeft ? 'end' : 'start'}
-        dominantBaseline="middle"
-        onClick={handleClick}
-        style={{
-          fontFamily: FONT_MONO,
-          fontSize: 9,
-          fill: PALETTE.muted,
-          letterSpacing: '0.04em',
-          cursor: 'pointer',
-        }}
-      >
-        {fmtFull(payload.value || 0)}
-      </text>
+      {/* Total count under each label, in monospace. Optional: dense
+          Sankeys with many nodes per side (e.g., the field Sankey at
+          26 nodes/side) suppress this to avoid the count of one row
+          colliding with the label of the next. The Tooltip and click-
+          to-detail still surface exact counts on demand. */}
+      {showCount && (
+        <text
+          x={isLeft ? x - 6 : x + width + 6}
+          y={y + height / 2 + 14}
+          textAnchor={isLeft ? 'end' : 'start'}
+          dominantBaseline="middle"
+          onClick={handleClick}
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            fill: PALETTE.muted,
+            letterSpacing: '0.04em',
+            cursor: 'pointer',
+          }}
+        >
+          {fmtFull(payload.value || 0)}
+        </text>
+      )}
     </Layer>
   );
 };
@@ -2125,6 +2131,12 @@ const DisciplineSankey = ({ sankey, view, viewLabel, isFiltered, level }) => {
                 }
                 selectedNodeIndex={selectedNode}
                 otherNames={otherSet}
+                // Field Sankey has 26 nodes per side; the per-node
+                // count would collide with the next label. Suppress
+                // it on field; keep it on domain (4 nodes, ample
+                // space). Publisher Sankey uses its own SankeyNode
+                // call elsewhere and is unaffected.
+                showCount={level !== 'field'}
               />
             )}
             link={(
