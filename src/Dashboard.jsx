@@ -4405,15 +4405,34 @@ const TopInstitutionsPanel = ({
   }, [institutions, typeFilter, subcategoryFilter, institutionSubcategory]);
 
   const chartData = useMemo(
-    () => filtered.slice(0, showCount).map((r) => ({
-      id: (r.id || '').replace('https://openalex.org/', ''),
-      name: r.name
-        .replace(/^King Mongkut's /, "KMUT-")
-        .replace(/^King Mongkut /, "KMUT-"),
-      type: r.type || 'other',
-      edges: r.n_edges,
-      seeds: r.n_seeds,
-    })),
+    () => {
+      const rows = filtered.slice(0, showCount).map((r) => ({
+        id: (r.id || '').replace('https://openalex.org/', ''),
+        name: r.name
+          .replace(/^King Mongkut's /, "KMUT-")
+          .replace(/^King Mongkut /, "KMUT-"),
+        type: r.type || 'other',
+        edges: r.n_edges,
+        seeds: r.n_seeds,
+      }));
+      // Recharts vertical BarChart fails to compute a band scale when
+      // there's exactly one category row — the bar renders with height=0
+      // and the y-axis label is dropped. Workaround: append an invisible
+      // spacer row so the band scale has at least 2 entries to divide
+      // the available height between. The spacer's id starts with "__"
+      // so the bar Cell map and ColoredYTick can detect it and skip
+      // rendering anything visible for it.
+      if (rows.length === 1) {
+        rows.push({
+          id: '__spacer__',
+          name: ' ',  // single space so the y-axis tick has SOMETHING to render
+          type: 'other',
+          edges: 0,
+          seeds: 0,
+        });
+      }
+      return rows;
+    },
     [filtered, showCount],
   );
 
