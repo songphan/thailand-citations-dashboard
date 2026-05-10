@@ -30,6 +30,16 @@ const PALETTE = {
   sage: '#7a9079',
   plum: '#5d3a5a',
   ochre: '#c9963f',
+  // Subcategory shades for education sub-classifications. Picked to
+  // be distinct from the 9 type colors above while still reading as
+  // a coordinated palette. Public re-uses navy (the type color for
+  // education) since Public is the modal subcategory.
+  scRajabhat: '#3d6b8c',     // brighter mid-blue
+  scRajamangala: '#4a5970',  // cool slate
+  scPrivate: '#8c4a3a',      // terracotta (warm contrast)
+  scMilitary: '#6b6a3a',     // muted olive
+  scCommunity: '#5a7a5e',    // moss green
+  scOther: '#4a4540',        // dark graphite
 };
 
 const FONT_DISPLAY = "'Fraunces', 'Iowan Old Style', Georgia, serif";
@@ -2723,7 +2733,11 @@ const InstitutionOverlapHeatmap = ({
                       height: 180,
                       verticalAlign: 'bottom',
                       textAlign: 'left',
-                      color: INST_TYPE_COLORS[types[i]] || PALETTE.charcoal,
+                      color: resolveInstitutionColor(
+                        types[i],
+                        (ids[i] || '').replace('https://openalex.org/', ''),
+                        institutionSubcategory,
+                      ),
                       fontWeight: 500,
                       minWidth: 28,
                     }}
@@ -2754,7 +2768,11 @@ const InstitutionOverlapHeatmap = ({
                       padding: '4px 8px',
                       textAlign: 'right',
                       fontWeight: 500,
-                      color: INST_TYPE_COLORS[types[i]] || PALETTE.charcoal,
+                      color: resolveInstitutionColor(
+                        types[i],
+                        (ids[i] || '').replace('https://openalex.org/', ''),
+                        institutionSubcategory,
+                      ),
                       whiteSpace: 'nowrap',
                       maxWidth: 220,
                       overflow: 'hidden',
@@ -2926,12 +2944,17 @@ const InstitutionOverlapHeatmap = ({
           </div>
         ) : (
           <>
-            {selectedSelf && (
+            {selectedSelf && (() => {
+              const selfShortId = (selectedSelf.id || '').replace('https://openalex.org/', '');
+              const selfColor = resolveInstitutionColor(
+                selectedSelf.type, selfShortId, institutionSubcategory,
+              );
+              return (
               <div
                 className="mb-4 px-4 py-3"
                 style={{
                   background: PALETTE.cream,
-                  borderLeft: `3px solid ${INST_TYPE_COLORS[selectedSelf.type] || PALETTE.ink}`,
+                  borderLeft: `3px solid ${selfColor}`,
                   fontFamily: FONT_BODY,
                   fontSize: 13,
                   color: PALETTE.charcoal,
@@ -2949,7 +2972,7 @@ const InstitutionOverlapHeatmap = ({
                   Anchor institution
                 </div>
                 <div>
-                  <strong style={{ color: INST_TYPE_COLORS[selectedSelf.type] || PALETTE.ink }}>
+                  <strong style={{ color: selfColor }}>
                     {selectedSelf.name}
                   </strong>{' '}
                   cites{' '}
@@ -2960,7 +2983,8 @@ const InstitutionOverlapHeatmap = ({
                   works the named institution also cites (after excluding co-authored seeds).
                 </div>
               </div>
-            )}
+              );
+            })()}
             {listRows.length === 0 ? (
               <div
                 className="p-6 text-center"
@@ -2997,7 +3021,12 @@ const InstitutionOverlapHeatmap = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {listRows.map((r) => (
+                    {listRows.map((r) => {
+                      const shortId = (r.id || '').replace('https://openalex.org/', '');
+                      const rowColor = resolveInstitutionColor(
+                        r.type, shortId, institutionSubcategory,
+                      );
+                      return (
                       <tr
                         key={r.id}
                         style={{ borderTop: `1px solid ${PALETTE.rule}` }}
@@ -3005,7 +3034,7 @@ const InstitutionOverlapHeatmap = ({
                         <td style={cellBody}>
                           <span
                             style={{
-                              color: INST_TYPE_COLORS[r.type] || PALETTE.ink,
+                              color: rowColor,
                               fontWeight: 500,
                             }}
                           >
@@ -3019,9 +3048,9 @@ const InstitutionOverlapHeatmap = ({
                               fontSize: 9,
                               letterSpacing: '0.08em',
                               textTransform: 'uppercase',
-                              color: INST_TYPE_COLORS[r.type] || PALETTE.charcoal,
+                              color: rowColor,
                               padding: '2px 6px',
-                              border: `1px solid ${INST_TYPE_COLORS[r.type] || PALETTE.rule}`,
+                              border: `1px solid ${rowColor}`,
                               whiteSpace: 'nowrap',
                             }}
                           >
@@ -3040,11 +3069,12 @@ const InstitutionOverlapHeatmap = ({
                         <td style={cellBody}>
                           <CoverageBar
                             value={r.pct}
-                            color={INST_TYPE_COLORS[r.type] || PALETTE.burgundy}
+                            color={rowColor}
                           />
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -4266,6 +4296,36 @@ const INST_TYPE_COLORS = {
   archive: PALETTE.sage,
 };
 
+// Color per education subcategory. Used by ColoredYTick and the
+// subcategory pill row when subcategory data is loaded. Public reuses
+// the education color (navy) since it's the modal subcategory and the
+// "default" expectation; the others get distinct hues so an at-a-glance
+// reader can see Rajabhat, Rajamangala, Private, etc. on different rows
+// without needing the breadcrumb. Subcategories not in this map fall
+// back to PALETTE.muted.
+const SUBCATEGORY_COLORS = {
+  public: PALETTE.navy,
+  rajabhat: PALETTE.scRajabhat,
+  rajamangala: PALETTE.scRajamangala,
+  private: PALETTE.scPrivate,
+  military: PALETTE.scMilitary,
+  community: PALETTE.scCommunity,
+  other: PALETTE.scOther,
+};
+
+// Resolve the rendering color for an institution. Education-type
+// institutions use their subcategory color when known; everything
+// else (and education institutions without a subcategory mapping)
+// fall back to the type color. The institutionSubcategory map is
+// keyed by short OpenAlex ID (e.g. 'I158708052').
+const resolveInstitutionColor = (instType, shortId, institutionSubcategory) => {
+  if (instType === 'education' && shortId && institutionSubcategory) {
+    const sc = institutionSubcategory[shortId];
+    if (sc && SUBCATEGORY_COLORS[sc]) return SUBCATEGORY_COLORS[sc];
+  }
+  return INST_TYPE_COLORS[instType] || PALETTE.muted;
+};
+
 const INST_TYPE_FILTER_ORDER = [
   'education', 'healthcare', 'government', 'facility',
   'nonprofit', 'funder', 'company', 'archive', 'other',
@@ -4365,14 +4425,15 @@ const TopInstitutionsPanel = ({
     return m;
   }, [chartData]);
 
-  // Custom tick component: colors each institution name by its type.
-  // Recharts passes x, y, payload (the tick value) into the renderer.
+  // Custom tick component: colors each institution name by its
+  // subcategory (for education) or type (everything else). Recharts
+  // passes x, y, payload (the tick value) into the renderer.
   const ColoredYTick = ({ x, y, payload }) => {
     const info = tickInfoByName[payload.value];
     const isFiltered = currentView && currentView !== 'all_thailand';
     const isSelected = info && currentView === info.id;
     const baseColor = info
-      ? INST_TYPE_COLORS[info.type] || PALETTE.charcoal
+      ? resolveInstitutionColor(info.type, info.id, institutionSubcategory)
       : PALETTE.charcoal;
     // Fade non-selected labels to match the bar shading behavior
     const color = isFiltered && !isSelected ? baseColor + '90' : baseColor;
@@ -4448,7 +4509,7 @@ const TopInstitutionsPanel = ({
           title="Thai institutions by 2025 publication output and citation activity"
           totalN={institutions.length}
           totalLabel="Thai institutions with at least 500 citation edges in 2025 (of 261 producing any research that year)"
-          hint="Each institution's 2025 publications (navy, primary, top axis) and the citations those publications make to other works (muted burgundy, bottom axis), shown on independent scales. Both axes describe what the institution produced and the outgoing references in those publications, not how often the institution is cited. Institution names are colored by type. Click a type pill to filter to the type-aggregate; click a single bar or row to filter to that institution. The 261 producing institutions tail off into a long set of one-off appearances; the 500-edge floor admits the top 200 with substantive 2025 activity (excludes 61 institutions, mostly individual hospitals or single-paper appearances)."
+          hint="Each institution's 2025 publications (navy, primary, top axis) and the citations those publications make to other works (muted burgundy, bottom axis), shown on independent scales. Both axes describe what the institution produced and the outgoing references in those publications, not how often the institution is cited. Institution names are colored by subcategory for education-type rows (Public, Rajabhat, Rajamangala, Private, Other) and by type for everything else (Healthcare, Government, Facility, Nonprofit, Funder, Company, Archive, Other). Click a type or subcategory pill to filter to the corresponding aggregate; click a single bar or row to filter to that institution. The 261 producing institutions tail off into a long set of one-off appearances; the 500-edge floor admits the top 200 with substantive 2025 activity (excludes 61 institutions, mostly individual hospitals or single-paper appearances)."
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
@@ -4517,13 +4578,13 @@ const TopInstitutionsPanel = ({
                 key={sc}
                 label={cap}
                 active={subcategoryFilter === sc}
-                // Subcategories are sub-classifications of the
-                // education type, so they share the education color
-                // (navy). This keeps the visual logic consistent with
-                // the Y-axis labels: education-type institutions are
-                // navy on the chart, and the subcategory pills that
-                // narrow down to subsets of education are navy too.
-                color={INST_TYPE_COLORS.education}
+                // Each subcategory has its own distinct color, matching
+                // the Y-axis label color of institutions in that
+                // subcategory. Public re-uses navy (the education type
+                // color); other subcategories get their own shades so
+                // the user can tell at a glance which rows in the
+                // chart belong to which subcategory.
+                color={SUBCATEGORY_COLORS[sc] || PALETTE.muted}
                 onClick={() => handleSubcategoryClick(sc)}
               />
             );
