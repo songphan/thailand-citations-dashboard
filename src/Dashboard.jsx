@@ -1514,7 +1514,22 @@ const SankeyLink = (props) => {
   return (
     <Layer key={`sankey-link-${index}`}>
       <defs>
-        <linearGradient id={`grad-${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
+        {/* Use absolute (userSpaceOnUse) coordinates so the gradient
+            renders correctly even when the path is exactly horizontal.
+            With the default objectBoundingBox units, a horizontal path
+            (sourceY === targetY) has a zero-height bounding box and the
+            gradient direction becomes undefined — which causes the
+            stroke to render with no fill, making the link invisible.
+            Self-flows (e.g. Physical Sciences citing Physical Sciences,
+            the dominant band in any all-Thailand disciplinary Sankey)
+            always have sourceY === targetY, so this edge case actually
+            hits the largest, most important link in every chart. */}
+        <linearGradient
+          id={`grad-${index}`}
+          gradientUnits="userSpaceOnUse"
+          x1={sourceX} y1={sourceY}
+          x2={targetX} y2={targetY}
+        >
           <stop
             offset="0%"
             stopColor={PALETTE.navy}
