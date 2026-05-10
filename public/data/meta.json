@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-10T19:47:23",
+  "generated_at": "2026-05-10T21:16:21",
   "pipeline_version": "v2.8",
   "views": [
     "all_thailand",
@@ -102,6 +102,121 @@
     "I4210151714",
     "I4210088075",
     "I2800945716",
+    "I3131658906",
+    "I4210106845",
+    "I4210135781",
+    "I1315830910",
+    "I4210146542",
+    "I3131721959",
+    "I154381313",
+    "I2803065428",
+    "I4210116630",
+    "I3132704155",
+    "I4210107506",
+    "I4210112607",
+    "I3142908523",
+    "I4210148395",
+    "I4210113609",
+    "I194118695",
+    "I269735430",
+    "I4210110271",
+    "I4210117768",
+    "I4210130885",
+    "I4322889",
+    "I60697786",
+    "I129496196",
+    "I4210107209",
+    "I4210158764",
+    "I2801166139",
+    "I2799476192",
+    "I114432228",
+    "I4210134513",
+    "I9340882",
+    "I4210127461",
+    "I197898795",
+    "I338254849",
+    "I34956611",
+    "I4210087403",
+    "I4210106727",
+    "I4210105130",
+    "I4210150275",
+    "I4210137768",
+    "I165232561",
+    "I4210109997",
+    "I4210108247",
+    "I4210166623",
+    "I4210097440",
+    "I4210096430",
+    "I4210126681",
+    "I4210163898",
+    "I95579309",
+    "I2801204956",
+    "I4210137676",
+    "I4210091243",
+    "I4210108296",
+    "I175611932",
+    "I2801080794",
+    "I3129675061",
+    "I4210132654",
+    "I4210089159",
+    "I28469333",
+    "I4210125399",
+    "I4210095040",
+    "I4210131608",
+    "I104005692",
+    "I4210087436",
+    "I4210138454",
+    "I4210152965",
+    "I4210166966",
+    "I4210096456",
+    "I2800913826",
+    "I4210110805",
+    "I4210111088",
+    "I184614866",
+    "I39491647",
+    "I4210130090",
+    "I4210114411",
+    "I4210154509",
+    "I4210096323",
+    "I4210110554",
+    "I4210111490",
+    "I4210142390",
+    "I4210128712",
+    "I4210132988",
+    "I4210086785",
+    "I4210160495",
+    "I4210155403",
+    "I176205391",
+    "I2803092234",
+    "I4210124378",
+    "I4210141957",
+    "I2802351605",
+    "I4210098294",
+    "I229056271",
+    "I4210099732",
+    "I4210166311",
+    "I4210105964",
+    "I4210100251",
+    "I19949148",
+    "I4210097165",
+    "I4210110331",
+    "I137559332",
+    "I4210095691",
+    "I4210125673",
+    "I4210136401",
+    "I3133070949",
+    "I70945806",
+    "I4210160044",
+    "I4210162622",
+    "I2800139740",
+    "I4210156301",
+    "I4210092354",
+    "I4210110060",
+    "I4210121587",
+    "I4210161103",
+    "I4210146492",
+    "I4210128518",
+    "I4210114505",
     "field:Medicine",
     "field:Engineering",
     "field:Agricultural and Biological Sciences",
@@ -643,6 +758,696 @@
       "name": "Thailand National Metal and Materials Technology Center",
       "type": "facility",
       "n_edges": 3044
+    },
+    {
+      "id": "I3131658906",
+      "name": "Pathumthani University",
+      "type": "education",
+      "n_edges": 2998
+    },
+    {
+      "id": "I4210106845",
+      "name": "Rajamangala University of Technology Suvarnabhumi",
+      "type": "education",
+      "n_edges": 2955
+    },
+    {
+      "id": "I4210135781",
+      "name": "Rajabhat Maha Sarakham University",
+      "type": "education",
+      "n_edges": 2940
+    },
+    {
+      "id": "I1315830910",
+      "name": "Ministry of Agriculture and Cooperatives",
+      "type": "government",
+      "n_edges": 2869
+    },
+    {
+      "id": "I4210146542",
+      "name": "Department of Marine and Coastal Resources",
+      "type": "government",
+      "n_edges": 2866
+    },
+    {
+      "id": "I3131721959",
+      "name": "Bangkokthonburi University",
+      "type": "education",
+      "n_edges": 2825
+    },
+    {
+      "id": "I154381313",
+      "name": "Pibulsongkram Rajabhat University",
+      "type": "education",
+      "n_edges": 2780
+    },
+    {
+      "id": "I2803065428",
+      "name": "Thammasat University Hospital",
+      "type": "healthcare",
+      "n_edges": 2633
+    },
+    {
+      "id": "I4210116630",
+      "name": "HIV Netherlands Australia Thailand Research Collaboration",
+      "type": "facility",
+      "n_edges": 2619
+    },
+    {
+      "id": "I3132704155",
+      "name": "Udon Thani Rajabhat University",
+      "type": "education",
+      "n_edges": 2551
+    },
+    {
+      "id": "I4210107506",
+      "name": "Maharat Nakhon Ratchasima Hospital",
+      "type": "healthcare",
+      "n_edges": 2540
+    },
+    {
+      "id": "I4210112607",
+      "name": "Armed Forces Research Institute of Medical Science",
+      "type": "nonprofit",
+      "n_edges": 2521
+    },
+    {
+      "id": "I3142908523",
+      "name": "Department of National Parks Wildlife and Plant Conservation",
+      "type": "government",
+      "n_edges": 2501
+    },
+    {
+      "id": "I4210148395",
+      "name": "Charoenkrung Pracharak Hospital",
+      "type": "healthcare",
+      "n_edges": 2481
+    },
+    {
+      "id": "I4210113609",
+      "name": "Nation University",
+      "type": "education",
+      "n_edges": 2463
+    },
+    {
+      "id": "I194118695",
+      "name": "Songkhla Rajabhat University",
+      "type": "education",
+      "n_edges": 2460
+    },
+    {
+      "id": "I269735430",
+      "name": "Stamford International University",
+      "type": "education",
+      "n_edges": 2444
+    },
+    {
+      "id": "I4210110271",
+      "name": "Ubon Ratchathani Rajabhat University",
+      "type": "education",
+      "n_edges": 2402
+    },
+    {
+      "id": "I4210117768",
+      "name": "Centre of Excellence in Mathematics",
+      "type": "education",
+      "n_edges": 2396
+    },
+    {
+      "id": "I4210130885",
+      "name": "Police General Hospital",
+      "type": "healthcare",
+      "n_edges": 2340
+    },
+    {
+      "id": "I4322889",
+      "name": "Mahanakorn University of Technology",
+      "type": "education",
+      "n_edges": 2275
+    },
+    {
+      "id": "I60697786",
+      "name": "Sukhothai Thammathirat Open University",
+      "type": "education",
+      "n_edges": 2245
+    },
+    {
+      "id": "I129496196",
+      "name": "University of the Thai Chamber of Commerce",
+      "type": "education",
+      "n_edges": 2241
+    },
+    {
+      "id": "I4210107209",
+      "name": "Mae Fah Luang University Hospital",
+      "type": "healthcare",
+      "n_edges": 2229
+    },
+    {
+      "id": "I4210158764",
+      "name": "Yala Rajabhat University",
+      "type": "education",
+      "n_edges": 2190
+    },
+    {
+      "id": "I2801166139",
+      "name": "Health Intervention and Technology Assessment Program",
+      "type": "nonprofit",
+      "n_edges": 2185
+    },
+    {
+      "id": "I2799476192",
+      "name": "Bumrungrad International Hospital",
+      "type": "healthcare",
+      "n_edges": 2106
+    },
+    {
+      "id": "I114432228",
+      "name": "Siam University",
+      "type": "education",
+      "n_edges": 2061
+    },
+    {
+      "id": "I4210134513",
+      "name": "Bansomdejchaopraya Rajabhat University",
+      "type": "education",
+      "n_edges": 2060
+    },
+    {
+      "id": "I9340882",
+      "name": "Chiang Mai Rajabhat University",
+      "type": "education",
+      "n_edges": 2048
+    },
+    {
+      "id": "I4210127461",
+      "name": "Social Security Office (Thailand)",
+      "type": "company",
+      "n_edges": 1936
+    },
+    {
+      "id": "I197898795",
+      "name": "Payap University",
+      "type": "education",
+      "n_edges": 1914
+    },
+    {
+      "id": "I338254849",
+      "name": "Princess of Naradhiwas University",
+      "type": "education",
+      "n_edges": 1901
+    },
+    {
+      "id": "I34956611",
+      "name": "North Chiang Mai University",
+      "type": "education",
+      "n_edges": 1892
+    },
+    {
+      "id": "I4210087403",
+      "name": "Roi et Rajabhat University",
+      "type": "education",
+      "n_edges": 1854
+    },
+    {
+      "id": "I4210106727",
+      "name": "Phetchaburi Rajabhat University",
+      "type": "education",
+      "n_edges": 1836
+    },
+    {
+      "id": "I4210105130",
+      "name": "Asia Centre",
+      "type": "nonprofit",
+      "n_edges": 1826
+    },
+    {
+      "id": "I4210150275",
+      "name": "Chonburi Hospital",
+      "type": "healthcare",
+      "n_edges": 1792
+    },
+    {
+      "id": "I4210137768",
+      "name": "UNICEF East Asia and Pacific Regional Office",
+      "type": "nonprofit",
+      "n_edges": 1773
+    },
+    {
+      "id": "I165232561",
+      "name": "Asian University",
+      "type": "education",
+      "n_edges": 1739
+    },
+    {
+      "id": "I4210109997",
+      "name": "Boromarajonani College of Nursing",
+      "type": "education",
+      "n_edges": 1737
+    },
+    {
+      "id": "I4210108247",
+      "name": "Sirindhorn College of Public Health",
+      "type": "education",
+      "n_edges": 1729
+    },
+    {
+      "id": "I4210166623",
+      "name": "Rajabhat Rajanagarindra University",
+      "type": "education",
+      "n_edges": 1726
+    },
+    {
+      "id": "I4210097440",
+      "name": "Suan Dusit University",
+      "type": "education",
+      "n_edges": 1708
+    },
+    {
+      "id": "I4210096430",
+      "name": "Lampang Rajabhat University",
+      "type": "education",
+      "n_edges": 1667
+    },
+    {
+      "id": "I4210126681",
+      "name": "Department of Medical Sciences",
+      "type": "government",
+      "n_edges": 1640
+    },
+    {
+      "id": "I4210163898",
+      "name": "Office of the Higher Education Commission",
+      "type": "government",
+      "n_edges": 1634
+    },
+    {
+      "id": "I95579309",
+      "name": "Chandrakasem Rajabhat University",
+      "type": "education",
+      "n_edges": 1597
+    },
+    {
+      "id": "I2801204956",
+      "name": "Hatyai Hospital",
+      "type": "healthcare",
+      "n_edges": 1594
+    },
+    {
+      "id": "I4210137676",
+      "name": "Muban Chombueng Rajabhat University",
+      "type": "education",
+      "n_edges": 1540
+    },
+    {
+      "id": "I4210091243",
+      "name": "Buriram Rajabhat University",
+      "type": "education",
+      "n_edges": 1506
+    },
+    {
+      "id": "I4210108296",
+      "name": "Central Chest Institute of Thailand",
+      "type": "facility",
+      "n_edges": 1498
+    },
+    {
+      "id": "I175611932",
+      "name": "Electricity Generating Authority of Thailand",
+      "type": "government",
+      "n_edges": 1484
+    },
+    {
+      "id": "I2801080794",
+      "name": "Government of Thailand",
+      "type": "government",
+      "n_edges": 1471
+    },
+    {
+      "id": "I3129675061",
+      "name": "Fatoni University",
+      "type": "education",
+      "n_edges": 1431
+    },
+    {
+      "id": "I4210132654",
+      "name": "Valaya Alongkorn Rajabhat University",
+      "type": "education",
+      "n_edges": 1415
+    },
+    {
+      "id": "I4210089159",
+      "name": "Phitsanulok University",
+      "type": "education",
+      "n_edges": 1375
+    },
+    {
+      "id": "I28469333",
+      "name": "Thai-Nichi Institute of Technology",
+      "type": "education",
+      "n_edges": 1366
+    },
+    {
+      "id": "I4210125399",
+      "name": "SCG Chemicals (Thailand)",
+      "type": "company",
+      "n_edges": 1364
+    },
+    {
+      "id": "I4210095040",
+      "name": "Shoklo Malaria Research Unit",
+      "type": "facility",
+      "n_edges": 1348
+    },
+    {
+      "id": "I4210131608",
+      "name": "National Institute of Health of Thailand",
+      "type": "healthcare",
+      "n_edges": 1343
+    },
+    {
+      "id": "I104005692",
+      "name": "Huachiew Chalermprakiet University",
+      "type": "education",
+      "n_edges": 1335
+    },
+    {
+      "id": "I4210087436",
+      "name": "Chiang Rai Rajabhat University",
+      "type": "education",
+      "n_edges": 1325
+    },
+    {
+      "id": "I4210138454",
+      "name": "Nakhon Sawan Rajabhat University",
+      "type": "education",
+      "n_edges": 1322
+    },
+    {
+      "id": "I4210152965",
+      "name": "Asian Disaster Preparedness Center",
+      "type": "nonprofit",
+      "n_edges": 1313
+    },
+    {
+      "id": "I4210166966",
+      "name": "Ratchaburi Hospital",
+      "type": "healthcare",
+      "n_edges": 1300
+    },
+    {
+      "id": "I4210096456",
+      "name": "Phranakhon Rajabhat University",
+      "type": "education",
+      "n_edges": 1291
+    },
+    {
+      "id": "I2800913826",
+      "name": "Bangkok Metropolitan Administration",
+      "type": "government",
+      "n_edges": 1263
+    },
+    {
+      "id": "I4210110805",
+      "name": "ChiangRai Prachanukroh Hospital",
+      "type": "healthcare",
+      "n_edges": 1219
+    },
+    {
+      "id": "I4210111088",
+      "name": "Maharaj Nakorn Chiang Mai Hospital",
+      "type": "healthcare",
+      "n_edges": 1218
+    },
+    {
+      "id": "I184614866",
+      "name": "Far Eastern University",
+      "type": "education",
+      "n_edges": 1215
+    },
+    {
+      "id": "I39491647",
+      "name": "Kasem Bundit University",
+      "type": "education",
+      "n_edges": 1208
+    },
+    {
+      "id": "I4210130090",
+      "name": "Phranakhon Si Ayutthaya Rajabhat University",
+      "type": "education",
+      "n_edges": 1196
+    },
+    {
+      "id": "I4210114411",
+      "name": "Prapokklao Hospital",
+      "type": "healthcare",
+      "n_edges": 1174
+    },
+    {
+      "id": "I4210154509",
+      "name": "Surindra Rajabhat University",
+      "type": "education",
+      "n_edges": 1106
+    },
+    {
+      "id": "I4210096323",
+      "name": "Stockholm Environment Institute",
+      "type": "nonprofit",
+      "n_edges": 1095
+    },
+    {
+      "id": "I4210110554",
+      "name": "Songklanagarind Hospital",
+      "type": "healthcare",
+      "n_edges": 1092
+    },
+    {
+      "id": "I4210111490",
+      "name": "Southeast Asia University",
+      "type": "education",
+      "n_edges": 1088
+    },
+    {
+      "id": "I4210142390",
+      "name": "Bhumibol Adulyadej Hospital",
+      "type": "healthcare",
+      "n_edges": 1084
+    },
+    {
+      "id": "I4210128712",
+      "name": "Sisaket Rajabhat University",
+      "type": "education",
+      "n_edges": 1082
+    },
+    {
+      "id": "I4210132988",
+      "name": "Lampang Hospital",
+      "type": "healthcare",
+      "n_edges": 1064
+    },
+    {
+      "id": "I4210086785",
+      "name": "Queen Sirikit National Institute of Child Health",
+      "type": "healthcare",
+      "n_edges": 1040
+    },
+    {
+      "id": "I4210160495",
+      "name": "Nakornping Hospital",
+      "type": "healthcare",
+      "n_edges": 1002
+    },
+    {
+      "id": "I4210155403",
+      "name": "Zoological Park Organization",
+      "type": "archive",
+      "n_edges": 1002
+    },
+    {
+      "id": "I176205391",
+      "name": "Uttaradit Rajabhat University",
+      "type": "education",
+      "n_edges": 989
+    },
+    {
+      "id": "I2803092234",
+      "name": "Thailand Graduate Institute of Science and Technology",
+      "type": "education",
+      "n_edges": 986
+    },
+    {
+      "id": "I4210124378",
+      "name": "Sappasithiprasong Hospital",
+      "type": "healthcare",
+      "n_edges": 978
+    },
+    {
+      "id": "I4210141957",
+      "name": "Rambhai Barni Rajabhat University",
+      "type": "education",
+      "n_edges": 895
+    },
+    {
+      "id": "I2802351605",
+      "name": "Royal Forest Department",
+      "type": "government",
+      "n_edges": 887
+    },
+    {
+      "id": "I4210098294",
+      "name": "Suratthani Cancer Hospital",
+      "type": "healthcare",
+      "n_edges": 868
+    },
+    {
+      "id": "I229056271",
+      "name": "Sripatum University",
+      "type": "education",
+      "n_edges": 865
+    },
+    {
+      "id": "I4210099732",
+      "name": "Asia Pacific International University",
+      "type": "education",
+      "n_edges": 847
+    },
+    {
+      "id": "I4210166311",
+      "name": "Udon Thani Hospital",
+      "type": "healthcare",
+      "n_edges": 836
+    },
+    {
+      "id": "I4210105964",
+      "name": "Chaiyaphum Rajabhat University",
+      "type": "education",
+      "n_edges": 833
+    },
+    {
+      "id": "I4210100251",
+      "name": "National Cancer Institute of Thailand",
+      "type": "facility",
+      "n_edges": 821
+    },
+    {
+      "id": "I19949148",
+      "name": "Queen Saovabha Memorial Institute",
+      "type": "facility",
+      "n_edges": 814
+    },
+    {
+      "id": "I4210097165",
+      "name": "Lerdsin Hospital",
+      "type": "healthcare",
+      "n_edges": 786
+    },
+    {
+      "id": "I4210110331",
+      "name": "North Eastern University",
+      "type": "education",
+      "n_edges": 776
+    },
+    {
+      "id": "I137559332",
+      "name": "United Nations Economic and Social Commission for Asia and the Pacific",
+      "type": "government",
+      "n_edges": 754
+    },
+    {
+      "id": "I4210095691",
+      "name": "Vachira Phuket Hospital",
+      "type": "healthcare",
+      "n_edges": 744
+    },
+    {
+      "id": "I4210125673",
+      "name": "Dhonburi Rajabhat University",
+      "type": "education",
+      "n_edges": 731
+    },
+    {
+      "id": "I4210136401",
+      "name": "Neurological Institute of Thailand",
+      "type": "healthcare",
+      "n_edges": 725
+    },
+    {
+      "id": "I3133070949",
+      "name": "Hatyai University",
+      "type": "education",
+      "n_edges": 717
+    },
+    {
+      "id": "I70945806",
+      "name": "Vongchavalitkul University",
+      "type": "education",
+      "n_edges": 669
+    },
+    {
+      "id": "I4210160044",
+      "name": "Department of Disaster Prevention and Mitigation",
+      "type": "government",
+      "n_edges": 665
+    },
+    {
+      "id": "I4210162622",
+      "name": "Mahamakut Buddhist University",
+      "type": "education",
+      "n_edges": 645
+    },
+    {
+      "id": "I2800139740",
+      "name": "Armed Forces Academies Preparatory School",
+      "type": "education",
+      "n_edges": 603
+    },
+    {
+      "id": "I4210156301",
+      "name": "Kidney Disease Association of Thailand",
+      "type": "facility",
+      "n_edges": 585
+    },
+    {
+      "id": "I4210092354",
+      "name": "Toray (Thailand)",
+      "type": "company",
+      "n_edges": 581
+    },
+    {
+      "id": "I4210110060",
+      "name": "Kamphaeng Phet Rajabhat University",
+      "type": "education",
+      "n_edges": 573
+    },
+    {
+      "id": "I4210121587",
+      "name": "UbonRatchathani Rice Research Center",
+      "type": "facility",
+      "n_edges": 552
+    },
+    {
+      "id": "I4210161103",
+      "name": "Surin Hospital",
+      "type": "healthcare",
+      "n_edges": 540
+    },
+    {
+      "id": "I4210146492",
+      "name": "Somdet Chaopraya Institute of Psychiatry",
+      "type": "healthcare",
+      "n_edges": 535
+    },
+    {
+      "id": "I4210128518",
+      "name": "Rajamangala Institute of kidney disease",
+      "type": "healthcare",
+      "n_edges": 530
+    },
+    {
+      "id": "I4210114505",
+      "name": "Buddhachinaraj Hospital",
+      "type": "healthcare",
+      "n_edges": 526
     }
   ],
   "type_views": [
