@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-10T15:11:39",
-  "pipeline_version": "v2.6",
+  "generated_at": "2026-05-10T18:44:18",
+  "pipeline_version": "v2.7",
   "views": [
     "all_thailand",
     "type:education",
@@ -123,56 +123,10 @@
     "field:Chemical Engineering",
     "field:Mathematics",
     "field:Veterinary",
-    "subfield:Molecular Biology",
-    "subfield:Biomedical Engineering",
-    "subfield:Plant Science",
-    "subfield:Materials Chemistry",
-    "subfield:Electrical and Electronic Engineering",
-    "subfield:Public Health, Environmental and Occupational Health",
-    "subfield:Biomaterials",
-    "subfield:Sociology and Political Science",
-    "subfield:Food Science",
-    "subfield:Surgery",
-    "subfield:Epidemiology",
-    "subfield:Pharmacology",
-    "subfield:Mechanical Engineering",
-    "subfield:Renewable Energy, Sustainability and the Environment",
-    "subfield:Genetics",
-    "subfield:Cell Biology",
-    "subfield:Pulmonary and Respiratory Medicine",
-    "subfield:Nutrition and Dietetics",
-    "subfield:Nuclear and High Energy Physics",
-    "subfield:Immunology",
-    "subfield:Physiology",
-    "subfield:Artificial Intelligence",
-    "subfield:Civil and Structural Engineering",
-    "subfield:Ecology",
-    "subfield:Pollution",
-    "subfield:Astronomy and Astrophysics",
-    "subfield:Infectious Diseases",
-    "subfield:Polymers and Plastics",
-    "subfield:Education",
-    "subfield:Strategy and Management",
-    "subfield:Global and Planetary Change",
-    "subfield:Health, Toxicology and Mutagenesis",
-    "subfield:Oncology",
-    "subfield:Animal Science and Zoology",
-    "subfield:Economics and Econometrics",
-    "subfield:Insect Science",
-    "subfield:Neurology",
-    "subfield:Industrial and Manufacturing Engineering",
-    "subfield:Building and Construction",
-    "subfield:Cardiology and Cardiovascular Medicine",
-    "subfield:Social Psychology",
-    "subfield:Radiology, Nuclear Medicine and Imaging",
-    "subfield:Water Science and Technology",
-    "subfield:Electronic, Optical and Magnetic Materials",
-    "subfield:Ecology, Evolution, Behavior and Systematics",
-    "subfield:Organic Chemistry",
-    "subfield:Endocrinology, Diabetes and Metabolism",
-    "subfield:Pathology and Forensic Medicine",
-    "subfield:Environmental Engineering",
-    "subfield:Clinical Psychology"
+    "domain:Physical Sciences",
+    "domain:Health Sciences",
+    "domain:Life Sciences",
+    "domain:Social Sciences"
   ],
   "institution_views": [
     {
@@ -900,306 +854,30 @@
       "n_edges": 4207
     }
   ],
-  "subfield_views": [
+  "domain_views": [
     {
-      "id": "subfield:Molecular Biology",
-      "subfield": "Molecular Biology",
-      "n_seeds": 1123,
-      "n_edges": 63850
+      "id": "domain:Physical Sciences",
+      "domain": "Physical Sciences",
+      "n_seeds": 11829,
+      "n_edges": 529749
     },
     {
-      "id": "subfield:Biomedical Engineering",
-      "subfield": "Biomedical Engineering",
-      "n_seeds": 999,
-      "n_edges": 53457
+      "id": "domain:Health Sciences",
+      "domain": "Health Sciences",
+      "n_seeds": 8868,
+      "n_edges": 354448
     },
     {
-      "id": "subfield:Plant Science",
-      "subfield": "Plant Science",
-      "n_seeds": 847,
-      "n_edges": 43451
+      "id": "domain:Life Sciences",
+      "domain": "Life Sciences",
+      "n_seeds": 5735,
+      "n_edges": 307960
     },
     {
-      "id": "subfield:Materials Chemistry",
-      "subfield": "Materials Chemistry",
-      "n_seeds": 702,
-      "n_edges": 41136
-    },
-    {
-      "id": "subfield:Electrical and Electronic Engineering",
-      "subfield": "Electrical and Electronic Engineering",
-      "n_seeds": 975,
-      "n_edges": 37386
-    },
-    {
-      "id": "subfield:Public Health, Environmental and Occupational Health",
-      "subfield": "Public Health, Environmental and Occupational Health",
-      "n_seeds": 751,
-      "n_edges": 30324
-    },
-    {
-      "id": "subfield:Biomaterials",
-      "subfield": "Biomaterials",
-      "n_seeds": 427,
-      "n_edges": 26663
-    },
-    {
-      "id": "subfield:Sociology and Political Science",
-      "subfield": "Sociology and Political Science",
-      "n_seeds": 679,
-      "n_edges": 26154
-    },
-    {
-      "id": "subfield:Food Science",
-      "subfield": "Food Science",
-      "n_seeds": 516,
-      "n_edges": 25617
-    },
-    {
-      "id": "subfield:Surgery",
-      "subfield": "Surgery",
-      "n_seeds": 690,
-      "n_edges": 24475
-    },
-    {
-      "id": "subfield:Epidemiology",
-      "subfield": "Epidemiology",
-      "n_seeds": 615,
-      "n_edges": 23449
-    },
-    {
-      "id": "subfield:Pharmacology",
-      "subfield": "Pharmacology",
-      "n_seeds": 483,
-      "n_edges": 23156
-    },
-    {
-      "id": "subfield:Mechanical Engineering",
-      "subfield": "Mechanical Engineering",
-      "n_seeds": 526,
-      "n_edges": 21746
-    },
-    {
-      "id": "subfield:Renewable Energy, Sustainability and the Environment",
-      "subfield": "Renewable Energy, Sustainability and the Environment",
-      "n_seeds": 380,
-      "n_edges": 21301
-    },
-    {
-      "id": "subfield:Genetics",
-      "subfield": "Genetics",
-      "n_seeds": 404,
-      "n_edges": 18239
-    },
-    {
-      "id": "subfield:Cell Biology",
-      "subfield": "Cell Biology",
-      "n_seeds": 229,
-      "n_edges": 17386
-    },
-    {
-      "id": "subfield:Pulmonary and Respiratory Medicine",
-      "subfield": "Pulmonary and Respiratory Medicine",
-      "n_seeds": 431,
-      "n_edges": 16670
-    },
-    {
-      "id": "subfield:Nutrition and Dietetics",
-      "subfield": "Nutrition and Dietetics",
-      "n_seeds": 304,
-      "n_edges": 16335
-    },
-    {
-      "id": "subfield:Nuclear and High Energy Physics",
-      "subfield": "Nuclear and High Energy Physics",
-      "n_seeds": 293,
-      "n_edges": 16316
-    },
-    {
-      "id": "subfield:Immunology",
-      "subfield": "Immunology",
-      "n_seeds": 278,
-      "n_edges": 16207
-    },
-    {
-      "id": "subfield:Physiology",
-      "subfield": "Physiology",
-      "n_seeds": 351,
-      "n_edges": 16064
-    },
-    {
-      "id": "subfield:Artificial Intelligence",
-      "subfield": "Artificial Intelligence",
-      "n_seeds": 573,
-      "n_edges": 15678
-    },
-    {
-      "id": "subfield:Civil and Structural Engineering",
-      "subfield": "Civil and Structural Engineering",
-      "n_seeds": 359,
-      "n_edges": 15272
-    },
-    {
-      "id": "subfield:Ecology",
-      "subfield": "Ecology",
-      "n_seeds": 292,
-      "n_edges": 14605
-    },
-    {
-      "id": "subfield:Pollution",
-      "subfield": "Pollution",
-      "n_seeds": 243,
-      "n_edges": 14045
-    },
-    {
-      "id": "subfield:Astronomy and Astrophysics",
-      "subfield": "Astronomy and Astrophysics",
-      "n_seeds": 186,
-      "n_edges": 14043
-    },
-    {
-      "id": "subfield:Infectious Diseases",
-      "subfield": "Infectious Diseases",
-      "n_seeds": 389,
-      "n_edges": 13774
-    },
-    {
-      "id": "subfield:Polymers and Plastics",
-      "subfield": "Polymers and Plastics",
-      "n_seeds": 235,
-      "n_edges": 13724
-    },
-    {
-      "id": "subfield:Education",
-      "subfield": "Education",
-      "n_seeds": 465,
-      "n_edges": 13404
-    },
-    {
-      "id": "subfield:Strategy and Management",
-      "subfield": "Strategy and Management",
-      "n_seeds": 288,
-      "n_edges": 13127
-    },
-    {
-      "id": "subfield:Global and Planetary Change",
-      "subfield": "Global and Planetary Change",
-      "n_seeds": 252,
-      "n_edges": 12772
-    },
-    {
-      "id": "subfield:Health, Toxicology and Mutagenesis",
-      "subfield": "Health, Toxicology and Mutagenesis",
-      "n_seeds": 251,
-      "n_edges": 12664
-    },
-    {
-      "id": "subfield:Oncology",
-      "subfield": "Oncology",
-      "n_seeds": 277,
-      "n_edges": 12559
-    },
-    {
-      "id": "subfield:Animal Science and Zoology",
-      "subfield": "Animal Science and Zoology",
-      "n_seeds": 248,
-      "n_edges": 12471
-    },
-    {
-      "id": "subfield:Economics and Econometrics",
-      "subfield": "Economics and Econometrics",
-      "n_seeds": 295,
-      "n_edges": 12445
-    },
-    {
-      "id": "subfield:Insect Science",
-      "subfield": "Insect Science",
-      "n_seeds": 226,
-      "n_edges": 12345
-    },
-    {
-      "id": "subfield:Neurology",
-      "subfield": "Neurology",
-      "n_seeds": 264,
-      "n_edges": 12010
-    },
-    {
-      "id": "subfield:Industrial and Manufacturing Engineering",
-      "subfield": "Industrial and Manufacturing Engineering",
-      "n_seeds": 307,
-      "n_edges": 11457
-    },
-    {
-      "id": "subfield:Building and Construction",
-      "subfield": "Building and Construction",
-      "n_seeds": 275,
-      "n_edges": 10879
-    },
-    {
-      "id": "subfield:Cardiology and Cardiovascular Medicine",
-      "subfield": "Cardiology and Cardiovascular Medicine",
-      "n_seeds": 260,
-      "n_edges": 10855
-    },
-    {
-      "id": "subfield:Social Psychology",
-      "subfield": "Social Psychology",
-      "n_seeds": 269,
-      "n_edges": 10768
-    },
-    {
-      "id": "subfield:Radiology, Nuclear Medicine and Imaging",
-      "subfield": "Radiology, Nuclear Medicine and Imaging",
-      "n_seeds": 276,
-      "n_edges": 10694
-    },
-    {
-      "id": "subfield:Water Science and Technology",
-      "subfield": "Water Science and Technology",
-      "n_seeds": 206,
-      "n_edges": 10545
-    },
-    {
-      "id": "subfield:Electronic, Optical and Magnetic Materials",
-      "subfield": "Electronic, Optical and Magnetic Materials",
-      "n_seeds": 159,
-      "n_edges": 10159
-    },
-    {
-      "id": "subfield:Ecology, Evolution, Behavior and Systematics",
-      "subfield": "Ecology, Evolution, Behavior and Systematics",
-      "n_seeds": 177,
-      "n_edges": 10127
-    },
-    {
-      "id": "subfield:Organic Chemistry",
-      "subfield": "Organic Chemistry",
-      "n_seeds": 186,
-      "n_edges": 10032
-    },
-    {
-      "id": "subfield:Endocrinology, Diabetes and Metabolism",
-      "subfield": "Endocrinology, Diabetes and Metabolism",
-      "n_seeds": 235,
-      "n_edges": 9833
-    },
-    {
-      "id": "subfield:Pathology and Forensic Medicine",
-      "subfield": "Pathology and Forensic Medicine",
-      "n_seeds": 236,
-      "n_edges": 9790
-    },
-    {
-      "id": "subfield:Environmental Engineering",
-      "subfield": "Environmental Engineering",
-      "n_seeds": 209,
-      "n_edges": 9350
-    },
-    {
-      "id": "subfield:Clinical Psychology",
-      "subfield": "Clinical Psychology",
-      "n_seeds": 231,
-      "n_edges": 8973
+      "id": "domain:Social Sciences",
+      "domain": "Social Sciences",
+      "n_seeds": 4950,
+      "n_edges": 181363
     }
   ],
   "has_disciplinary_data": true,
