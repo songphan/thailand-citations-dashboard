@@ -2358,6 +2358,12 @@ const InstitutionOverlapHeatmap = ({
   // Subcategory filter for client-side narrowing. Synced with global
   // view when the user is on a subcategory:* view.
   const [subcategoryFilter, setSubcategoryFilter] = useState('all');
+  // Visual size cap for the matrix and the list-mode comparison
+  // bars. The pipeline already capped at OVERLAP_MATRIX_TOP_N (~100),
+  // but with type/subcategory filters peeling off subsets, a 100x100
+  // matrix is often more than the user wants to scan. 'all' means
+  // "show everything that survives the type/subcategory filter."
+  const [topNFilter, setTopNFilter] = useState('all');
   const [selectedCell, setSelectedCell] = useState(null);
 
   // We compute everything against the data even when it might be missing,
@@ -2402,8 +2408,10 @@ const InstitutionOverlapHeatmap = ({
   }, [currentView]);
 
   // Apply institution-type AND subcategory filters to rows AND columns.
-  // Keep matrix entries by index, so filtered indices are projected
-  // through the original matrix.
+  // Then optionally trim to the top-N entries (the input is already
+  // sorted by total citation activity descending, so slicing the head
+  // keeps the most-active institutions). Keep matrix entries by index,
+  // so filtered indices are projected through the original matrix.
   const { labels, matrixOv, matrixA, types, ids, indices } = useMemo(() => {
     let idx = insts.map((_, i) => i);
     if (typeFilter !== 'all') {
@@ -2414,6 +2422,14 @@ const InstitutionOverlapHeatmap = ({
         const id = (insts[i].id || '').replace('https://openalex.org/', '');
         return institutionSubcategory[id] === subcategoryFilter;
       });
+    }
+    // top-N visual cap. Applied AFTER type/subcategory filtering so
+    // "top 25" means top 25 of the filtered subset, not top 25 overall.
+    if (topNFilter !== 'all') {
+      const n = parseInt(topNFilter, 10);
+      if (Number.isFinite(n) && n > 0 && n < idx.length) {
+        idx = idx.slice(0, n);
+      }
     }
     if (!o) {
       return { labels: [], matrixOv: [], matrixA: [], types: [], ids: [], indices: [] };
@@ -2428,7 +2444,7 @@ const InstitutionOverlapHeatmap = ({
       ids: idx.map((i) => insts[i].id),
       indices: idx,
     };
-  }, [insts, o, typeFilter, subcategoryFilter, institutionSubcategory]);
+  }, [insts, o, typeFilter, subcategoryFilter, institutionSubcategory, topNFilter]);
 
   // Available types (only those that appear in the matrix)
   const availableTypes = useMemo(() => {
@@ -2473,11 +2489,26 @@ const InstitutionOverlapHeatmap = ({
         pct: (ov / denom) * 100,
       };
     }).filter(Boolean);
-    const filtered = typeFilter === 'all'
+    let filtered = typeFilter === 'all'
       ? rows
       : rows.filter((r) => r.type === typeFilter);
-    return filtered.sort((a, b) => b.pct - a.pct);
-  }, [insts, o, mode, selectedListIdx, typeFilter]);
+    if (subcategoryFilter !== 'all' && institutionSubcategory) {
+      filtered = filtered.filter((r) => {
+        const id = (r.id || '').replace('https://openalex.org/', '');
+        return institutionSubcategory[id] === subcategoryFilter;
+      });
+    }
+    const sorted = filtered.sort((a, b) => b.pct - a.pct);
+    // Apply the visual top-N cap
+    if (topNFilter !== 'all') {
+      const n = parseInt(topNFilter, 10);
+      if (Number.isFinite(n) && n > 0 && n < sorted.length) {
+        return sorted.slice(0, n);
+      }
+    }
+    return sorted;
+  }, [insts, o, mode, selectedListIdx, typeFilter, subcategoryFilter,
+      institutionSubcategory, topNFilter]);
 
   // The "self" row (the selected institution itself) — used as a
   // reference at the top of the list to anchor the user.
@@ -2552,6 +2583,56 @@ const InstitutionOverlapHeatmap = ({
             : "For each ordered pair (row → column), the cell shows what share of the row institution's distinct cited works are also cited by the column institution. Citations from papers the two institutions co-authored are excluded — without that exclusion, co-authorship alone would inflate every cell. Use the type filter to compare institutions within a category. Click any cell for the underlying counts."
         }
       />
+
+      {/* Top-N visual cap — independent of type/subcategory filters,
+          and visible in every mode. The pipeline already capped the
+          matrix at OVERLAP_MATRIX_TOP_N (~100), but this lets the
+          user further trim the visible matrix to top 25/50/75 of
+          whatever is currently filtered. The "All" option keeps
+          everything that survived the type/subcategory cut. */}
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            letterSpacing: '0.16em',
+            color: PALETTE.muted,
+            textTransform: 'uppercase',
+            marginRight: 6,
+          }}
+        >
+          {mode === 'list' ? 'Show top' : 'Matrix size'}
+        </span>
+        {[
+          { label: 'Top 25', value: '25' },
+          { label: 'Top 50', value: '50' },
+          { label: 'Top 75', value: '75' },
+          { label: 'All', value: 'all' },
+        ].map((opt) => (
+          <FilterPill
+            key={opt.value}
+            label={opt.label}
+            active={topNFilter === opt.value}
+            onClick={() => setTopNFilter(opt.value)}
+          />
+        ))}
+        {/* Show the resulting count next to the pills as a soft
+            indicator of how many institutions made it through both
+            the type/subcategory filter and the top-N cap. */}
+        <span
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            letterSpacing: '0.08em',
+            color: PALETTE.muted,
+            marginLeft: 6,
+          }}
+        >
+          {mode === 'list'
+            ? `${listRows.length} comparison institution${listRows.length === 1 ? '' : 's'}`
+            : `${labels.length} institution${labels.length === 1 ? '' : 's'} shown`}
+        </span>
+      </div>
 
       {/* In matrix-typed and matrix-subcat modes the filter is forced
           by the global filter, so showing local pills would be
