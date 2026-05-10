@@ -709,9 +709,23 @@ const FilterPill = ({ label, active, onClick, color }) => (
       fontSize: 10,
       letterSpacing: '0.1em',
       textTransform: 'uppercase',
+      // Active: solid color background. Inactive: transparent with
+      // colored text + left border accent so the type/subcategory
+      // color is visible at a glance, matching the Y-axis labels of
+      // any colored bar chart in the same panel.
       background: active ? (color || PALETTE.ink) : 'transparent',
-      color: active ? PALETTE.paper : PALETTE.charcoal,
+      color: active
+        ? PALETTE.paper
+        : (color || PALETTE.charcoal),
       border: `1px solid ${active ? (color || PALETTE.ink) : PALETTE.rule}`,
+      // The 3px left accent reads as a "color tag" without
+      // overpowering the layout. Falls back to no accent when no
+      // color is provided (keeps neutral pills neutral).
+      borderLeft: active
+        ? `1px solid ${color || PALETTE.ink}`
+        : color
+          ? `3px solid ${color}`
+          : `1px solid ${PALETTE.rule}`,
       cursor: active ? 'default' : 'pointer',
     }}
   >
@@ -4262,7 +4276,7 @@ const TopInstitutionsPanel = ({
   subcategoryViews, institutionSubcategory,
 }) => {
   const [mode, setMode] = useState('chart');
-  const [showCount, setShowCount] = useState(20);
+  const [showCount, setShowCount] = useState(25);
   // Initialize typeFilter from currentView if it's a type:* view
   const [typeFilter, setTypeFilter] = useState(() => {
     if (currentView && currentView.startsWith('type:')) return currentView.slice(5);
@@ -4433,8 +4447,8 @@ const TopInstitutionsPanel = ({
           kicker="Institutional landscape"
           title="Thai institutions by 2025 publication output and citation activity"
           totalN={institutions.length}
-          totalLabel="Thai institutions producing 2025 research"
-          hint="Each institution's 2025 publications (navy, primary, top axis) and the citations those publications make to other works (muted burgundy, bottom axis), shown on independent scales. Both axes describe what the institution produced and the outgoing references in those publications, not how often the institution is cited. Institution names are colored by type. Click a type pill to filter to the type-aggregate; click a single bar or row to filter to that institution."
+          totalLabel="Thai institutions with at least 500 citation edges in 2025 (of 261 producing any research that year)"
+          hint="Each institution's 2025 publications (navy, primary, top axis) and the citations those publications make to other works (muted burgundy, bottom axis), shown on independent scales. Both axes describe what the institution produced and the outgoing references in those publications, not how often the institution is cited. Institution names are colored by type. Click a type pill to filter to the type-aggregate; click a single bar or row to filter to that institution. The 261 producing institutions tail off into a long set of one-off appearances; the 500-edge floor admits the top 200 with substantive 2025 activity (excludes 61 institutions, mostly individual hospitals or single-paper appearances)."
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
@@ -4503,6 +4517,13 @@ const TopInstitutionsPanel = ({
                 key={sc}
                 label={cap}
                 active={subcategoryFilter === sc}
+                // Subcategories are sub-classifications of the
+                // education type, so they share the education color
+                // (navy). This keeps the visual logic consistent with
+                // the Y-axis labels: education-type institutions are
+                // navy on the chart, and the subcategory pills that
+                // narrow down to subsets of education are navy too.
+                color={INST_TYPE_COLORS.education}
                 onClick={() => handleSubcategoryClick(sc)}
               />
             );
@@ -4651,7 +4672,7 @@ const TopInstitutionsPanel = ({
               </span>
             </div>
             <div className="flex gap-1">
-              {[10, 20, 30, 50, 85].map((n) => (
+              {[10, 25, 50, 100, 200].map((n) => (
                 <button
                   key={n}
                   onClick={() => setShowCount(Math.min(n, filtered.length || institutions.length))}
