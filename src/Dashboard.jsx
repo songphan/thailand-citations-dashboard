@@ -1781,7 +1781,12 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
             // Layout iterations still run and place link endpoints
             // correctly within each node's vertical slot.
             sort={false}
-            margin={{ top: 16, right: 220, bottom: 16, left: 220 }}
+            // Generous top/bottom margins so the topmost and bottommost
+            // node labels (positioned at y + height/2 by Recharts) don't
+            // clip against the SVG boundary when their bars are small.
+            // 32px also leaves room for the per-node count line below
+            // each label.
+            margin={{ top: 32, right: 220, bottom: 32, left: 220 }}
           >
             <Tooltip
               contentStyle={{
@@ -2180,7 +2185,20 @@ const DisciplineSankey = ({ sankey, view, viewLabel, isFiltered, level }) => {
             nodePadding={level === 'domain' ? 24 : 8}
             nodeWidth={10}
             sort={false}
-            margin={{ top: 16, right: 220, bottom: 16, left: 220 }}
+            // Top and bottom margins need to be generous enough to fit
+            // the topmost and bottommost node labels (which Recharts
+            // positions at y + height/2 — for small nodes near the
+            // chart edges, that point can be just a few px from y=0
+            // or y=chartHeight, clipping the text). 32px gives the
+            // label and the optional count line below it room to
+            // render fully. The domain Sankey has only 4 nodes per
+            // side, so its larger margin needs are met by nodePadding.
+            margin={{
+              top: level === 'domain' ? 16 : 32,
+              right: 220,
+              bottom: level === 'domain' ? 16 : 32,
+              left: 220,
+            }}
           >
             <Tooltip
               contentStyle={{
