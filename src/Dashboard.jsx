@@ -2359,12 +2359,13 @@ const InstitutionOverlapHeatmap = ({
   // view when the user is on a subcategory:* view.
   const [subcategoryFilter, setSubcategoryFilter] = useState('all');
   // Visual size cap for the matrix and the list-mode comparison
-  // bars. The pipeline already capped at OVERLAP_MATRIX_TOP_N (~100),
-  // but with type/subcategory filters peeling off subsets, a 100x100
-  // matrix is often more than the user wants to scan. Default is
-  // 'Top 25' so the matrix lands in a comfortably readable size on
-  // first paint; user can step up to 50/75 or pop to 'all' to see
-  // the full filtered set.
+  // bars. The pipeline already capped at OVERLAP_MATRIX_TOP_N (100),
+  // and these pills further trim the visible matrix in 25-row steps
+  // so the user can settle on a comfortable size. Default is 'Top 25'
+  // so the matrix lands readable on first paint; 'Top 100' shows the
+  // full filtered set up to the pipeline cap. With type/subcategory
+  // filters peeling off subsets, the actual visible count may be
+  // lower than the chosen cap (shown next to the pills).
   const [topNFilter, setTopNFilter] = useState('25');
   const [selectedCell, setSelectedCell] = useState(null);
 
@@ -2606,10 +2607,10 @@ const InstitutionOverlapHeatmap = ({
           {mode === 'list' ? 'Show top' : 'Matrix size'}
         </span>
         {[
-          { label: 'All', value: 'all' },
           { label: 'Top 25', value: '25' },
           { label: 'Top 50', value: '50' },
           { label: 'Top 75', value: '75' },
+          { label: 'Top 100', value: '100' },
         ].map((opt) => (
           <FilterPill
             key={opt.value}
