@@ -4430,13 +4430,20 @@ const TopInstitutionsPanel = ({
   // passes x, y, payload (the tick value) into the renderer.
   const ColoredYTick = ({ x, y, payload }) => {
     const info = tickInfoByName[payload.value];
-    const isFiltered = currentView && currentView !== 'all_thailand';
+    // Fade only when drilled into a single institution (matches the
+    // bar coloring logic). For type/subcategory aggregate views, all
+    // labels render at full color.
+    const isSingleInstView = currentView
+      && currentView !== 'all_thailand'
+      && !currentView.startsWith('type:')
+      && !currentView.startsWith('subcategory:')
+      && !currentView.startsWith('field:')
+      && !currentView.startsWith('domain:');
     const isSelected = info && currentView === info.id;
     const baseColor = info
       ? resolveInstitutionColor(info.type, info.id, institutionSubcategory)
       : PALETTE.charcoal;
-    // Fade non-selected labels to match the bar shading behavior
-    const color = isFiltered && !isSelected ? baseColor + '90' : baseColor;
+    const color = isSingleInstView && !isSelected ? baseColor + '90' : baseColor;
     return (
       <text
         x={x}
@@ -4658,9 +4665,20 @@ const TopInstitutionsPanel = ({
                 />
                 <Bar dataKey="seeds" xAxisId="seeds" cursor="pointer" name="seeds">
                   {chartData.map((d, i) => {
-                    const isFiltered = currentView && currentView !== 'all_thailand';
+                    // Fade bars only when the user has drilled into a
+                    // SINGLE institution (so the rest dim to highlight
+                    // the selection). For type/subcategory aggregate
+                    // views, the chart is already filtered to the
+                    // relevant subset, so all bars should render at
+                    // full opacity.
+                    const isSingleInstView = currentView
+                      && currentView !== 'all_thailand'
+                      && !currentView.startsWith('type:')
+                      && !currentView.startsWith('subcategory:')
+                      && !currentView.startsWith('field:')
+                      && !currentView.startsWith('domain:');
                     const isSelected = currentView === d.id;
-                    const fill = isFiltered && !isSelected
+                    const fill = isSingleInstView && !isSelected
                       ? PALETTE.navy + '40'
                       : PALETTE.navy;
                     return (
@@ -4685,9 +4703,14 @@ const TopInstitutionsPanel = ({
                   fillOpacity={0.5}
                 >
                   {chartData.map((d, i) => {
-                    const isFiltered = currentView && currentView !== 'all_thailand';
+                    const isSingleInstView = currentView
+                      && currentView !== 'all_thailand'
+                      && !currentView.startsWith('type:')
+                      && !currentView.startsWith('subcategory:')
+                      && !currentView.startsWith('field:')
+                      && !currentView.startsWith('domain:');
                     const isSelected = currentView === d.id;
-                    const fill = isFiltered && !isSelected
+                    const fill = isSingleInstView && !isSelected
                       ? PALETTE.burgundy + '40'
                       : PALETTE.burgundy;
                     return (
