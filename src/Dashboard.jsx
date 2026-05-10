@@ -4433,8 +4433,8 @@ const TopInstitutionsPanel = ({
           kicker="Institutional landscape"
           title="Thai institutions by 2025 publication output and citation activity"
           totalN={institutions.length}
-          totalLabel="Thai institutions producing 2025 research"
-          hint="Each institution's 2025 publications (navy, primary, top axis) and the citations those publications make to other works (muted burgundy, bottom axis), shown on independent scales. Both axes describe what the institution produced and the outgoing references in those publications, not how often the institution is cited. Institution names are colored by type. Click a type pill to filter to the type-aggregate; click a single bar or row to filter to that institution."
+          totalLabel="Thai institutions with at least 500 citation edges in 2025 (of 261 producing any research that year)"
+          hint="Each institution's 2025 publications (navy, primary, top axis) and the citations those publications make to other works (muted burgundy, bottom axis), shown on independent scales. Both axes describe what the institution produced and the outgoing references in those publications, not how often the institution is cited. Institution names are colored by type. Click a type pill to filter to the type-aggregate; click a single bar or row to filter to that institution. The 261 producing institutions tail off into a long set of one-off appearances; the 500-edge floor admits the top 200 with substantive 2025 activity (excludes 61 institutions, mostly individual hospitals or single-paper appearances)."
         />
         <ChartTableToggle mode={mode} onChange={setMode} />
       </div>
