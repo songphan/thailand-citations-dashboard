@@ -4436,6 +4436,16 @@ const TopInstitutionsPanel = ({
     [filtered, showCount],
   );
 
+  // Number of real (non-spacer) rows. Used for height sizing so the
+  // chart container doesn't expand to accommodate the invisible spacer
+  // — without this, a single-institution view (e.g. subcategory:other
+  // with only AIT) would render the bar at half the container height
+  // with an empty row below.
+  const realRowCount = useMemo(
+    () => chartData.filter((r) => r.id !== '__spacer__').length,
+    [chartData],
+  );
+
   // Lookup so the custom Y-axis tick can find each institution's type
   // and color the label accordingly.
   const tickInfoByName = useMemo(() => {
@@ -4634,7 +4644,26 @@ const TopInstitutionsPanel = ({
           </div>
         ) : (
         <>
-          <div style={{ width: '100%', height: chartData.length * 32 + 80 }}>
+          {/* Single-row chart needs a workaround: Recharts' band scale
+              fails when there's exactly 1 category, leaving the bar
+              with height=0. The chartData useMemo above appends an
+              invisible spacer row in that case so Recharts has 2 bands
+              to divide. To hide the spacer's empty band visually, we
+              clip the container to the height of just the real row(s)
+              plus margins — Recharts still allocates 2 band slots
+              internally, but the spacer slot extends below the
+              container's clipped bounds and is never visible. */}
+          {(() => {
+            const hasSpacer = chartData.length === 2 && chartData[1].id === '__spacer__';
+            // Container height: when there's a spacer, only count the real row(s).
+            const realRows = hasSpacer ? 1 : chartData.length;
+            const containerHeight = realRows * 32 + 80;
+            // Inner Recharts height: when there's a spacer, render at the
+            // 2-row size so the band scale gives the real bar full height.
+            const innerHeight = chartData.length * 32 + 80;
+            return (
+          <div style={{ width: '100%', height: containerHeight, overflow: 'hidden' }}>
+            <div style={{ width: '100%', height: innerHeight }}>
             <ResponsiveContainer>
               <BarChart
                 data={chartData}
@@ -4744,7 +4773,10 @@ const TopInstitutionsPanel = ({
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            </div>
           </div>
+            );
+          })()}
           <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
             <div
               className="flex items-center gap-4 flex-wrap"
