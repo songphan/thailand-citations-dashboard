@@ -4262,7 +4262,7 @@ const TopInstitutionsPanel = ({
   subcategoryViews, institutionSubcategory,
 }) => {
   const [mode, setMode] = useState('chart');
-  const [showCount, setShowCount] = useState(20);
+  const [showCount, setShowCount] = useState(25);
   // Initialize typeFilter from currentView if it's a type:* view
   const [typeFilter, setTypeFilter] = useState(() => {
     if (currentView && currentView.startsWith('type:')) return currentView.slice(5);
@@ -4651,7 +4651,7 @@ const TopInstitutionsPanel = ({
               </span>
             </div>
             <div className="flex gap-1">
-              {[10, 20, 30, 50, 85].map((n) => (
+              {[10, 25, 50, 100, 200].map((n) => (
                 <button
                   key={n}
                   onClick={() => setShowCount(Math.min(n, filtered.length || institutions.length))}
