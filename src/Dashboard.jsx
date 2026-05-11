@@ -743,11 +743,94 @@ const FilterPill = ({ label, active, onClick, color }) => (
   </button>
 );
 
-const CoverageTable = ({ coverage, summary, view }) => {
+// Database name label with a tooltip showing scope metadata (title
+// list size, ISSN matchability) and an optional (i) icon for
+// databases with manual scope caveats (e.g., conference-heavy
+// publishers like ACM/IEEE where the journal title list systematically
+// understates the database's actual reach). Used in the coverage
+// table and (via getDbMeta lookup) the database overlap heatmap so
+// the warning context appears everywhere the user encounters a
+// database label.
+const DatabaseLabel = ({ label, dbMeta }) => {
+  const hasCaveat = dbMeta && dbMeta.caveat;
+  // Build the tooltip text shown on hover. Always includes title-list
+  // size and ISSN coverage; appends the caveat if present.
+  const tooltip = useMemo(() => {
+    if (!dbMeta) return label;
+    const lines = [label];
+    if (dbMeta.title_count != null) {
+      lines.push(
+        `Title list: ${dbMeta.title_count.toLocaleString()} entries`,
+      );
+    }
+    if (dbMeta.with_either != null && dbMeta.title_count) {
+      const pct = ((dbMeta.with_either / dbMeta.title_count) * 100).toFixed(1);
+      lines.push(
+        `With ISSN: ${dbMeta.with_either.toLocaleString()} (${pct}%)`,
+      );
+      const without = dbMeta.title_count - dbMeta.with_either;
+      if (without > 0) {
+        lines.push(`Without ISSN: ${without.toLocaleString()} (cannot be matched)`);
+      }
+    }
+    if (dbMeta.caveat) {
+      lines.push('');
+      lines.push('Scope caveat:');
+      lines.push(dbMeta.caveat);
+    }
+    return lines.join('\n');
+  }, [label, dbMeta]);
+
+  return (
+    <span
+      title={tooltip}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        color: PALETTE.ink,
+        fontWeight: 500,
+        cursor: dbMeta ? 'help' : 'default',
+      }}
+    >
+      <span>{label}</span>
+      {hasCaveat && (
+        <AlertCircle
+          size={12}
+          aria-label="Scope caveat"
+          style={{
+            color: PALETTE.gold,
+            flexShrink: 0,
+            opacity: 0.8,
+          }}
+        />
+      )}
+    </span>
+  );
+};
+
+
+const CoverageTable = ({ coverage, summary, view, databaseMeta }) => {
   const [typeFilter, setTypeFilter] = useState('all');
   if (!coverage || !coverage[view]) return null;
   const data = coverage[view];
   const isFiltered = view !== 'all_thailand';
+
+  // Lookup: db_key -> meta entry from meta.json. Used by DatabaseLabel
+  // to render scope tooltips and caveat icons. databaseMeta is an
+  // array; we index it by key for O(1) lookup.
+  const dbMetaByKey = useMemo(() => {
+    const m = {};
+    if (databaseMeta) for (const d of databaseMeta) m[d.key] = d;
+    return m;
+  }, [databaseMeta]);
+
+  // Count databases with caveats among the visible set — used to
+  // decide whether to show the methodology note at the top of the table.
+  const caveatCount = useMemo(
+    () => Object.values(dbMetaByKey).filter((d) => d.caveat).length,
+    [dbMetaByKey],
+  );
 
   // Build a lookup for Thailand baseline percentages so each row can show a marker
   const thBaseline = useMemo(() => {
@@ -782,10 +865,48 @@ const CoverageTable = ({ coverage, summary, view }) => {
         totalLabel="citations"
         hint={
           isFiltered
-            ? 'Matched on normalized ISSN against the public title list of each database. Coverage is computed over journal articles only; conference proceedings, books, and book chapters are excluded because they use ISBN rather than ISSN identifiers and most database title lists do not enumerate them in a way that allows a clean ISSN match. The gold marker on each bar shows the All Thailand baseline for that database, so you can see whether this institution leans on a database more or less than Thailand as a whole.'
-            : 'Matched on normalized ISSN against the public title list of each database. Coverage is computed over journal articles only; conference proceedings, books, and book chapters are excluded because they use ISBN rather than ISSN identifiers and most database title lists do not enumerate them in a way that allows a clean ISSN match. This shows the technical coverage potential of each database, not whether a particular library subscribes to it.'
+            ? 'Matched on normalized ISSN against the public title list of each database. Each row reports two numbers: the citation-events percentage (the Citation coverage bar, weighted by how often each work is cited) and Unique works (distinct cited papers, deduplicated). The gold marker on each bar shows the All Thailand baseline for that database, so you can see whether this institution leans on a database more or less than Thailand as a whole.'
+            : 'Matched on normalized ISSN against the public title list of each database. Each row reports two numbers: the citation-events percentage (the Citation coverage bar, weighted by how often each work is cited) and Unique works (distinct cited papers, deduplicated). The citation-events percentage is what library subscription decisions usually weigh, since it reflects actual usage; the Unique works count is a measure of breadth.'
         }
       />
+
+      {/* Methodology note. Surfaces the journal-only scope limit up
+          front so users have the right interpretive frame before they
+          read the table. The amber alert marker matches the (i) icons
+          on individual database rows for visual consistency. */}
+      <div
+        className="mb-4 px-3 py-2"
+        style={{
+          background: PALETTE.cream,
+          borderLeft: `3px solid ${PALETTE.gold}`,
+          fontFamily: FONT_BODY,
+          fontSize: 12,
+          color: PALETTE.charcoal,
+          lineHeight: 1.5,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            letterSpacing: '0.16em',
+            color: PALETTE.muted,
+            textTransform: 'uppercase',
+            marginBottom: 4,
+          }}
+        >
+          Scope note
+        </div>
+        Coverage is computed over journal articles only, matched by ISSN.
+        Conference proceedings, books, and book chapters cannot be matched
+        because they use different identifiers (ISBN, DOI-only) and most
+        publisher title lists do not enumerate them. This systematically
+        understates coverage for conference-heavy publishers (ACM, IEEE) and
+        book-heavy publishers (Springer, Wiley, Cambridge). Rows marked with
+        an amber icon carry a publisher-specific scope caveat; hover any
+        database label for its title-list size and matchability details.
+      </div>
+
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span
           style={{
@@ -833,8 +954,16 @@ const CoverageTable = ({ coverage, summary, view }) => {
             >
               <th style={cellHead}>Database</th>
               <th style={{ ...cellHead, width: 90 }}>Type</th>
-              <th style={{ ...cellHead, width: 110, textAlign: 'right' }}>Citations</th>
-              <th style={{ ...cellHead, width: isFiltered ? '34%' : '36%' }}>
+              <th
+                style={{ ...cellHead, width: 110, textAlign: 'right' }}
+                title="Number of citation events from this view that match this database's ISSN title list. A single Thai paper citing 'Nature' twice counts as two events; ten papers citing the same Nature paper count as ten events. This is the count behind the Citation coverage percentage."
+              >
+                Citations
+              </th>
+              <th
+                style={{ ...cellHead, width: isFiltered ? '34%' : '36%' }}
+                title="Percentage of citation events from this view that are covered by this database. Events-weighted, so heavily-cited works contribute more than singletons. Distinct from the Unique works count, which deduplicates."
+              >
                 Citation coverage
               </th>
               {isFiltered && (
@@ -845,7 +974,12 @@ const CoverageTable = ({ coverage, summary, view }) => {
                   Diff vs TH
                 </th>
               )}
-              <th style={{ ...cellHead, width: 110, textAlign: 'right' }}>Unique</th>
+              <th
+                style={{ ...cellHead, width: 110, textAlign: 'right' }}
+                title="Number of distinct cited papers in this view that are in this database's title list. Each paper counts once regardless of how many Thai citations point to it. Provides a breadth measure to complement the events-weighted coverage percentage."
+              >
+                Unique works
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -855,7 +989,7 @@ const CoverageTable = ({ coverage, summary, view }) => {
               return (
                 <tr key={d.key} style={{ borderTop: `1px solid ${PALETTE.rule}` }}>
                   <td style={cellBody}>
-                    <span style={{ color: PALETTE.ink, fontWeight: 500 }}>{d.label}</span>
+                    <DatabaseLabel label={d.label} dbMeta={dbMetaByKey[d.key]} />
                   </td>
                   <td style={cellBody}>
                     <span
@@ -1011,6 +1145,38 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
   if (!overlap || !overlap.all_thailand) return null;
   const o = overlap.all_thailand;
 
+  // Lookup: db_key -> meta entry. Used to render scope tooltips on
+  // database labels in this heatmap (rows and columns). meta.databases
+  // now carries the richer per-database metadata (title-list size,
+  // ISSN matchability, caveat text).
+  const dbMetaByKey = useMemo(() => {
+    const m = {};
+    if (meta && meta.databases) for (const d of meta.databases) m[d.key] = d;
+    return m;
+  }, [meta]);
+
+  // Build a tooltip string for a database key. Reused for both row
+  // labels and column labels in the heatmap. Returns plain text
+  // suitable for the `title` HTML attribute (native browser tooltip).
+  const tooltipFor = (key, label) => {
+    const dm = dbMetaByKey[key];
+    if (!dm) return label;
+    const lines = [label];
+    if (dm.title_count != null) {
+      lines.push(`Title list: ${dm.title_count.toLocaleString()} entries`);
+    }
+    if (dm.with_either != null && dm.title_count) {
+      const pct = ((dm.with_either / dm.title_count) * 100).toFixed(1);
+      lines.push(`With ISSN: ${dm.with_either.toLocaleString()} (${pct}%)`);
+    }
+    if (dm.caveat) {
+      lines.push('');
+      lines.push('Scope caveat:');
+      lines.push(dm.caveat);
+    }
+    return lines.join('\n');
+  };
+
   // Filter by database type using meta.databases lookup. When showing
   // all types, group databases by type (open access → index → full text)
   // so visually similar databases sit next to each other in the matrix.
@@ -1165,6 +1331,7 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
                 {labels.map((label, i) => (
                   <th
                     key={i}
+                    title={tooltipFor(dbKeys[i], label)}
                     style={{
                       padding: '4px 2px',
                       height: 140,
@@ -1173,6 +1340,7 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
                       color: labelColors[i],
                       fontWeight: 500,
                       minWidth: 36,
+                      cursor: 'help',
                     }}
                   >
                     <div
@@ -1181,9 +1349,19 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
                         transform: 'rotate(180deg)',
                         whiteSpace: 'nowrap',
                         letterSpacing: '0.04em',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
                       }}
                     >
-                      {label}
+                      <span>{label}</span>
+                      {dbMetaByKey[dbKeys[i]]?.caveat && (
+                        <AlertCircle
+                          size={10}
+                          aria-label="Scope caveat"
+                          style={{ color: PALETTE.gold, opacity: 0.8 }}
+                        />
+                      )}
                     </div>
                   </th>
                 ))}
@@ -1193,15 +1371,30 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
               {labels.map((rowLabel, i) => (
                 <tr key={i}>
                   <th
+                    title={tooltipFor(dbKeys[i], rowLabel)}
                     style={{
                       padding: '4px 8px',
                       textAlign: 'right',
                       fontWeight: 500,
                       color: labelColors[i],
                       whiteSpace: 'nowrap',
+                      cursor: 'help',
                     }}
                   >
-                    {rowLabel}
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}>
+                      <span>{rowLabel}</span>
+                      {dbMetaByKey[dbKeys[i]]?.caveat && (
+                        <AlertCircle
+                          size={10}
+                          aria-label="Scope caveat"
+                          style={{ color: PALETTE.gold, opacity: 0.8 }}
+                        />
+                      )}
+                    </span>
                   </th>
                   {labels.map((_, j) => {
                     const pct = pctMatrix[i][j];
@@ -6049,6 +6242,7 @@ export default function Dashboard() {
             coverage={data.coverage}
             summary={data.summary}
             view={effectiveView}
+            databaseMeta={data.meta?.databases}
           />
 
           {/* Institutional citation overlap heatmap. Now sits after the
