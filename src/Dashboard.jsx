@@ -715,6 +715,96 @@ const CoverageBar = ({ value, color, thBenchmark }) => {
   );
 };
 
+// HoverTip — hover-triggered explanatory box (renamed from Tooltip
+// to avoid colliding with the Recharts Tooltip import). Replaces the native
+// `title` attribute, which Chrome on Windows sometimes refuses to
+// render (especially when paired with a custom cursor). This version
+// uses React state for show/hide so behavior is reliable across
+// browsers. Wrap any element to attach a tooltip to it.
+//
+// Props:
+//   content: string OR ReactNode. If string, line breaks render via
+//            white-space: pre-line. If ReactNode, rendered directly.
+//   children: the element being explained
+//   maxWidth: tooltip max width in px (default 320)
+//   placement: 'top' (default) | 'bottom' — which side of the trigger
+//   delay: ms before showing on hover (default 250); set to 0 to
+//          show instantly. Hide is always instant.
+//   block: if true, wrap with display:block (default false uses
+//          inline-flex). Useful when wrapping a full-width button.
+const HoverTip = ({
+  content, children, maxWidth = 320, placement = 'top', delay = 250,
+  block = false,
+}) => {
+  const [visible, setVisible] = useState(false);
+  // Track timer in a ref so we can cancel it on mouseleave
+  const timerRef = React.useRef(null);
+
+  if (!content) return children;
+
+  const handleEnter = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (delay > 0) {
+      timerRef.current = setTimeout(() => setVisible(true), delay);
+    } else {
+      setVisible(true);
+    }
+  };
+  const handleLeave = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setVisible(false);
+  };
+
+  const above = placement === 'top';
+  return (
+    <span
+      style={{
+        position: 'relative',
+        display: block ? 'block' : 'inline-flex',
+        alignItems: block ? undefined : 'center',
+        width: block ? '100%' : undefined,
+      }}
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
+      onFocus={handleEnter}
+      onBlur={handleLeave}
+    >
+      {children}
+      {visible && (
+        <span
+          style={{
+            position: 'absolute',
+            [above ? 'bottom' : 'top']: 'calc(100% + 6px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: PALETTE.ink,
+            color: PALETTE.paper,
+            padding: '8px 10px',
+            fontSize: 11,
+            fontFamily: FONT_BODY,
+            fontWeight: 400,
+            lineHeight: 1.4,
+            letterSpacing: 'normal',
+            textTransform: 'none',
+            whiteSpace: 'pre-line',
+            maxWidth,
+            width: 'max-content',
+            zIndex: 1000,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            pointerEvents: 'none',
+          }}
+        >
+          {content}
+        </span>
+      )}
+    </span>
+  );
+};
+
+
 const FilterPill = ({ label, active, onClick, color }) => (
   <button
     onClick={onClick}
@@ -787,30 +877,31 @@ const DatabaseLabel = ({ label, dbMeta }) => {
   }, [label, dbMeta]);
 
   return (
-    <span
-      title={tooltip}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        color: PALETTE.ink,
-        fontWeight: 500,
-        cursor: dbMeta ? 'help' : 'default',
-      }}
-    >
-      <span>{label}</span>
-      {hasCaveat && (
-        <AlertCircle
-          size={12}
-          aria-label="Scope caveat"
-          style={{
-            color: PALETTE.gold,
-            flexShrink: 0,
-            opacity: 0.8,
-          }}
-        />
-      )}
-    </span>
+    <HoverTip content={tooltip} maxWidth={360}>
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          color: PALETTE.ink,
+          fontWeight: 500,
+          cursor: dbMeta ? 'help' : 'default',
+        }}
+      >
+        <span>{label}</span>
+        {hasCaveat && (
+          <AlertCircle
+            size={12}
+            aria-label="Scope caveat"
+            style={{
+              color: PALETTE.gold,
+              flexShrink: 0,
+              opacity: 0.8,
+            }}
+          />
+        )}
+      </span>
+    </HoverTip>
   );
 };
 
@@ -959,31 +1050,27 @@ const CoverageTable = ({ coverage, summary, view, databaseMeta }) => {
             >
               <th style={cellHead}>Database</th>
               <th style={{ ...cellHead, width: 90 }}>Type</th>
-              <th
-                style={{ ...cellHead, width: 110, textAlign: 'right' }}
-                title="Number of citation events from this view that match this database's ISSN title list. A single Thai paper citing 'Nature' twice counts as two events; ten papers citing the same Nature paper count as ten events. This is the count behind the Citation coverage percentage."
-              >
-                Citations
+              <th style={{ ...cellHead, width: 110, textAlign: 'right' }}>
+                <HoverTip content="Number of citation events from this view that match this database's ISSN title list. A single Thai paper citing 'Nature' twice counts as two events; ten papers citing the same Nature paper count as ten events. This is the count behind the Citation coverage percentage.">
+                  <span style={{ cursor: 'help' }}>Citations</span>
+                </HoverTip>
               </th>
-              <th
-                style={{ ...cellHead, width: isFiltered ? '34%' : '36%' }}
-                title="Percentage of citation events from this view that are covered by this database. Events-weighted, so heavily-cited works contribute more than singletons. Distinct from the Unique works count, which deduplicates."
-              >
-                Citation coverage
+              <th style={{ ...cellHead, width: isFiltered ? '34%' : '36%' }}>
+                <HoverTip content="Percentage of citation events from this view that are covered by this database. Events-weighted, so heavily-cited works contribute more than singletons. Distinct from the Unique works count, which deduplicates.">
+                  <span style={{ cursor: 'help' }}>Citation coverage</span>
+                </HoverTip>
               </th>
               {isFiltered && (
-                <th
-                  style={{ ...cellHead, width: 90, textAlign: 'right' }}
-                  title="Difference between this institution's coverage and the All Thailand baseline. Positive values mean this institution leans more on this database than Thailand as a whole."
-                >
-                  Diff vs TH
+                <th style={{ ...cellHead, width: 90, textAlign: 'right' }}>
+                  <HoverTip content="Difference between this institution's coverage and the All Thailand baseline. Positive values mean this institution leans more on this database than Thailand as a whole.">
+                    <span style={{ cursor: 'help' }}>Diff vs TH</span>
+                  </HoverTip>
                 </th>
               )}
-              <th
-                style={{ ...cellHead, width: 110, textAlign: 'right' }}
-                title="Number of distinct cited papers in this view that are in this database's title list. Each paper counts once regardless of how many Thai citations point to it. Provides a breadth measure to complement the events-weighted coverage percentage."
-              >
-                Unique works
+              <th style={{ ...cellHead, width: 110, textAlign: 'right' }}>
+                <HoverTip content="Number of distinct cited papers in this view that are in this database's title list. Each paper counts once regardless of how many Thai citations point to it. Provides a breadth measure to complement the events-weighted coverage percentage.">
+                  <span style={{ cursor: 'help' }}>Unique works</span>
+                </HoverTip>
               </th>
             </tr>
           </thead>
@@ -1336,7 +1423,6 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
                 {labels.map((label, i) => (
                   <th
                     key={i}
-                    title={tooltipFor(dbKeys[i], label)}
                     style={{
                       padding: '4px 2px',
                       height: 140,
@@ -1348,26 +1434,28 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
                       cursor: 'help',
                     }}
                   >
-                    <div
-                      style={{
-                        writingMode: 'vertical-rl',
-                        transform: 'rotate(180deg)',
-                        whiteSpace: 'nowrap',
-                        letterSpacing: '0.04em',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                      }}
-                    >
-                      <span>{label}</span>
-                      {dbMetaByKey[dbKeys[i]]?.caveat && (
-                        <AlertCircle
-                          size={10}
-                          aria-label="Scope caveat"
-                          style={{ color: PALETTE.gold, opacity: 0.8 }}
-                        />
-                      )}
-                    </div>
+                    <HoverTip content={tooltipFor(dbKeys[i], label)} maxWidth={340}>
+                      <div
+                        style={{
+                          writingMode: 'vertical-rl',
+                          transform: 'rotate(180deg)',
+                          whiteSpace: 'nowrap',
+                          letterSpacing: '0.04em',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <span>{label}</span>
+                        {dbMetaByKey[dbKeys[i]]?.caveat && (
+                          <AlertCircle
+                            size={10}
+                            aria-label="Scope caveat"
+                            style={{ color: PALETTE.gold, opacity: 0.8 }}
+                          />
+                        )}
+                      </div>
+                    </HoverTip>
                   </th>
                 ))}
               </tr>
@@ -1376,7 +1464,6 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
               {labels.map((rowLabel, i) => (
                 <tr key={i}>
                   <th
-                    title={tooltipFor(dbKeys[i], rowLabel)}
                     style={{
                       padding: '4px 8px',
                       textAlign: 'right',
@@ -1386,20 +1473,22 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
                       cursor: 'help',
                     }}
                   >
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}>
-                      <span>{rowLabel}</span>
-                      {dbMetaByKey[dbKeys[i]]?.caveat && (
-                        <AlertCircle
-                          size={10}
-                          aria-label="Scope caveat"
-                          style={{ color: PALETTE.gold, opacity: 0.8 }}
-                        />
-                      )}
-                    </span>
+                    <HoverTip content={tooltipFor(dbKeys[i], rowLabel)} maxWidth={340}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}>
+                        <span>{rowLabel}</span>
+                        {dbMetaByKey[dbKeys[i]]?.caveat && (
+                          <AlertCircle
+                            size={10}
+                            aria-label="Scope caveat"
+                            style={{ color: PALETTE.gold, opacity: 0.8 }}
+                          />
+                        )}
+                      </span>
+                    </HoverTip>
                   </th>
                   {labels.map((_, j) => {
                     const pct = pctMatrix[i][j];
@@ -1629,25 +1718,20 @@ const BeneficiaryPanel = ({
   const [typeFilter, setTypeFilter] = useState('all');
   const [subcategoryFilter, setSubcategoryFilter] = useState('all');
 
-  // Sort modes for each view. Independent so the user can have one
-  // ordering in the bars view and a different ordering in the
-  // heatmap view without them stomping on each other.
+  // Sort mode applied to BOTH the bars and the heatmap. Switching
+  // tabs preserves the sort, so a user investigating one perspective
+  // can see the same ordering in the other view. Options:
   //
-  //   barsSort: 'total' | 'solo' | 'shared' | 'pct_shared'
-  //     total      = solo + shared, desc (default — overall benefit)
-  //     solo       = solo desc (institutions that benefit most alone)
-  //     shared     = shared desc (institutions that benefit most via collab)
-  //     pct_shared = shared / (solo + shared) desc (most consortium-relevant)
+  //   total      = solo + shared, desc (default — overall benefit)
+  //   solo       = solo desc (institutions that benefit most alone)
+  //   shared     = shared desc (institutions that benefit most via collab)
+  //   pct_shared = shared / (solo + shared) desc (most consortium-relevant)
   //
-  //   heatmapSort: 'total' | 'solo'
-  //     total = solo + shared, desc (default — matches bars default)
-  //     solo  = solo desc (institutions ranked by individual citation volume)
-  //
-  // Sort applies BEFORE the size cap so e.g. "Top 25 by % shared"
-  // returns the 25 institutions with highest % shared, not the 25
-  // largest re-ordered.
-  const [barsSort, setBarsSort] = useState('total');
-  const [heatmapSort, setHeatmapSort] = useState('total');
+  // Sort applies BEFORE the size cap so "Top 25 by % shared" returns
+  // the 25 institutions with the highest % shared, not the 25 largest
+  // re-ordered. For the heatmap, sorting changes both axes
+  // simultaneously since the matrix is symmetric.
+  const [sortMode, setSortMode] = useState('total');
 
   // Build the database list shown in the left panel. Mirrors the
   // Overlap Heatmap's sort: by type group (open access -> abstract
@@ -1741,19 +1825,19 @@ const BeneficiaryPanel = ({
     // sort with institutions that have zero solo benefit) preserves
     // the original total-benefit order via a secondary key.
     const sorted = (() => {
-      if (barsSort === 'total') return filtered;  // already in this order
+      if (sortMode === 'total') return filtered;  // already in this order
       const arr = [...filtered];
-      if (barsSort === 'solo') {
+      if (sortMode === 'solo') {
         arr.sort((a, b) => {
           if (b.solo !== a.solo) return b.solo - a.solo;
           return (b.solo + b.shared) - (a.solo + a.shared);
         });
-      } else if (barsSort === 'shared') {
+      } else if (sortMode === 'shared') {
         arr.sort((a, b) => {
           if (b.shared !== a.shared) return b.shared - a.shared;
           return (b.solo + b.shared) - (a.solo + a.shared);
         });
-      } else if (barsSort === 'pct_shared') {
+      } else if (sortMode === 'pct_shared') {
         arr.sort((a, b) => {
           const ta = a.solo + a.shared;
           const tb = b.solo + b.shared;
@@ -1783,7 +1867,7 @@ const BeneficiaryPanel = ({
   }, [
     selectedDbKey, beneficiaryBars, sizePill,
     typeFilter, subcategoryFilter, institutionSubcategory,
-    barsSort,
+    sortMode,
   ]);
 
   // Lazy load matrix data for the heatmap tab. Triggered when:
@@ -1859,7 +1943,27 @@ const BeneficiaryPanel = ({
           {dbList.map((d) => {
             const isSelected = d.key === selectedDbKey;
             const hasCaveat = d.meta?.caveat;
-            return (
+            // Build a richer tooltip when meta is present (title-list
+            // size + caveat). Same content used in the heatmap labels.
+            const dbTooltip = (() => {
+              const dm = d.meta;
+              if (!dm) return null;
+              const lines = [d.label];
+              if (dm.title_count != null) {
+                lines.push(`Title list: ${dm.title_count.toLocaleString()} entries`);
+              }
+              if (dm.with_either != null && dm.title_count) {
+                const pct = ((dm.with_either / dm.title_count) * 100).toFixed(1);
+                lines.push(`With ISSN: ${dm.with_either.toLocaleString()} (${pct}%)`);
+              }
+              if (dm.caveat) {
+                lines.push('');
+                lines.push('Scope caveat:');
+                lines.push(dm.caveat);
+              }
+              return lines.join('\n');
+            })();
+            const buttonEl = (
               <button
                 key={d.key}
                 onClick={() => {
@@ -1885,7 +1989,6 @@ const BeneficiaryPanel = ({
                   cursor: 'pointer',
                   fontWeight: isSelected ? 500 : 400,
                 }}
-                title={d.meta?.caveat || d.label}
               >
                 <span style={{
                   display: 'inline-flex',
@@ -1924,6 +2027,23 @@ const BeneficiaryPanel = ({
                   {d.total_institutions}
                 </span>
               </button>
+            );
+            // The HoverTip wrapper uses block mode here because the
+            // button is a full-width sidebar item — wrapping in the
+            // default inline-flex span would collapse its width.
+            return (
+              <React.Fragment key={d.key}>
+                {dbTooltip ? (
+                  <HoverTip
+                    content={dbTooltip}
+                    maxWidth={360}
+                    placement="bottom"
+                    block
+                  >
+                    {buttonEl}
+                  </HoverTip>
+                ) : buttonEl}
+              </React.Fragment>
             );
           })}
         </div>
@@ -2113,6 +2233,87 @@ const BeneficiaryPanel = ({
                 </div>
               )}
 
+              {/* Sort pill row. Applies to BOTH bars and heatmap so
+                  the user's chosen ordering carries across tabs.
+                  Each pill has a tooltip explaining what it sorts by;
+                  the (i) icon at the end shows all four definitions at
+                  once so users don't have to hover each pill in turn. */}
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <span
+                  style={{
+                    fontFamily: FONT_MONO,
+                    fontSize: 9,
+                    letterSpacing: '0.16em',
+                    color: PALETTE.muted,
+                    textTransform: 'uppercase',
+                    marginRight: 6,
+                  }}
+                >
+                  Sort by
+                </span>
+                {[
+                  {
+                    id: 'total',
+                    label: 'Total benefit',
+                    tip: 'Sort by total benefit (solo + shared citations) descending. Highlights institutions that benefit most overall from this database, regardless of authorship pattern.',
+                  },
+                  {
+                    id: 'solo',
+                    label: 'Solo',
+                    tip: 'Sort by solo benefit descending. Solo benefit = citations from papers where this institution is the only Thai institution among authors. Highlights institutions that work most independently.',
+                  },
+                  {
+                    id: 'shared',
+                    label: 'Shared',
+                    tip: 'Sort by shared benefit descending. Shared benefit = citations from papers where two or more Thai institutions are coauthors. Highlights institutions that collaborate most often on papers citing this database.',
+                  },
+                  {
+                    id: 'pct_shared',
+                    label: '% shared',
+                    tip: 'Sort by share-of-shared descending: shared / (solo + shared). Highlights institutions whose benefit is mostly via collaboration with other Thai institutions, which makes them strong candidates for a consortium-level subscription. Independent of total volume — a small institution with 90% shared appears above a large one with 30% shared.',
+                  },
+                ].map((opt) => (
+                  <HoverTip key={opt.id} content={opt.tip} maxWidth={360}>
+                    <FilterPill
+                      label={opt.label}
+                      active={sortMode === opt.id}
+                      onClick={() => setSortMode(opt.id)}
+                    />
+                  </HoverTip>
+                ))}
+                <HoverTip
+                  content={
+                    "Sort modes:\n\n" +
+                    "Total benefit: solo + shared, desc. The default overall ranking.\n\n" +
+                    "Solo: citations from papers with only one Thai institution as author, desc. Independent-use ranking.\n\n" +
+                    "Shared: citations from papers with two or more Thai coauthors, desc. Collaboration-volume ranking.\n\n" +
+                    "% shared: shared / (solo + shared), desc. Consortium-relevance ranking — institutions whose benefit is mostly via collaboration are most likely to gain from a shared subscription, independent of their total volume."
+                  }
+                  maxWidth={400}
+                >
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 18,
+                      height: 18,
+                      borderRadius: '50%',
+                      border: `1px solid ${PALETTE.muted}`,
+                      color: PALETTE.muted,
+                      fontFamily: FONT_BODY,
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: 'help',
+                      marginLeft: 4,
+                    }}
+                    aria-label="What do these sort modes mean?"
+                  >
+                    ?
+                  </span>
+                </HoverTip>
+              </div>
+
               {/* Tab toggle */}
               <div style={{
                 display: 'flex',
@@ -2154,8 +2355,6 @@ const BeneficiaryPanel = ({
                   maxBenefit={maxBenefit}
                   tableMode={tableMode}
                   setTableMode={setTableMode}
-                  barsSort={barsSort}
-                  setBarsSort={setBarsSort}
                 />
               ) : (
                 <JointBenefitHeatmapView
@@ -2168,8 +2367,7 @@ const BeneficiaryPanel = ({
                   typeFilter={typeFilter}
                   subcategoryFilter={subcategoryFilter}
                   institutionSubcategory={institutionSubcategory}
-                  heatmapSort={heatmapSort}
-                  setHeatmapSort={setHeatmapSort}
+                  sortMode={sortMode}
                 />
               )}
             </>
@@ -2198,7 +2396,6 @@ const InstNameChip = ({ inst }) => (
 // mode swaps the bars for a sortable column layout.
 const BeneficiaryBarsView = ({
   barsData, maxBenefit, tableMode, setTableMode,
-  barsSort, setBarsSort,
 }) => {
   if (!barsData || barsData.institutions.length === 0) {
     return (
@@ -2215,44 +2412,8 @@ const BeneficiaryBarsView = ({
   const SOLO_COLOR = PALETTE.burgundy;
   const SHARED_COLOR = PALETTE.burgundyLight || '#c89899';
 
-  // Sort mode options for the pill row. The sort is applied upstream
-  // (in the parent BeneficiaryPanel's barsData useMemo) BEFORE the
-  // size cap, so e.g. "Top 25 by Shared" returns the 25 institutions
-  // with the highest shared count rather than re-ordering the top 25
-  // by total.
-  const SORT_OPTIONS = [
-    { id: 'total',      label: 'Total benefit' },
-    { id: 'solo',       label: 'Solo' },
-    { id: 'shared',     label: 'Shared' },
-    { id: 'pct_shared', label: '% shared' },
-  ];
-
   return (
     <div>
-      {/* Sort pill row. Same visual language as the size pills above. */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span
-          style={{
-            fontFamily: FONT_MONO,
-            fontSize: 9,
-            letterSpacing: '0.16em',
-            color: PALETTE.muted,
-            textTransform: 'uppercase',
-            marginRight: 6,
-          }}
-        >
-          Sort by
-        </span>
-        {SORT_OPTIONS.map((opt) => (
-          <FilterPill
-            key={opt.id}
-            label={opt.label}
-            active={barsSort === opt.id}
-            onClick={() => setBarsSort(opt.id)}
-          />
-        ))}
-      </div>
-
       {/* Legend + table mode toggle */}
       <div style={{
         display: 'flex',
@@ -2457,9 +2618,12 @@ const JointBenefitHeatmapView = ({
   // institutionSubcategory is the lookup map from short OpenAlex ID
   // to subcategory string (same map used elsewhere in the dashboard).
   typeFilter, subcategoryFilter, institutionSubcategory,
-  // Sort mode for the axes. 'total' is the default (matches bars
-  // default); 'solo' ranks institutions by their solo benefit only.
-  heatmapSort, setHeatmapSort,
+  // Sort mode for the axes. Same set as the bars view (total / solo /
+  // shared / pct_shared); sortMode is owned by the parent
+  // BeneficiaryPanel so switching tabs preserves the ordering.
+  // The heatmap reads this value but never changes it (the sort
+  // pill row lives at panel level, not per-tab).
+  sortMode,
 }) => {
   if (loading) {
     return (
@@ -2488,7 +2652,7 @@ const JointBenefitHeatmapView = ({
   // Compute which institutions survive the filters and the heatmap
   // sort. The flow is:
   //   (1) filter by type/subcategory  → still in original total-benefit order
-  //   (2) re-sort by heatmapSort      → custom ordering of the filtered set
+  //   (2) re-sort by sortMode      → custom ordering of the filtered set
   //   (3) slice the top N by size pill
   //
   // origIdxList holds ORIGINAL matrix indices (into
@@ -2510,24 +2674,43 @@ const JointBenefitHeatmapView = ({
       }
       filteredIdx.push(i);
     }
-    // Step 2: re-sort if needed
-    if (heatmapSort === 'solo') {
+    // Step 2: re-sort if needed. All four sort modes from the bars
+    // view are supported here so switching tabs preserves the
+    // ordering. For the heatmap, sorting changes BOTH axes
+    // simultaneously since the matrix is symmetric — sorting axes
+    // independently would put the diagonal off the diagonal.
+    if (sortMode === 'solo') {
       filteredIdx.sort((ai, bi) => {
         const a = all[ai];
         const b = all[bi];
         if (b.solo !== a.solo) return b.solo - a.solo;
-        // Secondary tiebreak by total so within-tie ordering is
-        // stable and meaningful (e.g. when many institutions have
-        // zero solo benefit, the bigger totals come first).
         return (b.solo + b.shared) - (a.solo + a.shared);
       });
+    } else if (sortMode === 'shared') {
+      filteredIdx.sort((ai, bi) => {
+        const a = all[ai];
+        const b = all[bi];
+        if (b.shared !== a.shared) return b.shared - a.shared;
+        return (b.solo + b.shared) - (a.solo + a.shared);
+      });
+    } else if (sortMode === 'pct_shared') {
+      filteredIdx.sort((ai, bi) => {
+        const a = all[ai];
+        const b = all[bi];
+        const ta = a.solo + a.shared;
+        const tb = b.solo + b.shared;
+        const pa = ta > 0 ? a.shared / ta : 0;
+        const pb = tb > 0 ? b.shared / tb : 0;
+        if (pb !== pa) return pb - pa;
+        return tb - ta;
+      });
     }
-    // For heatmapSort === 'total' the original order already is
+    // For sortMode === 'total' the original order already is
     // total-desc, so no resort needed.
     return filteredIdx;
   }, [
     matrixData, typeFilter, subcategoryFilter, institutionSubcategory,
-    heatmapSort,
+    sortMode,
   ]);
 
   const filteredN = origIdxList.length;
@@ -2662,39 +2845,6 @@ const JointBenefitHeatmapView = ({
 
   return (
     <div>
-      {/* Sort pill row for the heatmap axes. The sort applies to BOTH
-          axes simultaneously (the matrix is symmetric, so the rows
-          and columns must always be in the same order — sorting one
-          asymmetrically would put the diagonal off the diagonal).
-          'Total' is the default and matches the bars view default;
-          'Solo' surfaces institutions whose individual citation
-          volume is highest, which can be different from total
-          benefit when an institution has heavy collaboration. */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span
-          style={{
-            fontFamily: FONT_MONO,
-            fontSize: 9,
-            letterSpacing: '0.16em',
-            color: PALETTE.muted,
-            textTransform: 'uppercase',
-            marginRight: 6,
-          }}
-        >
-          Sort axes by
-        </span>
-        <FilterPill
-          label="Total benefit"
-          active={heatmapSort === 'total'}
-          onClick={() => setHeatmapSort('total')}
-        />
-        <FilterPill
-          label="Solo"
-          active={heatmapSort === 'solo'}
-          onClick={() => setHeatmapSort('solo')}
-        />
-      </div>
-
       {/* Heatmap matrix. Keep cells small at high N. */}
       <div style={{ overflowX: 'auto', overflowY: 'visible' }}>
         <table style={{
