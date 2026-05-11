@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-11T18:49:42",
+  "generated_at": "2026-05-11T19:46:31",
   "pipeline_version": "v2.8",
   "views": [
     "all_thailand",
@@ -184,8 +184,8 @@
     "I4210128712",
     "I4210132988",
     "I4210086785",
-    "I4210155403",
     "I4210160495",
+    "I4210155403",
     "I176205391",
     "I2803092234",
     "I4210124378",
@@ -236,8 +236,8 @@
     "field:Nursing",
     "field:Neuroscience",
     "field:Pharmacology, Toxicology and Pharmaceutics",
-    "field:Earth and Planetary Sciences",
     "field:Dentistry",
+    "field:Earth and Planetary Sciences",
     "field:Decision Sciences",
     "field:Arts and Humanities",
     "field:Chemical Engineering",
@@ -1252,15 +1252,15 @@
       "n_edges": 1040
     },
     {
-      "id": "I4210155403",
-      "name": "Zoological Park Organization",
-      "type": "archive",
-      "n_edges": 1002
-    },
-    {
       "id": "I4210160495",
       "name": "Nakornping Hospital",
       "type": "healthcare",
+      "n_edges": 1002
+    },
+    {
+      "id": "I4210155403",
+      "name": "Zoological Park Organization",
+      "type": "archive",
       "n_edges": 1002
     },
     {
@@ -1708,15 +1708,15 @@
       "n_edges": 14901
     },
     {
-      "id": "field:Earth and Planetary Sciences",
-      "field": "Earth and Planetary Sciences",
-      "n_seeds": 280,
-      "n_edges": 14625
-    },
-    {
       "id": "field:Dentistry",
       "field": "Dentistry",
       "n_seeds": 380,
+      "n_edges": 14625
+    },
+    {
+      "id": "field:Earth and Planetary Sciences",
+      "field": "Earth and Planetary Sciences",
+      "n_seeds": 280,
       "n_edges": 14625
     },
     {
@@ -1943,6 +1943,18 @@
     {
       "key": "sage_gold_oa",
       "label": "Sage Gold OA",
+      "type": "open_access",
+      "subscribed": true
+    },
+    {
+      "key": "pubmed",
+      "label": "PubMed (NLM)",
+      "type": "abstract_index",
+      "subscribed": true
+    },
+    {
+      "key": "pmc",
+      "label": "PubMed Central (PMC)",
       "type": "open_access",
       "subscribed": true
     }
