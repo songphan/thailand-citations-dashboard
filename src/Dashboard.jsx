@@ -183,6 +183,11 @@ function useDataFiles() {
       'institution_overlap', 'publisher_sankey',
       'by_field', 'by_domain', 'by_language',
       'field_sankey', 'domain_sankey',
+      // Consortium analysis: per-(institution, database) solo/shared
+      // benefit counts. Optional so older builds without the section
+      // still render. The matching joint-benefit matrices are loaded
+      // lazily per database when the user opens the heatmap tab.
+      'database_beneficiary_bars',
     ];
 
     const loadRequired = Promise.all(
@@ -1569,6 +1574,909 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
     </Card>
   );
 };
+
+
+// ============================================================
+// DATABASE BENEFICIARY PANEL  (consortium analysis)
+// ============================================================
+// "If we subscribe to this database, who benefits?" Two views:
+//
+//   1. Beneficiary bars: top N institutions ranked by total benefit
+//      (solo + shared) for the selected database. Each bar split
+//      into solo (single-Thai-institution papers) and shared
+//      (multi-Thai-institution coauthored papers). Solo segment
+//      represents benefit that ONLY this institution receives;
+//      shared is what a consortium subscription could amortize.
+//
+//   2. Joint-benefit heatmap: institution-pair matrix for the
+//      selected database. Each cell counts joint benefit via two
+//      mechanisms summed together — coauthored citations (same paper,
+//      multiple Thai institutions) and convergent citations
+//      (different Thai institutions citing the same target work in
+//      separate papers). Tooltip on each cell shows the breakdown.
+//
+// The matrix data is loaded lazily per database to keep initial
+// dashboard load fast; the bars data is loaded upfront with the rest
+// of the dashboard.
+const BeneficiaryPanel = ({ beneficiaryBars, meta }) => {
+  const [selectedDbKey, setSelectedDbKey] = useState(null);
+  const [activeTab, setActiveTab] = useState('bars');  // 'bars' | 'heatmap'
+  const [sizePill, setSizePill] = useState(25);  // 25 | 50 | 100 | 'all'
+  const [tableMode, setTableMode] = useState(false);
+  const [matrixCache, setMatrixCache] = useState({});  // db_key -> matrix data
+  const [matrixLoading, setMatrixLoading] = useState(false);
+  const [matrixError, setMatrixError] = useState(null);
+  const [selectedCell, setSelectedCell] = useState(null);  // {i, j} for heatmap
+
+  // Build the database list shown in the left panel. Mirrors the
+  // Overlap Heatmap's sort: by type group (open access -> abstract
+  // index -> full text), alphabetical within each group. Pulled from
+  // meta.databases so caveat icons and labels are consistent
+  // throughout the dashboard.
+  const dbList = useMemo(() => {
+    if (!meta || !meta.databases || !beneficiaryBars) return [];
+    const TYPE_ORDER = { open_access: 0, abstract_index: 1, full_text: 2 };
+    const out = [];
+    for (const d of meta.databases) {
+      if (HIDDEN_DATABASE_KEYS.has(d.key)) continue;
+      // Skip databases that aren't in the beneficiary data (e.g. zero
+      // beneficiary institutions — extremely unlikely but defensive).
+      const bd = beneficiaryBars.databases?.[d.key];
+      if (!bd) continue;
+      out.push({
+        key: d.key,
+        label: d.label,
+        type: d.type,
+        total_institutions: bd.total_institutions,
+        meta: d,  // pass full meta for tooltip
+      });
+    }
+    out.sort((a, b) => {
+      const ta = TYPE_ORDER[a.type] ?? 99;
+      const tb = TYPE_ORDER[b.type] ?? 99;
+      if (ta !== tb) return ta - tb;
+      return a.label.localeCompare(b.label);
+    });
+    return out;
+  }, [meta, beneficiaryBars]);
+
+  // Default-select the first database with the most institutions
+  // (most data to show first), once the data loads.
+  useEffect(() => {
+    if (selectedDbKey || dbList.length === 0) return;
+    // Pick the database with the largest beneficiary count as a
+    // sensible default starting view — usually Scopus or DOAJ which
+    // is what a librarian would naturally inspect first.
+    const sorted = [...dbList].sort(
+      (a, b) => b.total_institutions - a.total_institutions,
+    );
+    setSelectedDbKey(sorted[0].key);
+  }, [dbList, selectedDbKey]);
+
+  // Selected database's bars data, sliced according to size pill.
+  const barsData = useMemo(() => {
+    if (!selectedDbKey || !beneficiaryBars) return null;
+    const dbData = beneficiaryBars.databases?.[selectedDbKey];
+    if (!dbData) return null;
+    const insts = dbData.institutions || [];
+    const total = dbData.total_institutions;
+    const showAll = sizePill === 'all';
+    const cap = showAll ? insts.length : Math.min(sizePill, insts.length);
+    return {
+      total,
+      shown: cap,
+      institutions: insts.slice(0, cap),
+    };
+  }, [selectedDbKey, beneficiaryBars, sizePill]);
+
+  // Lazy load matrix data for the heatmap tab. Triggered when:
+  //   - user is on the heatmap tab
+  //   - a database is selected
+  //   - we haven't already cached this database's matrix
+  useEffect(() => {
+    if (activeTab !== 'heatmap' || !selectedDbKey) return;
+    if (matrixCache[selectedDbKey]) return;  // already loaded
+    setMatrixLoading(true);
+    setMatrixError(null);
+    // The base path is the same as the rest of the dashboard data
+    // (vite dev: /data/, production: <repo>/public/data/).
+    const url = `data/database_beneficiary_matrices/${selectedDbKey}.json`;
+    fetch(url)
+      .then((r) => {
+        if (!r.ok) throw new Error(`Failed to load (${r.status})`);
+        return r.json();
+      })
+      .then((j) => {
+        setMatrixCache((c) => ({ ...c, [selectedDbKey]: j }));
+        setMatrixLoading(false);
+      })
+      .catch((err) => {
+        setMatrixError(err.message);
+        setMatrixLoading(false);
+      });
+  }, [activeTab, selectedDbKey, matrixCache]);
+
+  const matrixData = selectedDbKey ? matrixCache[selectedDbKey] : null;
+
+  if (!beneficiaryBars || dbList.length === 0) return null;
+
+  const selectedDb = dbList.find((d) => d.key === selectedDbKey);
+  const maxBenefit = barsData?.institutions
+    ? Math.max(...barsData.institutions.map((r) => r.solo + r.shared), 1)
+    : 1;
+
+  return (
+    <Card className="p-5">
+      <SectionTitle
+        icon={Database}
+        kicker="Consortium beneficiary analysis"
+        title="If this database is subscribed, who benefits?"
+        hint="Each Thai institution's benefit is measured by citation events from its 2025 publications to works in the selected database's title list. Solo benefit comes from papers where this institution is the only Thai institution among authors. Shared benefit comes from papers coauthored with other Thai institutions, where a single consortium subscription could serve everyone. Switch tabs to compare individual institution benefit (bars) with institution-pair joint benefit (heatmap), which identifies natural consortium pairings."
+      />
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '220px minmax(0, 1fr)',
+        gap: 16,
+        alignItems: 'start',
+      }}>
+
+        {/* Left: database selector */}
+        <div style={{
+          border: `1px solid ${PALETTE.rule}`,
+          background: PALETTE.paper,
+          maxHeight: 600,
+          overflowY: 'auto',
+        }}>
+          <div style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            letterSpacing: '0.16em',
+            color: PALETTE.muted,
+            textTransform: 'uppercase',
+            padding: '8px 12px',
+            borderBottom: `1px solid ${PALETTE.rule}`,
+          }}>
+            Select database
+          </div>
+          {dbList.map((d) => {
+            const isSelected = d.key === selectedDbKey;
+            const hasCaveat = d.meta?.caveat;
+            return (
+              <button
+                key={d.key}
+                onClick={() => {
+                  setSelectedDbKey(d.key);
+                  setSelectedCell(null);  // clear cell highlight on db switch
+                }}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  width: '100%',
+                  padding: '6px 12px',
+                  fontFamily: FONT_BODY,
+                  fontSize: 12,
+                  color: isSelected ? PALETTE.ink : PALETTE.charcoal,
+                  background: isSelected ? PALETTE.cream : 'transparent',
+                  borderLeft: isSelected
+                    ? `3px solid ${TYPE_COLORS[d.type]}`
+                    : '3px solid transparent',
+                  border: 'none',
+                  borderBottom: `1px solid ${PALETTE.rule}`,
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  fontWeight: isSelected ? 500 : 400,
+                }}
+                title={d.meta?.caveat || d.label}
+              >
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  flex: 1,
+                  minWidth: 0,
+                }}>
+                  <span style={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}>
+                    {d.label}
+                  </span>
+                  {hasCaveat && (
+                    <AlertCircle
+                      size={11}
+                      style={{
+                        color: PALETTE.gold,
+                        flexShrink: 0,
+                        opacity: 0.8,
+                      }}
+                    />
+                  )}
+                </span>
+                <span style={{
+                  fontFamily: FONT_MONO,
+                  fontSize: 10,
+                  color: isSelected ? TYPE_COLORS[d.type] : PALETTE.muted,
+                  marginLeft: 8,
+                  flexShrink: 0,
+                }}>
+                  {d.total_institutions}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right: selected database visualizations */}
+        <div>
+          {!selectedDb ? (
+            <div style={{
+              padding: 24,
+              color: PALETTE.muted,
+              fontFamily: FONT_BODY,
+              fontStyle: 'italic',
+            }}>
+              Select a database from the list.
+            </div>
+          ) : (
+            <>
+              {/* Header: database name + total + tabs + size pills */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: 12,
+                flexWrap: 'wrap',
+                gap: 8,
+              }}>
+                <div>
+                  <div style={{
+                    fontFamily: FONT_DISPLAY,
+                    fontSize: 18,
+                    fontWeight: 500,
+                    color: PALETTE.ink,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}>
+                    {selectedDb.label}
+                    {selectedDb.meta?.caveat && (
+                      <AlertCircle
+                        size={14}
+                        style={{ color: PALETTE.gold, opacity: 0.8 }}
+                      />
+                    )}
+                  </div>
+                  <div style={{
+                    fontFamily: FONT_MONO,
+                    fontSize: 10,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: PALETTE.muted,
+                    marginTop: 2,
+                  }}>
+                    {selectedDb.total_institutions} institutions with at least one citation
+                    {' · '}
+                    {selectedDb.type.replace('_', ' ')}
+                  </div>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  gap: 4,
+                  alignItems: 'center',
+                }}>
+                  <span style={{
+                    fontFamily: FONT_MONO,
+                    fontSize: 9,
+                    letterSpacing: '0.16em',
+                    color: PALETTE.muted,
+                    textTransform: 'uppercase',
+                    marginRight: 4,
+                  }}>
+                    Show
+                  </span>
+                  {[25, 50, 100, 'all'].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setSizePill(n)}
+                      style={{
+                        fontFamily: FONT_MONO,
+                        fontSize: 10,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        padding: '4px 8px',
+                        background: sizePill === n ? PALETTE.ink : PALETTE.paper,
+                        color: sizePill === n ? PALETTE.paper : PALETTE.charcoal,
+                        border: `1px solid ${sizePill === n ? PALETTE.ink : PALETTE.rule}`,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {n === 'all' ? 'All' : n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tab toggle */}
+              <div style={{
+                display: 'flex',
+                borderBottom: `1px solid ${PALETTE.rule}`,
+                marginBottom: 16,
+                gap: 0,
+              }}>
+                {[
+                  { id: 'bars', label: 'Beneficiary bars' },
+                  { id: 'heatmap', label: 'Joint-benefit heatmap' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    style={{
+                      fontFamily: FONT_BODY,
+                      fontSize: 13,
+                      padding: '8px 16px',
+                      background: 'transparent',
+                      color: activeTab === tab.id ? PALETTE.ink : PALETTE.muted,
+                      border: 'none',
+                      borderBottom: activeTab === tab.id
+                        ? `2px solid ${PALETTE.ink}`
+                        : '2px solid transparent',
+                      marginBottom: -1,
+                      cursor: 'pointer',
+                      fontWeight: activeTab === tab.id ? 500 : 400,
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab content */}
+              {activeTab === 'bars' ? (
+                <BeneficiaryBarsView
+                  barsData={barsData}
+                  maxBenefit={maxBenefit}
+                  tableMode={tableMode}
+                  setTableMode={setTableMode}
+                />
+              ) : (
+                <JointBenefitHeatmapView
+                  matrixData={matrixData}
+                  loading={matrixLoading}
+                  error={matrixError}
+                  sizePill={sizePill}
+                  selectedCell={selectedCell}
+                  setSelectedCell={setSelectedCell}
+                />
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+// Helper: render the institution chip in beneficiary bars; just the
+// institution name colored by its type, with a small icon if a
+// subcategory accent applies. Kept simple — no drill-down here
+// because that would conflict with the database-selected context.
+const InstNameChip = ({ inst }) => (
+  <span style={{
+    color: TYPE_COLORS[inst.type] || PALETTE.charcoal,
+    fontWeight: 500,
+  }}>
+    {inst.name}
+  </span>
+);
+
+// Beneficiary bars view: split horizontal bars (solo dark, shared
+// light) for each institution. Tooltip shows the breakdown. Table
+// mode swaps the bars for a sortable column layout.
+const BeneficiaryBarsView = ({ barsData, maxBenefit, tableMode, setTableMode }) => {
+  if (!barsData || barsData.institutions.length === 0) {
+    return (
+      <div style={{ padding: 16, color: PALETTE.muted, fontStyle: 'italic' }}>
+        No institutions have any benefit from this database in 2025.
+      </div>
+    );
+  }
+
+  // Colors for the segments. Reuse the burgundy/burgundy-light pair
+  // used elsewhere in the dashboard so this feels native. Solo is the
+  // saturated tone (unique benefit), shared is the lighter tone
+  // (shared with other Thai institutions).
+  const SOLO_COLOR = PALETTE.burgundy;
+  const SHARED_COLOR = PALETTE.burgundyLight || '#c89899';
+
+  return (
+    <div>
+      {/* Legend + table mode toggle */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+        fontFamily: FONT_MONO,
+        fontSize: 10,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase',
+        color: PALETTE.muted,
+      }}>
+        <div style={{ display: 'flex', gap: 16 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span style={{
+              width: 12,
+              height: 8,
+              background: SOLO_COLOR,
+              display: 'inline-block',
+            }} />
+            Solo (only Thai author)
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span style={{
+              width: 12,
+              height: 8,
+              background: SHARED_COLOR,
+              display: 'inline-block',
+            }} />
+            Shared (multiple Thai authors)
+          </span>
+        </div>
+        <button
+          onClick={() => setTableMode(!tableMode)}
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 10,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            padding: '3px 8px',
+            background: tableMode ? PALETTE.ink : PALETTE.paper,
+            color: tableMode ? PALETTE.paper : PALETTE.charcoal,
+            border: `1px solid ${tableMode ? PALETTE.ink : PALETTE.rule}`,
+            cursor: 'pointer',
+          }}
+        >
+          {tableMode ? 'Bar mode' : 'Table mode'}
+        </button>
+      </div>
+
+      {!tableMode ? (
+        // Bar chart layout
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '210px minmax(0, 1fr) 80px',
+          gap: 10,
+          alignItems: 'center',
+          fontSize: 12,
+        }}>
+          {barsData.institutions.map((inst) => {
+            const total = inst.solo + inst.shared;
+            const totalPct = (total / maxBenefit) * 100;
+            const soloPct = total > 0 ? (inst.solo / total) * 100 : 0;
+            const sharedPct = total > 0 ? (inst.shared / total) * 100 : 0;
+            return (
+              <React.Fragment key={inst.id}>
+                <div
+                  style={{
+                    textAlign: 'right',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title={inst.name}
+                >
+                  <InstNameChip inst={inst} />
+                </div>
+                <div
+                  style={{
+                    height: 18,
+                    background: PALETTE.cream,
+                    width: `${totalPct}%`,
+                    display: 'flex',
+                    overflow: 'hidden',
+                  }}
+                  title={`${inst.name}\nSolo: ${inst.solo.toLocaleString()} citations\nShared: ${inst.shared.toLocaleString()} citations\nTotal: ${total.toLocaleString()}`}
+                >
+                  <div style={{
+                    background: SOLO_COLOR,
+                    width: `${soloPct}%`,
+                    transition: 'width 200ms',
+                  }} />
+                  <div style={{
+                    background: SHARED_COLOR,
+                    width: `${sharedPct}%`,
+                    transition: 'width 200ms',
+                  }} />
+                </div>
+                <div style={{
+                  fontFamily: FONT_MONO,
+                  fontSize: 11,
+                  textAlign: 'right',
+                  color: PALETTE.charcoal,
+                }}>
+                  {total.toLocaleString()}
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      ) : (
+        // Table mode
+        <table style={{
+          width: '100%',
+          fontFamily: FONT_BODY,
+          fontSize: 12,
+          borderCollapse: 'collapse',
+        }}>
+          <thead>
+            <tr style={{
+              fontFamily: FONT_MONO,
+              fontSize: 10,
+              letterSpacing: '0.12em',
+              color: PALETTE.muted,
+              textTransform: 'uppercase',
+              borderBottom: `1px solid ${PALETTE.rule}`,
+            }}>
+              <th style={{ textAlign: 'left', padding: '8px 4px' }}>Institution</th>
+              <th style={{ textAlign: 'left', padding: '8px 4px', width: 100 }}>Type</th>
+              <th style={{ textAlign: 'right', padding: '8px 4px', width: 90 }}>Solo</th>
+              <th style={{ textAlign: 'right', padding: '8px 4px', width: 90 }}>Shared</th>
+              <th style={{ textAlign: 'right', padding: '8px 4px', width: 90 }}>Total</th>
+              <th style={{ textAlign: 'right', padding: '8px 4px', width: 80 }}>% shared</th>
+            </tr>
+          </thead>
+          <tbody>
+            {barsData.institutions.map((inst) => {
+              const total = inst.solo + inst.shared;
+              const pctShared = total > 0
+                ? ((inst.shared / total) * 100).toFixed(1)
+                : '0.0';
+              return (
+                <tr key={inst.id} style={{ borderBottom: `1px solid ${PALETTE.rule}` }}>
+                  <td style={{ padding: '6px 4px' }}>
+                    <InstNameChip inst={inst} />
+                  </td>
+                  <td style={{ padding: '6px 4px', textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.06em', color: TYPE_COLORS[inst.type] || PALETTE.muted }}>
+                    {inst.type}
+                  </td>
+                  <td style={{ padding: '6px 4px', textAlign: 'right', fontFamily: FONT_MONO, fontSize: 11 }}>
+                    {inst.solo.toLocaleString()}
+                  </td>
+                  <td style={{ padding: '6px 4px', textAlign: 'right', fontFamily: FONT_MONO, fontSize: 11 }}>
+                    {inst.shared.toLocaleString()}
+                  </td>
+                  <td style={{ padding: '6px 4px', textAlign: 'right', fontFamily: FONT_MONO, fontSize: 11, fontWeight: 500 }}>
+                    {total.toLocaleString()}
+                  </td>
+                  <td style={{ padding: '6px 4px', textAlign: 'right', fontFamily: FONT_MONO, fontSize: 11, color: PALETTE.muted }}>
+                    {pctShared}%
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+      <div style={{
+        marginTop: 12,
+        padding: '8px 12px',
+        background: PALETTE.cream,
+        borderLeft: `3px solid ${PALETTE.gold}`,
+        fontFamily: FONT_BODY,
+        fontSize: 12,
+        color: PALETTE.charcoal,
+        lineHeight: 1.5,
+      }}>
+        <strong style={{ fontWeight: 500 }}>Showing {barsData.shown} of {barsData.total} institutions.</strong>
+        {' '}A high solo share suggests an institution makes independent use of
+        this database; a high shared share suggests it routinely
+        coauthors with other Thai institutions on papers citing this
+        content, making it a strong candidate for a consortium-level
+        subscription.
+      </div>
+    </div>
+  );
+};
+
+// Joint-benefit heatmap. Sparse matrix data → dense visual matrix.
+// On first render with matrixData, builds a dense N×N grid from the
+// sparse coauth + convergent triples, sliced to the size pill.
+const JointBenefitHeatmapView = ({
+  matrixData, loading, error, sizePill, selectedCell, setSelectedCell,
+}) => {
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: 24, color: PALETTE.muted,
+      }}>
+        <Loader2 size={16} className="animate-spin" />
+        <span style={{ fontFamily: FONT_BODY, fontSize: 13 }}>
+          Loading joint-benefit matrix...
+        </span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: 16, color: PALETTE.burgundy, fontFamily: FONT_BODY, fontSize: 13 }}>
+        Failed to load matrix: {error}
+      </div>
+    );
+  }
+
+  if (!matrixData) return null;
+
+  // Determine N from sizePill. The full institution list in
+  // matrixData is sorted by total benefit desc, so slicing the first
+  // N gives the right subset.
+  const fullN = matrixData.institutions.length;
+  const N = sizePill === 'all' ? fullN : Math.min(sizePill, fullN);
+  const insts = matrixData.institutions.slice(0, N);
+
+  // Build dense matrices from sparse triples. We only consider
+  // entries where both i and j are in the top-N window. coauth +
+  // convergent are stored separately to make the click-through
+  // breakdown possible.
+  const coauthDense = useMemo(() => {
+    const m = Array.from({ length: N }, () => new Array(N).fill(0));
+    for (const [i, j, v] of matrixData.coauth || []) {
+      if (i < N && j < N) {
+        m[i][j] = v;
+        m[j][i] = v;  // matrix is symmetric, sparse stored upper-triangle
+      }
+    }
+    return m;
+  }, [matrixData, N]);
+
+  const convergentDense = useMemo(() => {
+    const m = Array.from({ length: N }, () => new Array(N).fill(0));
+    for (const [i, j, v] of matrixData.convergent || []) {
+      if (i < N && j < N) {
+        m[i][j] = v;
+        m[j][i] = v;
+      }
+    }
+    return m;
+  }, [matrixData, N]);
+
+  // Cell value = coauth + convergent. Diagonal = solo from institutions data.
+  const cellValue = (i, j) => {
+    if (i === j) return insts[i].solo;
+    return coauthDense[i][j] + convergentDense[i][j];
+  };
+
+  // Color scale based on log of max off-diagonal value (since diagonal
+  // dominates and would compress all off-diagonal cells to white).
+  const maxOffDiag = useMemo(() => {
+    let m = 1;
+    for (let i = 0; i < N; i++) {
+      for (let j = 0; j < N; j++) {
+        if (i !== j) m = Math.max(m, cellValue(i, j));
+      }
+    }
+    return m;
+  }, [N, coauthDense, convergentDense]);
+
+  // Use the navy-to-pale blue ramp matching the mockup
+  const colorFor = (val, isDiag) => {
+    if (val === 0) return PALETTE.cream;
+    if (isDiag) {
+      // Diagonal uses burgundy to distinguish from joint values
+      return PALETTE.burgundy;
+    }
+    const t = Math.min(1, Math.log10(val + 1) / Math.log10(maxOffDiag + 1));
+    // Manual ramp: pale -> deep navy
+    if (t < 0.2) return '#E6F1FB';
+    if (t < 0.4) return '#B5D4F4';
+    if (t < 0.6) return '#85B7EB';
+    if (t < 0.8) return '#378ADD';
+    return '#185FA5';
+  };
+
+  const textColorFor = (val, isDiag) => {
+    if (val === 0) return PALETTE.muted;
+    if (isDiag) return PALETTE.paper;
+    const t = Math.min(1, Math.log10(val + 1) / Math.log10(maxOffDiag + 1));
+    return t > 0.55 ? PALETTE.paper : PALETTE.charcoal;
+  };
+
+  // Click handler. Selected cell shows the breakdown panel below.
+  const handleCellClick = (i, j) => {
+    if (i === j) {
+      setSelectedCell(null);
+      return;
+    }
+    setSelectedCell({ i, j });
+  };
+
+  return (
+    <div>
+      {/* Heatmap matrix. Keep cells small at high N. */}
+      <div style={{ overflowX: 'auto', overflowY: 'visible' }}>
+        <table style={{
+          borderCollapse: 'collapse',
+          fontFamily: FONT_MONO,
+          fontSize: N > 50 ? 8 : 10,
+        }}>
+          <thead>
+            <tr>
+              <th style={{ padding: 4 }}></th>
+              {insts.map((inst, j) => (
+                <th
+                  key={j}
+                  style={{
+                    padding: '4px 2px',
+                    height: N > 50 ? 100 : 120,
+                    verticalAlign: 'bottom',
+                    textAlign: 'left',
+                    color: TYPE_COLORS[inst.type] || PALETTE.charcoal,
+                    fontWeight: 500,
+                    minWidth: N > 50 ? 18 : 26,
+                  }}
+                  title={inst.name}
+                >
+                  <div style={{
+                    writingMode: 'vertical-rl',
+                    transform: 'rotate(180deg)',
+                    whiteSpace: 'nowrap',
+                    letterSpacing: '0.02em',
+                  }}>
+                    {inst.name.length > 22 ? inst.name.slice(0, 21) + '…' : inst.name}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {insts.map((inst, i) => (
+              <tr key={i}>
+                <th style={{
+                  padding: '2px 8px',
+                  textAlign: 'right',
+                  fontWeight: 500,
+                  color: TYPE_COLORS[inst.type] || PALETTE.charcoal,
+                  whiteSpace: 'nowrap',
+                  fontFamily: FONT_BODY,
+                  fontSize: N > 50 ? 10 : 11,
+                }} title={inst.name}>
+                  {inst.name.length > 26 ? inst.name.slice(0, 25) + '…' : inst.name}
+                </th>
+                {insts.map((other, j) => {
+                  const val = cellValue(i, j);
+                  const isDiag = i === j;
+                  const isSelected = selectedCell &&
+                    ((selectedCell.i === i && selectedCell.j === j) ||
+                     (selectedCell.i === j && selectedCell.j === i));
+                  return (
+                    <td
+                      key={j}
+                      onClick={() => handleCellClick(i, j)}
+                      style={{
+                        background: colorFor(val, isDiag),
+                        color: textColorFor(val, isDiag),
+                        padding: N > 50 ? '4px 2px' : '6px 3px',
+                        textAlign: 'center',
+                        cursor: isDiag ? 'default' : 'pointer',
+                        border: isSelected
+                          ? `2px solid ${PALETTE.ink}`
+                          : `0.5px solid ${PALETTE.paper}`,
+                        minWidth: N > 50 ? 18 : 26,
+                      }}
+                      title={isDiag
+                        ? `${inst.name} (solo): ${val.toLocaleString()}`
+                        : `${inst.name} × ${other.name}\nJoint benefit: ${val.toLocaleString()}\nCoauthored: ${coauthDense[i][j].toLocaleString()}\nConvergent: ${convergentDense[i][j].toLocaleString()}\nClick for details.`
+                      }
+                    >
+                      {val > 0 ? val.toLocaleString() : ''}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Selected cell breakdown panel */}
+      {selectedCell && (
+        <div style={{
+          marginTop: 16,
+          padding: 12,
+          background: PALETTE.cream,
+          borderLeft: `3px solid ${PALETTE.ink}`,
+          fontFamily: FONT_BODY,
+          fontSize: 13,
+          color: PALETTE.charcoal,
+          lineHeight: 1.6,
+        }}>
+          <div style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            letterSpacing: '0.16em',
+            color: PALETTE.muted,
+            textTransform: 'uppercase',
+            marginBottom: 4,
+          }}>
+            Pair breakdown
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>
+            {insts[selectedCell.i].name}
+            {' × '}
+            {insts[selectedCell.j].name}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', rowGap: 4, columnGap: 12 }}>
+            <span style={{ color: PALETTE.muted }}>Coauthored citations:</span>
+            <span style={{ fontFamily: FONT_MONO }}>
+              {coauthDense[selectedCell.i][selectedCell.j].toLocaleString()}
+              <span style={{ color: PALETTE.muted, marginLeft: 8 }}>
+                (same paper, both institutions as authors)
+              </span>
+            </span>
+            <span style={{ color: PALETTE.muted }}>Convergent citations:</span>
+            <span style={{ fontFamily: FONT_MONO }}>
+              {convergentDense[selectedCell.i][selectedCell.j].toLocaleString()}
+              <span style={{ color: PALETTE.muted, marginLeft: 8 }}>
+                (different papers, same cited work)
+              </span>
+            </span>
+            <span style={{ color: PALETTE.muted, fontWeight: 500 }}>Total joint benefit:</span>
+            <span style={{ fontFamily: FONT_MONO, fontWeight: 500 }}>
+              {(coauthDense[selectedCell.i][selectedCell.j] +
+                convergentDense[selectedCell.i][selectedCell.j]).toLocaleString()}
+            </span>
+          </div>
+          <button
+            onClick={() => setSelectedCell(null)}
+            style={{
+              marginTop: 8,
+              fontFamily: FONT_MONO,
+              fontSize: 10,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              padding: '3px 8px',
+              background: 'transparent',
+              color: PALETTE.muted,
+              border: `1px solid ${PALETTE.rule}`,
+              cursor: 'pointer',
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      <div style={{
+        marginTop: 16,
+        fontFamily: FONT_MONO,
+        fontSize: 9,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase',
+        color: PALETTE.muted,
+        display: 'flex',
+        gap: 16,
+        flexWrap: 'wrap',
+      }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 12, height: 8, background: PALETTE.burgundy }} />
+          Diagonal: institution's solo benefit
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 12, height: 8, background: '#185FA5' }} />
+          Off-diagonal: joint benefit (coauthored + convergent)
+        </span>
+        <span>Showing {N} of {fullN} institutions · Click any off-diagonal cell for breakdown</span>
+      </div>
+    </div>
+  );
+};
+
 
 // ============================================================
 // PUBLISHER SANKEY  (alluvial flow diagram)
@@ -5768,7 +6676,7 @@ const CountryContextSection = ({ children }) => (
           color: PALETTE.muted,
         }}
       >
-        <span>Section II · Database catalogs</span>
+        <span>Section II · Database catalogs and consortium analysis</span>
       </div>
       <h2
         style={{
@@ -5781,7 +6689,7 @@ const CountryContextSection = ({ children }) => (
           marginBottom: 8,
         }}
       >
-        How major databases overlap with each other
+        How databases overlap and who benefits from each subscription
       </h2>
       <p
         style={{
@@ -5792,11 +6700,14 @@ const CountryContextSection = ({ children }) => (
           maxWidth: 760,
         }}
       >
-        This view describes a property of the database catalogs themselves
-        rather than anything specific to Thailand. It compares the public
-        title lists of major academic databases to show how much
-        redundancy exists between them, which is useful for thinking
-        about subscription decisions and consortium-level coverage.
+        Two perspectives on the database landscape, both useful for
+        subscription and consortium decisions. The overlap matrix
+        describes a structural property of the database catalogs
+        themselves (how much redundancy exists between them). The
+        consortium analysis instead looks at Thai citation behavior:
+        if a particular database were subscribed, which Thai
+        institutions would benefit most, and which pairs of
+        institutions would gain the most from sharing that subscription.
       </p>
     </div>
     <div className="space-y-6">
@@ -6273,6 +7184,10 @@ export default function Dashboard() {
               overlap={data.overlap}
               meta={data.meta}
               summary={data.summary}
+            />
+            <BeneficiaryPanel
+              beneficiaryBars={data.database_beneficiary_bars}
+              meta={data.meta}
             />
           </CountryContextSection>
         </div>
