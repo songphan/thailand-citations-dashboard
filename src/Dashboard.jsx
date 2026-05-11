@@ -1598,7 +1598,12 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
 // The matrix data is loaded lazily per database to keep initial
 // dashboard load fast; the bars data is loaded upfront with the rest
 // of the dashboard.
-const BeneficiaryPanel = ({ beneficiaryBars, meta }) => {
+const BeneficiaryPanel = ({
+  beneficiaryBars,
+  meta,
+  subcategoryViews,
+  institutionSubcategory,
+}) => {
   const [selectedDbKey, setSelectedDbKey] = useState(null);
   const [activeTab, setActiveTab] = useState('bars');  // 'bars' | 'heatmap'
   const [sizePill, setSizePill] = useState(25);  // 25 | 50 | 100 | 'all'
@@ -1607,6 +1612,22 @@ const BeneficiaryPanel = ({ beneficiaryBars, meta }) => {
   const [matrixLoading, setMatrixLoading] = useState(false);
   const [matrixError, setMatrixError] = useState(null);
   const [selectedCell, setSelectedCell] = useState(null);  // {i, j} for heatmap
+
+  // Filter state local to this panel. These let the user narrow the
+  // visible beneficiaries to a specific institution type (education,
+  // healthcare, etc.) or, when education is selected, to a specific
+  // education subcategory (Public, Rajabhat, Rajamangala, Private).
+  // Q3 of the design discussion was answered "retain global solo/shared
+  // classification" — meaning these filters only HIDE non-matching
+  // institutions from the chart; they do NOT re-derive the solo/shared
+  // split. So filtering to Rajamangala may still show bars with shared
+  // segments that reflect coauthorship with non-Rajamangala
+  // institutions (which are no longer visible). That's intentional —
+  // it shows what those institutions actually got from the database
+  // including via collaborations that a Rajamangala-only consortium
+  // would not capture.
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [subcategoryFilter, setSubcategoryFilter] = useState('all');
 
   // Build the database list shown in the left panel. Mirrors the
   // Overlap Heatmap's sort: by type group (open access -> abstract
@@ -1653,21 +1674,65 @@ const BeneficiaryPanel = ({ beneficiaryBars, meta }) => {
     setSelectedDbKey(sorted[0].key);
   }, [dbList, selectedDbKey]);
 
-  // Selected database's bars data, sliced according to size pill.
-  const barsData = useMemo(() => {
-    if (!selectedDbKey || !beneficiaryBars) return null;
+  // Selected database's bars data, with type/subcategory filters
+  // applied then sliced according to the size pill.
+  //
+  // Filter order matters: we filter FIRST then take top N within the
+  // filtered set. So "top 25 + public only" means top 25 PUBLIC
+  // institutions, not "top 25 of all then narrow to public" (which
+  // could yield fewer than 25 rows).
+  //
+  // We also compute the unfiltered "available types" set here so the
+  // type pill row only shows pills for types that actually appear in
+  // this database's beneficiary list (e.g. some databases have no
+  // healthcare institutions citing them).
+  const { barsData, availableTypes } = useMemo(() => {
+    if (!selectedDbKey || !beneficiaryBars) {
+      return { barsData: null, availableTypes: [] };
+    }
     const dbData = beneficiaryBars.databases?.[selectedDbKey];
-    if (!dbData) return null;
-    const insts = dbData.institutions || [];
+    if (!dbData) return { barsData: null, availableTypes: [] };
+    const allInsts = dbData.institutions || [];
+
+    // Available types: every distinct type appearing in this database's
+    // beneficiary list, in the canonical filter order. Used to render
+    // the type pill row.
+    const seen = new Set();
+    for (const r of allInsts) seen.add(r.type || 'other');
+    const types = INST_TYPE_FILTER_ORDER.filter((t) => seen.has(t));
+
+    // Apply type filter
+    let filtered = typeFilter === 'all'
+      ? allInsts
+      : allInsts.filter((r) => (r.type || 'other') === typeFilter);
+
+    // Apply subcategory filter (only meaningful for education-type
+    // institutions; for non-education types the subcategory pill row
+    // isn't visible so subcategoryFilter stays 'all' anyway).
+    if (subcategoryFilter !== 'all' && institutionSubcategory) {
+      filtered = filtered.filter(
+        (r) => institutionSubcategory[r.id] === subcategoryFilter,
+      );
+    }
+
     const total = dbData.total_institutions;
+    const filteredTotal = filtered.length;
     const showAll = sizePill === 'all';
-    const cap = showAll ? insts.length : Math.min(sizePill, insts.length);
+    const cap = showAll ? filtered.length : Math.min(sizePill, filtered.length);
     return {
-      total,
-      shown: cap,
-      institutions: insts.slice(0, cap),
+      barsData: {
+        total,           // total across all types
+        filteredTotal,   // total after type/subcategory filter
+        shown: cap,
+        institutions: filtered.slice(0, cap),
+        isFiltered: typeFilter !== 'all' || subcategoryFilter !== 'all',
+      },
+      availableTypes: types,
     };
-  }, [selectedDbKey, beneficiaryBars, sizePill]);
+  }, [
+    selectedDbKey, beneficiaryBars, sizePill,
+    typeFilter, subcategoryFilter, institutionSubcategory,
+  ]);
 
   // Lazy load matrix data for the heatmap tab. Triggered when:
   //   - user is on the heatmap tab
@@ -1859,7 +1924,9 @@ const BeneficiaryPanel = ({ beneficiaryBars, meta }) => {
                     color: PALETTE.muted,
                     marginTop: 2,
                   }}>
-                    {selectedDb.total_institutions} institutions with at least one citation
+                    {barsData && barsData.isFiltered
+                      ? `${barsData.filteredTotal} of ${selectedDb.total_institutions} institutions (filtered)`
+                      : `${selectedDb.total_institutions} institutions with at least one citation`}
                     {' · '}
                     {selectedDb.type.replace('_', ' ')}
                   </div>
@@ -1900,6 +1967,99 @@ const BeneficiaryPanel = ({ beneficiaryBars, meta }) => {
                   ))}
                 </div>
               </div>
+
+              {/* Type filter row. Mirrors Section I's institutional
+                  landscape filter UI: a row of pills colored by type,
+                  with a leading "All" pill. The pill set is dynamic —
+                  only types that actually appear in the selected
+                  database's beneficiary list are shown. Clicking a
+                  type pill clears any subcategory pill so filters
+                  don't conflict. */}
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span
+                  style={{
+                    fontFamily: FONT_MONO,
+                    fontSize: 9,
+                    letterSpacing: '0.16em',
+                    color: PALETTE.muted,
+                    textTransform: 'uppercase',
+                    marginRight: 6,
+                  }}
+                >
+                  Filter by type
+                </span>
+                <FilterPill
+                  label="All"
+                  active={typeFilter === 'all'}
+                  onClick={() => {
+                    setTypeFilter('all');
+                    setSubcategoryFilter('all');
+                  }}
+                />
+                {availableTypes.map((t) => (
+                  <FilterPill
+                    key={t}
+                    label={t.charAt(0).toUpperCase() + t.slice(1)}
+                    active={typeFilter === t}
+                    color={INST_TYPE_COLORS[t]}
+                    onClick={() => {
+                      setTypeFilter(t);
+                      setSubcategoryFilter('all');
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Education subcategory pill row. Visible only when
+                  typeFilter is 'all' or 'education', since the
+                  subcategories sub-classify education-type institutions
+                  (Public, Rajabhat, Rajamangala, Private, etc.).
+                  Clicking a subcategory pill forces typeFilter to
+                  'education' for visual consistency. */}
+              {(typeFilter === 'all' || typeFilter === 'education')
+               && subcategoryViews && subcategoryViews.length > 0 && (
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <span
+                    style={{
+                      fontFamily: FONT_MONO,
+                      fontSize: 9,
+                      letterSpacing: '0.16em',
+                      color: PALETTE.muted,
+                      textTransform: 'uppercase',
+                      marginRight: 6,
+                    }}
+                  >
+                    Education subcategory
+                  </span>
+                  <FilterPill
+                    label="All"
+                    active={subcategoryFilter === 'all'}
+                    onClick={() => setSubcategoryFilter('all')}
+                  />
+                  {subcategoryViews
+                    .filter((sv) => (sv.n_institutions || 0) >= 2)
+                    .map((sv) => {
+                      const sc = sv.subcategory;
+                      const cap = sc.charAt(0).toUpperCase() + sc.slice(1);
+                      return (
+                        <FilterPill
+                          key={sc}
+                          label={cap}
+                          active={subcategoryFilter === sc}
+                          color={SUBCATEGORY_COLORS[sc] || PALETTE.muted}
+                          onClick={() => {
+                            setSubcategoryFilter(sc);
+                            // Force type to education so the row stays
+                            // visible after click (otherwise the pill
+                            // would disappear if user had no type
+                            // selection yet).
+                            setTypeFilter('education');
+                          }}
+                        />
+                      );
+                    })}
+                </div>
+              )}
 
               {/* Tab toggle */}
               <div style={{
@@ -1951,6 +2111,9 @@ const BeneficiaryPanel = ({ beneficiaryBars, meta }) => {
                   sizePill={sizePill}
                   selectedCell={selectedCell}
                   setSelectedCell={setSelectedCell}
+                  typeFilter={typeFilter}
+                  subcategoryFilter={subcategoryFilter}
+                  institutionSubcategory={institutionSubcategory}
                 />
               )}
             </>
@@ -2172,12 +2335,18 @@ const BeneficiaryBarsView = ({ barsData, maxBenefit, tableMode, setTableMode }) 
         color: PALETTE.charcoal,
         lineHeight: 1.5,
       }}>
-        <strong style={{ fontWeight: 500 }}>Showing {barsData.shown} of {barsData.total} institutions.</strong>
+        <strong style={{ fontWeight: 500 }}>
+          {barsData.isFiltered
+            ? `Showing ${barsData.shown} of ${barsData.filteredTotal} filtered institutions (${barsData.total} unfiltered).`
+            : `Showing ${barsData.shown} of ${barsData.total} institutions.`}
+        </strong>
         {' '}A high solo share suggests an institution makes independent use of
         this database; a high shared share suggests it routinely
         coauthors with other Thai institutions on papers citing this
         content, making it a strong candidate for a consortium-level
-        subscription.
+        subscription. Solo/shared classification reflects ALL Thai
+        coauthorship, including with institutions that may be hidden
+        by the current type or subcategory filter.
       </div>
     </div>
   );
@@ -2188,6 +2357,11 @@ const BeneficiaryBarsView = ({ barsData, maxBenefit, tableMode, setTableMode }) 
 // sparse coauth + convergent triples, sliced to the size pill.
 const JointBenefitHeatmapView = ({
   matrixData, loading, error, sizePill, selectedCell, setSelectedCell,
+  // Filter inputs, mirroring the bars view. typeFilter and
+  // subcategoryFilter narrow which institutions appear on each axis;
+  // institutionSubcategory is the lookup map from short OpenAlex ID
+  // to subcategory string (same map used elsewhere in the dashboard).
+  typeFilter, subcategoryFilter, institutionSubcategory,
 }) => {
   if (loading) {
     return (
@@ -2213,38 +2387,75 @@ const JointBenefitHeatmapView = ({
 
   if (!matrixData) return null;
 
-  // Determine N from sizePill. The full institution list in
-  // matrixData is sorted by total benefit desc, so slicing the first
-  // N gives the right subset.
+  // Compute which institutions survive the filters. We compute a
+  // list of ORIGINAL matrix indices (into matrixData.institutions)
+  // that pass the type/subcategory filter, in the original sort
+  // order (which is desc by total benefit, so the top of the filtered
+  // list is still the heaviest beneficiary among the filtered set).
+  // Then the size pill takes the top N of THOSE.
+  //
+  // origIdxList: indices into matrixData.institutions, after filters,
+  //              still in original (total-benefit) order.
+  // The sparse coauth/convergent triples are keyed by original
+  // indices, so we use origIdxList to look up values, and remap to
+  // 0..N-1 for the dense matrix.
   const fullN = matrixData.institutions.length;
-  const N = sizePill === 'all' ? fullN : Math.min(sizePill, fullN);
-  const insts = matrixData.institutions.slice(0, N);
 
-  // Build dense matrices from sparse triples. We only consider
-  // entries where both i and j are in the top-N window. coauth +
-  // convergent are stored separately to make the click-through
-  // breakdown possible.
+  const origIdxList = useMemo(() => {
+    const all = matrixData.institutions;
+    const out = [];
+    for (let i = 0; i < all.length; i++) {
+      const r = all[i];
+      if (typeFilter !== 'all' && (r.type || 'other') !== typeFilter) continue;
+      if (subcategoryFilter !== 'all' && institutionSubcategory) {
+        if (institutionSubcategory[r.id] !== subcategoryFilter) continue;
+      }
+      out.push(i);
+    }
+    return out;
+  }, [matrixData, typeFilter, subcategoryFilter, institutionSubcategory]);
+
+  const filteredN = origIdxList.length;
+  const N = sizePill === 'all' ? filteredN : Math.min(sizePill, filteredN);
+  // Take the top N of the filtered list, then derive insts and the
+  // reverse map (original-index -> display-index) used to densify
+  // the sparse triples.
+  const keptIdx = origIdxList.slice(0, N);
+  const origToDisplay = useMemo(() => {
+    const m = new Map();
+    for (let d = 0; d < keptIdx.length; d++) {
+      m.set(keptIdx[d], d);
+    }
+    return m;
+  }, [keptIdx]);
+  const insts = keptIdx.map((i) => matrixData.institutions[i]);
+
+  // Build dense matrices from sparse triples. Only triples whose
+  // i AND j BOTH survive the filter contribute to the dense matrix;
+  // others are dropped. Indices get remapped to the new 0..N-1 space.
   const coauthDense = useMemo(() => {
     const m = Array.from({ length: N }, () => new Array(N).fill(0));
     for (const [i, j, v] of matrixData.coauth || []) {
-      if (i < N && j < N) {
-        m[i][j] = v;
-        m[j][i] = v;  // matrix is symmetric, sparse stored upper-triangle
-      }
+      const di = origToDisplay.get(i);
+      const dj = origToDisplay.get(j);
+      if (di == null || dj == null) continue;
+      m[di][dj] = v;
+      m[dj][di] = v;
     }
     return m;
-  }, [matrixData, N]);
+  }, [matrixData, N, origToDisplay]);
 
   const convergentDense = useMemo(() => {
     const m = Array.from({ length: N }, () => new Array(N).fill(0));
     for (const [i, j, v] of matrixData.convergent || []) {
-      if (i < N && j < N) {
-        m[i][j] = v;
-        m[j][i] = v;
-      }
+      const di = origToDisplay.get(i);
+      const dj = origToDisplay.get(j);
+      if (di == null || dj == null) continue;
+      m[di][dj] = v;
+      m[dj][di] = v;
     }
     return m;
-  }, [matrixData, N]);
+  }, [matrixData, N, origToDisplay]);
 
   // Cell value = coauth + convergent. Diagonal = solo from institutions data.
   const cellValue = (i, j) => {
@@ -2471,7 +2682,13 @@ const JointBenefitHeatmapView = ({
           <span style={{ width: 12, height: 8, background: '#185FA5' }} />
           Off-diagonal: joint benefit (coauthored + convergent)
         </span>
-        <span>Showing {N} of {fullN} institutions · Click any off-diagonal cell for breakdown</span>
+        <span>
+          Showing {N} of {filteredN}
+          {(typeFilter !== 'all' || subcategoryFilter !== 'all') && filteredN !== fullN
+            ? ` filtered (${fullN} unfiltered)`
+            : ' institutions'}
+          {' · Click any off-diagonal cell for breakdown'}
+        </span>
       </div>
     </div>
   );
@@ -7188,6 +7405,8 @@ export default function Dashboard() {
             <BeneficiaryPanel
               beneficiaryBars={data.database_beneficiary_bars}
               meta={data.meta}
+              subcategoryViews={subcategoryViews}
+              institutionSubcategory={institutionSubcategory}
             />
           </CountryContextSection>
         </div>
