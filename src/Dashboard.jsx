@@ -1629,6 +1629,26 @@ const BeneficiaryPanel = ({
   const [typeFilter, setTypeFilter] = useState('all');
   const [subcategoryFilter, setSubcategoryFilter] = useState('all');
 
+  // Sort modes for each view. Independent so the user can have one
+  // ordering in the bars view and a different ordering in the
+  // heatmap view without them stomping on each other.
+  //
+  //   barsSort: 'total' | 'solo' | 'shared' | 'pct_shared'
+  //     total      = solo + shared, desc (default — overall benefit)
+  //     solo       = solo desc (institutions that benefit most alone)
+  //     shared     = shared desc (institutions that benefit most via collab)
+  //     pct_shared = shared / (solo + shared) desc (most consortium-relevant)
+  //
+  //   heatmapSort: 'total' | 'solo'
+  //     total = solo + shared, desc (default — matches bars default)
+  //     solo  = solo desc (institutions ranked by individual citation volume)
+  //
+  // Sort applies BEFORE the size cap so e.g. "Top 25 by % shared"
+  // returns the 25 institutions with highest % shared, not the 25
+  // largest re-ordered.
+  const [barsSort, setBarsSort] = useState('total');
+  const [heatmapSort, setHeatmapSort] = useState('total');
+
   // Build the database list shown in the left panel. Mirrors the
   // Overlap Heatmap's sort: by type group (open access -> abstract
   // index -> full text), alphabetical within each group. Pulled from
@@ -1715,16 +1735,47 @@ const BeneficiaryPanel = ({
       );
     }
 
+    // Apply sort. The original array (allInsts) is sorted by total
+    // benefit desc; if the user picks something different here we
+    // re-sort. Note that any sort that ties at zero (e.g. all 'solo'
+    // sort with institutions that have zero solo benefit) preserves
+    // the original total-benefit order via a secondary key.
+    const sorted = (() => {
+      if (barsSort === 'total') return filtered;  // already in this order
+      const arr = [...filtered];
+      if (barsSort === 'solo') {
+        arr.sort((a, b) => {
+          if (b.solo !== a.solo) return b.solo - a.solo;
+          return (b.solo + b.shared) - (a.solo + a.shared);
+        });
+      } else if (barsSort === 'shared') {
+        arr.sort((a, b) => {
+          if (b.shared !== a.shared) return b.shared - a.shared;
+          return (b.solo + b.shared) - (a.solo + a.shared);
+        });
+      } else if (barsSort === 'pct_shared') {
+        arr.sort((a, b) => {
+          const ta = a.solo + a.shared;
+          const tb = b.solo + b.shared;
+          const pa = ta > 0 ? a.shared / ta : 0;
+          const pb = tb > 0 ? b.shared / tb : 0;
+          if (pb !== pa) return pb - pa;
+          return tb - ta;
+        });
+      }
+      return arr;
+    })();
+
     const total = dbData.total_institutions;
-    const filteredTotal = filtered.length;
+    const filteredTotal = sorted.length;
     const showAll = sizePill === 'all';
-    const cap = showAll ? filtered.length : Math.min(sizePill, filtered.length);
+    const cap = showAll ? sorted.length : Math.min(sizePill, sorted.length);
     return {
       barsData: {
         total,           // total across all types
         filteredTotal,   // total after type/subcategory filter
         shown: cap,
-        institutions: filtered.slice(0, cap),
+        institutions: sorted.slice(0, cap),
         isFiltered: typeFilter !== 'all' || subcategoryFilter !== 'all',
       },
       availableTypes: types,
@@ -1732,6 +1783,7 @@ const BeneficiaryPanel = ({
   }, [
     selectedDbKey, beneficiaryBars, sizePill,
     typeFilter, subcategoryFilter, institutionSubcategory,
+    barsSort,
   ]);
 
   // Lazy load matrix data for the heatmap tab. Triggered when:
@@ -2102,6 +2154,8 @@ const BeneficiaryPanel = ({
                   maxBenefit={maxBenefit}
                   tableMode={tableMode}
                   setTableMode={setTableMode}
+                  barsSort={barsSort}
+                  setBarsSort={setBarsSort}
                 />
               ) : (
                 <JointBenefitHeatmapView
@@ -2114,6 +2168,8 @@ const BeneficiaryPanel = ({
                   typeFilter={typeFilter}
                   subcategoryFilter={subcategoryFilter}
                   institutionSubcategory={institutionSubcategory}
+                  heatmapSort={heatmapSort}
+                  setHeatmapSort={setHeatmapSort}
                 />
               )}
             </>
@@ -2140,7 +2196,10 @@ const InstNameChip = ({ inst }) => (
 // Beneficiary bars view: split horizontal bars (solo dark, shared
 // light) for each institution. Tooltip shows the breakdown. Table
 // mode swaps the bars for a sortable column layout.
-const BeneficiaryBarsView = ({ barsData, maxBenefit, tableMode, setTableMode }) => {
+const BeneficiaryBarsView = ({
+  barsData, maxBenefit, tableMode, setTableMode,
+  barsSort, setBarsSort,
+}) => {
   if (!barsData || barsData.institutions.length === 0) {
     return (
       <div style={{ padding: 16, color: PALETTE.muted, fontStyle: 'italic' }}>
@@ -2156,8 +2215,44 @@ const BeneficiaryBarsView = ({ barsData, maxBenefit, tableMode, setTableMode }) 
   const SOLO_COLOR = PALETTE.burgundy;
   const SHARED_COLOR = PALETTE.burgundyLight || '#c89899';
 
+  // Sort mode options for the pill row. The sort is applied upstream
+  // (in the parent BeneficiaryPanel's barsData useMemo) BEFORE the
+  // size cap, so e.g. "Top 25 by Shared" returns the 25 institutions
+  // with the highest shared count rather than re-ordering the top 25
+  // by total.
+  const SORT_OPTIONS = [
+    { id: 'total',      label: 'Total benefit' },
+    { id: 'solo',       label: 'Solo' },
+    { id: 'shared',     label: 'Shared' },
+    { id: 'pct_shared', label: '% shared' },
+  ];
+
   return (
     <div>
+      {/* Sort pill row. Same visual language as the size pills above. */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            letterSpacing: '0.16em',
+            color: PALETTE.muted,
+            textTransform: 'uppercase',
+            marginRight: 6,
+          }}
+        >
+          Sort by
+        </span>
+        {SORT_OPTIONS.map((opt) => (
+          <FilterPill
+            key={opt.id}
+            label={opt.label}
+            active={barsSort === opt.id}
+            onClick={() => setBarsSort(opt.id)}
+          />
+        ))}
+      </div>
+
       {/* Legend + table mode toggle */}
       <div style={{
         display: 'flex',
@@ -2362,6 +2457,9 @@ const JointBenefitHeatmapView = ({
   // institutionSubcategory is the lookup map from short OpenAlex ID
   // to subcategory string (same map used elsewhere in the dashboard).
   typeFilter, subcategoryFilter, institutionSubcategory,
+  // Sort mode for the axes. 'total' is the default (matches bars
+  // default); 'solo' ranks institutions by their solo benefit only.
+  heatmapSort, setHeatmapSort,
 }) => {
   if (loading) {
     return (
@@ -2387,33 +2485,50 @@ const JointBenefitHeatmapView = ({
 
   if (!matrixData) return null;
 
-  // Compute which institutions survive the filters. We compute a
-  // list of ORIGINAL matrix indices (into matrixData.institutions)
-  // that pass the type/subcategory filter, in the original sort
-  // order (which is desc by total benefit, so the top of the filtered
-  // list is still the heaviest beneficiary among the filtered set).
-  // Then the size pill takes the top N of THOSE.
+  // Compute which institutions survive the filters and the heatmap
+  // sort. The flow is:
+  //   (1) filter by type/subcategory  → still in original total-benefit order
+  //   (2) re-sort by heatmapSort      → custom ordering of the filtered set
+  //   (3) slice the top N by size pill
   //
-  // origIdxList: indices into matrixData.institutions, after filters,
-  //              still in original (total-benefit) order.
-  // The sparse coauth/convergent triples are keyed by original
-  // indices, so we use origIdxList to look up values, and remap to
-  // 0..N-1 for the dense matrix.
+  // origIdxList holds ORIGINAL matrix indices (into
+  // matrixData.institutions) after steps 1+2, in the new display
+  // order. The sparse coauth/convergent triples are keyed by
+  // original indices, so we use origIdxList to look up values, and
+  // remap to 0..N-1 for the dense matrix.
   const fullN = matrixData.institutions.length;
 
   const origIdxList = useMemo(() => {
     const all = matrixData.institutions;
-    const out = [];
+    // Step 1: filter
+    const filteredIdx = [];
     for (let i = 0; i < all.length; i++) {
       const r = all[i];
       if (typeFilter !== 'all' && (r.type || 'other') !== typeFilter) continue;
       if (subcategoryFilter !== 'all' && institutionSubcategory) {
         if (institutionSubcategory[r.id] !== subcategoryFilter) continue;
       }
-      out.push(i);
+      filteredIdx.push(i);
     }
-    return out;
-  }, [matrixData, typeFilter, subcategoryFilter, institutionSubcategory]);
+    // Step 2: re-sort if needed
+    if (heatmapSort === 'solo') {
+      filteredIdx.sort((ai, bi) => {
+        const a = all[ai];
+        const b = all[bi];
+        if (b.solo !== a.solo) return b.solo - a.solo;
+        // Secondary tiebreak by total so within-tie ordering is
+        // stable and meaningful (e.g. when many institutions have
+        // zero solo benefit, the bigger totals come first).
+        return (b.solo + b.shared) - (a.solo + a.shared);
+      });
+    }
+    // For heatmapSort === 'total' the original order already is
+    // total-desc, so no resort needed.
+    return filteredIdx;
+  }, [
+    matrixData, typeFilter, subcategoryFilter, institutionSubcategory,
+    heatmapSort,
+  ]);
 
   const filteredN = origIdxList.length;
   const N = sizePill === 'all' ? filteredN : Math.min(sizePill, filteredN);
@@ -2475,15 +2590,47 @@ const JointBenefitHeatmapView = ({
     return m;
   }, [N, coauthDense, convergentDense]);
 
-  // Use the navy-to-pale blue ramp matching the mockup
+  // Separate scale for the diagonal. Diagonal cells show each
+  // institution's solo benefit, ramped from pale-burgundy to deep
+  // burgundy so the user can see at a glance which institutions
+  // benefit most as a unique party. Without this, all diagonal cells
+  // were the same solid burgundy and the magnitude wasn't readable.
+  const maxDiag = useMemo(() => {
+    let m = 1;
+    for (let i = 0; i < N; i++) {
+      m = Math.max(m, insts[i].solo);
+    }
+    return m;
+  }, [N, insts]);
+
+  // Burgundy ramp — same structure as the navy ramp used for joint
+  // benefit, but using burgundy hues. PALETTE.burgundy (#7a2e3e) sits
+  // at the dark end; we manually mix toward white at the pale end.
+  // These hex values were chosen to match the visual weight of the
+  // navy ramp at corresponding stops.
+  const BURGUNDY_RAMP = [
+    '#f8e8eb',  // very pale (was PALETTE.cream-adjacent)
+    '#e9c5cc',
+    '#d8a0aa',
+    '#b06f7c',
+    '#7a2e3e',  // PALETTE.burgundy
+  ];
+
+  // Use the navy-to-pale blue ramp for off-diagonal cells; burgundy
+  // ramp for diagonal cells. Zero values use the cream paper color
+  // to render as effectively empty without breaking the table grid.
   const colorFor = (val, isDiag) => {
     if (val === 0) return PALETTE.cream;
     if (isDiag) {
-      // Diagonal uses burgundy to distinguish from joint values
-      return PALETTE.burgundy;
+      // Diagonal uses burgundy ramp keyed off the solo distribution
+      const t = Math.min(1, Math.log10(val + 1) / Math.log10(maxDiag + 1));
+      if (t < 0.2) return BURGUNDY_RAMP[0];
+      if (t < 0.4) return BURGUNDY_RAMP[1];
+      if (t < 0.6) return BURGUNDY_RAMP[2];
+      if (t < 0.8) return BURGUNDY_RAMP[3];
+      return BURGUNDY_RAMP[4];
     }
     const t = Math.min(1, Math.log10(val + 1) / Math.log10(maxOffDiag + 1));
-    // Manual ramp: pale -> deep navy
     if (t < 0.2) return '#E6F1FB';
     if (t < 0.4) return '#B5D4F4';
     if (t < 0.6) return '#85B7EB';
@@ -2493,7 +2640,13 @@ const JointBenefitHeatmapView = ({
 
   const textColorFor = (val, isDiag) => {
     if (val === 0) return PALETTE.muted;
-    if (isDiag) return PALETTE.paper;
+    if (isDiag) {
+      // Text on burgundy ramp: pale stops need dark text, dark stops
+      // need paper text. Use the same threshold as the off-diagonal
+      // case for consistency.
+      const t = Math.min(1, Math.log10(val + 1) / Math.log10(maxDiag + 1));
+      return t > 0.55 ? PALETTE.paper : PALETTE.charcoal;
+    }
     const t = Math.min(1, Math.log10(val + 1) / Math.log10(maxOffDiag + 1));
     return t > 0.55 ? PALETTE.paper : PALETTE.charcoal;
   };
@@ -2509,6 +2662,39 @@ const JointBenefitHeatmapView = ({
 
   return (
     <div>
+      {/* Sort pill row for the heatmap axes. The sort applies to BOTH
+          axes simultaneously (the matrix is symmetric, so the rows
+          and columns must always be in the same order — sorting one
+          asymmetrically would put the diagonal off the diagonal).
+          'Total' is the default and matches the bars view default;
+          'Solo' surfaces institutions whose individual citation
+          volume is highest, which can be different from total
+          benefit when an institution has heavy collaboration. */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 9,
+            letterSpacing: '0.16em',
+            color: PALETTE.muted,
+            textTransform: 'uppercase',
+            marginRight: 6,
+          }}
+        >
+          Sort axes by
+        </span>
+        <FilterPill
+          label="Total benefit"
+          active={heatmapSort === 'total'}
+          onClick={() => setHeatmapSort('total')}
+        />
+        <FilterPill
+          label="Solo"
+          active={heatmapSort === 'solo'}
+          onClick={() => setHeatmapSort('solo')}
+        />
+      </div>
+
       {/* Heatmap matrix. Keep cells small at high N. */}
       <div style={{ overflowX: 'auto', overflowY: 'visible' }}>
         <table style={{
@@ -2674,13 +2860,17 @@ const JointBenefitHeatmapView = ({
         gap: 16,
         flexWrap: 'wrap',
       }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 12, height: 8, background: PALETTE.burgundy }} />
-          Diagonal: institution's solo benefit
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span>Diagonal (solo)</span>
+          <span style={{ width: 8, height: 8, background: '#f8e8eb' }} />
+          <span style={{ width: 8, height: 8, background: '#d8a0aa' }} />
+          <span style={{ width: 8, height: 8, background: '#7a2e3e' }} />
         </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 12, height: 8, background: '#185FA5' }} />
-          Off-diagonal: joint benefit (coauthored + convergent)
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span>Off-diagonal (joint)</span>
+          <span style={{ width: 8, height: 8, background: '#E6F1FB' }} />
+          <span style={{ width: 8, height: 8, background: '#85B7EB' }} />
+          <span style={{ width: 8, height: 8, background: '#185FA5' }} />
         </span>
         <span>
           Showing {N} of {filteredN}
