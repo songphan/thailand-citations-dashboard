@@ -58,6 +58,45 @@ const HIDDEN_DATABASE_KEYS = new Set([
   'sciencedirect_cu',
 ]);
 
+// Institutions to suppress from the dashboard. These are entries in
+// the underlying OpenAlex data that are misclassified upstream:
+// either the country attribution is wrong, or the institution is a
+// known name-collision target where unrelated authors get aggregated.
+// The data still flows through the pipeline (because we don't want to
+// rebuild the harvest to fix display issues), but the dashboard skips
+// these IDs everywhere institutions appear: the institution selector,
+// the institutions panel, the beneficiary bars and heatmap, and the
+// institution overlap heatmap.
+//
+// Verified entries:
+//
+//   I4210123333 — Ministry of Education (Thailand)
+//     ROR: https://ror.org/036nq5137  homepage: www.en.moe.go.th
+//     This IS a legitimate Thai government entity. But OpenAlex's
+//     affiliation-string matcher conflates "Ministry of Education"
+//     affiliations from CHINESE authors (especially State Key
+//     Laboratory affiliations whose host_organization is the Chinese
+//     Ministry of Education) with this Thai entity. Spot-checks of
+//     top-cited 2025 works attributed here (e.g. 10.1038/s41589-025-
+//     01841-3, a Nature Chemical Biology paper) confirm every author
+//     is affiliated with Chinese institutions, no Thai author on the
+//     byline. The 4,940-work / 339,105-citation / h-186 profile is
+//     implausible for the actual Thai MoE.
+//
+// IDs are stored in short OpenAlex form (without the URL prefix), to
+// match how the pipeline emits them in dashboard_data/*.json files.
+const EXCLUDED_INSTITUTION_IDS = new Set([
+  'I4210123333',
+]);
+
+// Display names matching EXCLUDED_INSTITUTION_IDS entries, used in a
+// few places where the pipeline emits institution names without their
+// IDs (e.g. sample_institutions in institution_types.json). Keep this
+// synced with EXCLUDED_INSTITUTION_IDS above.
+const EXCLUDED_INSTITUTION_NAMES = new Set([
+  'Ministry of Education',
+]);
+
 // Publishers whose journals are predominantly or entirely open access,
 // meaning Thai institutions don't need a subscription to read them.
 // The list is intentionally conservative — only publishers where the
@@ -1748,11 +1787,17 @@ const BeneficiaryPanel = ({
       // beneficiary institutions — extremely unlikely but defensive).
       const bd = beneficiaryBars.databases?.[d.key];
       if (!bd) continue;
+      // Compute the institution count excluding misclassified entities,
+      // so the count next to each database in the selector matches
+      // what's actually shown when the user picks it.
+      const cleanedCount = (bd.institutions || []).filter(
+        (r) => !EXCLUDED_INSTITUTION_IDS.has(r.id),
+      ).length;
       out.push({
         key: d.key,
         label: d.label,
         type: d.type,
-        total_institutions: bd.total_institutions,
+        total_institutions: cleanedCount,
         meta: d,  // pass full meta for tooltip
       });
     }
@@ -1796,7 +1841,13 @@ const BeneficiaryPanel = ({
     }
     const dbData = beneficiaryBars.databases?.[selectedDbKey];
     if (!dbData) return { barsData: null, availableTypes: [] };
-    const allInsts = dbData.institutions || [];
+    // Drop misclassified institutions (see EXCLUDED_INSTITUTION_IDS
+    // at top of file). Filtering at this top level ensures both the
+    // bars rendering and the dbData.total_institutions count reflect
+    // the cleaned set.
+    const allInsts = (dbData.institutions || []).filter(
+      (r) => !EXCLUDED_INSTITUTION_IDS.has(r.id),
+    );
 
     // Available types: every distinct type appearing in this database's
     // beneficiary list, in the canonical filter order. Used to render
@@ -1850,7 +1901,12 @@ const BeneficiaryPanel = ({
       return arr;
     })();
 
-    const total = dbData.total_institutions;
+    // 'total' reports the count of beneficiary institutions for this
+    // database. Use the cleaned (post-EXCLUDED filter) count so the
+    // header text matches what users actually see in the bars and
+    // heatmap. The original dbData.total_institutions is no longer
+    // shown anywhere.
+    const total = allInsts.length;
     const filteredTotal = sorted.length;
     const showAll = sizePill === 'all';
     const cap = showAll ? sorted.length : Math.min(sizePill, sorted.length);
@@ -2660,7 +2716,15 @@ const JointBenefitHeatmapView = ({
   // order. The sparse coauth/convergent triples are keyed by
   // original indices, so we use origIdxList to look up values, and
   // remap to 0..N-1 for the dense matrix.
-  const fullN = matrixData.institutions.length;
+  // fullN is the total institution count (post-EXCLUDED filter) used
+  // in the legend "X of fullN" text. Excludes misclassified entities
+  // so the displayed number matches what's visible elsewhere.
+  const fullN = useMemo(
+    () => matrixData.institutions.filter(
+      (r) => !EXCLUDED_INSTITUTION_IDS.has(r.id),
+    ).length,
+    [matrixData],
+  );
 
   const origIdxList = useMemo(() => {
     const all = matrixData.institutions;
@@ -2668,6 +2732,11 @@ const JointBenefitHeatmapView = ({
     const filteredIdx = [];
     for (let i = 0; i < all.length; i++) {
       const r = all[i];
+      // Drop misclassified institutions (see EXCLUDED_INSTITUTION_IDS
+      // at top of file). They're filtered from the rows/columns but
+      // the underlying matrix indices still reference all institutions,
+      // so the projection from origIdx -> displayed cell still works.
+      if (EXCLUDED_INSTITUTION_IDS.has(r.id)) continue;
       if (typeFilter !== 'all' && (r.type || 'other') !== typeFilter) continue;
       if (subcategoryFilter !== 'all' && institutionSubcategory) {
         if (institutionSubcategory[r.id] !== subcategoryFilter) continue;
@@ -4132,6 +4201,16 @@ const InstitutionOverlapHeatmap = ({
   // so filtered indices are projected through the original matrix.
   const { labels, matrixOv, matrixA, types, ids, indices } = useMemo(() => {
     let idx = insts.map((_, i) => i);
+    // Drop misclassified institutions (e.g., Ministry of Education
+    // entries polluted with foreign-author papers — see
+    // EXCLUDED_INSTITUTION_IDS at the top of this file). Filtering
+    // here removes them from the matrix axes; the original matrix
+    // values for other institutions are still indexed via idx, so
+    // pair counts remain correct.
+    idx = idx.filter((i) => {
+      const id = (insts[i].id || '').replace('https://openalex.org/', '');
+      return !EXCLUDED_INSTITUTION_IDS.has(id);
+    });
     if (typeFilter !== 'all') {
       idx = idx.filter((i) => (insts[i].type || 'other') === typeFilter);
     }
@@ -4164,10 +4243,15 @@ const InstitutionOverlapHeatmap = ({
     };
   }, [insts, o, typeFilter, subcategoryFilter, institutionSubcategory, topNFilter]);
 
-  // Available types (only those that appear in the matrix)
+  // Available types (only those that appear in the matrix, EXCLUDING
+  // misclassified institutions from the type detection).
   const availableTypes = useMemo(() => {
     const seen = new Set();
-    for (const r of insts) seen.add(r.type || 'other');
+    for (const r of insts) {
+      const id = (r.id || '').replace('https://openalex.org/', '');
+      if (EXCLUDED_INSTITUTION_IDS.has(id)) continue;
+      seen.add(r.type || 'other');
+    }
     return INST_TYPE_FILTER_ORDER.filter((t) => seen.has(t));
   }, [insts]);
 
@@ -6604,7 +6688,18 @@ const InstitutionTypesPanel = ({ institutionTypes, view }) => {
         n_edges: r.n_edges,
         n_seeds: r.n_seeds,
         n_institutions: r.n_institutions,
-        sample_institutions: r.sample_institutions || [],
+        // The pipeline emits sample_institutions as { name, edges }
+        // without IDs, so we filter by name. The names listed in
+        // EXCLUDED_INSTITUTION_NAMES match the exclusion-set entries
+        // by their OpenAlex display_name. Filter just the samples;
+        // the type's aggregate n_edges and n_institutions counts can't
+        // easily be adjusted client-side since we lack the granular
+        // breakdown. The aggregates are off by the excluded entity's
+        // contribution, which is a known limitation noted in
+        // EXCLUDED_INSTITUTION_IDS documentation.
+        sample_institutions: (r.sample_institutions || []).filter(
+          (s) => !EXCLUDED_INSTITUTION_NAMES.has(s.name),
+        ),
       }))
       .sort((a, b) => b.n_edges - a.n_edges),
     [items],
@@ -7352,7 +7447,19 @@ export default function Dashboard() {
   const [view, setView] = useState('all_thailand');
   const data = useDataFiles();
 
-  const institutionViews = data.meta?.institution_views || [];
+  // Pull institution_views from meta.json and remove any IDs that are
+  // in the EXCLUDED_INSTITUTION_IDS set (upstream-misclassified
+  // entities). Filtering here cascades to: the institution selector
+  // dropdown, the per-institution view lookup, and anywhere that
+  // iterates institutionViews. Other places (data.institutions panel,
+  // beneficiary bars/heatmap, overlap matrix) apply their own filter
+  // since their data lives in different files.
+  const institutionViews = useMemo(
+    () => (data.meta?.institution_views || []).filter(
+      (iv) => !EXCLUDED_INSTITUTION_IDS.has(iv.id),
+    ),
+    [data.meta],
+  );
   const typeViews = data.meta?.type_views || [];
   const fieldViews = data.meta?.field_views || [];
   const domainViews = data.meta?.domain_views || [];
@@ -7607,7 +7714,15 @@ export default function Dashboard() {
               combine with the discipline view in v1. */}
           {!isDisciplineFilter && (
             <TopInstitutionsPanel
-              institutions={data.institutions}
+              institutions={
+                data.institutions
+                  ? data.institutions.filter(
+                      (r) => !EXCLUDED_INSTITUTION_IDS.has(
+                        (r.id || '').replace('https://openalex.org/', ''),
+                      ),
+                    )
+                  : data.institutions
+              }
               onSelectInstitution={setView}
               currentView={effectiveView}
               typeViews={typeViews}
