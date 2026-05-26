@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-11T22:36:57",
+  "generated_at": "2026-05-27T00:52:06",
   "pipeline_version": "v2.8",
   "views": [
     "all_thailand",
@@ -66,8 +66,8 @@
     "I159665162",
     "I79246082",
     "I85156444",
-    "I4210146814",
     "I4210094798",
+    "I4210146814",
     "I39737112",
     "I4210105946",
     "I73683852",
@@ -79,41 +79,41 @@
     "I4210139698",
     "I4210165065",
     "I14316845",
-    "I2802083337",
     "I4210149622",
+    "I2802083337",
     "I4210129057",
     "I58196637",
     "I4210092041",
     "I73668669",
-    "I13590829",
     "I2801262096",
+    "I13590829",
     "I4210110022",
     "I126954138",
-    "I178764607",
     "I4210131109",
+    "I178764607",
     "I4210130206",
     "I4210118263",
     "I4210088080",
     "I102065260",
-    "I4210112079",
     "I4210142541",
+    "I4210112079",
     "I4210134384",
     "I4210130811",
     "I4210151714",
     "I4210088075",
     "I2800945716",
     "I3131658906",
-    "I4210106845",
     "I4210135781",
+    "I4210106845",
     "I1315830910",
     "I4210146542",
     "I3131721959",
     "I154381313",
     "I2803065428",
     "I4210116630",
-    "I3132704155",
-    "I4210107506",
     "I4210112607",
+    "I4210107506",
+    "I3132704155",
     "I3142908523",
     "I4210148395",
     "I4210113609",
@@ -122,35 +122,35 @@
     "I4210110271",
     "I4210117768",
     "I4210130885",
-    "I4322889",
-    "I60697786",
-    "I129496196",
     "I4210107209",
+    "I60697786",
+    "I4322889",
+    "I129496196",
     "I4210158764",
-    "I2801166139",
     "I2799476192",
+    "I2801166139",
+    "I9340882",
     "I114432228",
     "I4210134513",
-    "I9340882",
+    "I338254849",
     "I4210127461",
     "I197898795",
-    "I338254849",
     "I34956611",
     "I4210087403",
     "I4210106727",
     "I4210105130",
-    "I4210150275",
-    "I4210137768",
     "I165232561",
+    "I4210150275",
     "I4210109997",
+    "I4210137768",
+    "I4210097440",
     "I4210108247",
     "I4210166623",
-    "I4210097440",
     "I4210096430",
     "I4210126681",
     "I4210163898",
-    "I95579309",
     "I2801204956",
+    "I95579309",
     "I4210137676",
     "I4210091243",
     "I4210108296",
@@ -170,18 +170,18 @@
     "I4210166966",
     "I4210096456",
     "I2800913826",
+    "I184614866",
     "I4210110805",
     "I4210111088",
-    "I184614866",
     "I39491647",
     "I4210130090",
     "I4210114411",
     "I4210154509",
-    "I4210096323",
     "I4210110554",
+    "I4210128712",
+    "I4210096323",
     "I4210111490",
     "I4210142390",
-    "I4210128712",
     "I4210132988",
     "I4210086785",
     "I4210155403",
@@ -190,10 +190,10 @@
     "I2803092234",
     "I4210124378",
     "I4210141957",
+    "I4210099732",
     "I2802351605",
     "I4210098294",
     "I229056271",
-    "I4210099732",
     "I4210166311",
     "I4210105964",
     "I4210100251",
@@ -236,8 +236,8 @@
     "field:Nursing",
     "field:Neuroscience",
     "field:Pharmacology, Toxicology and Pharmaceutics",
-    "field:Earth and Planetary Sciences",
     "field:Dentistry",
+    "field:Earth and Planetary Sciences",
     "field:Decision Sciences",
     "field:Arts and Humanities",
     "field:Chemical Engineering",
@@ -253,49 +253,49 @@
       "id": "I158708052",
       "name": "Chulalongkorn University",
       "type": "education",
-      "n_edges": 233961
+      "n_edges": 234766
     },
     {
       "id": "I25399158",
       "name": "Mahidol University",
       "type": "education",
-      "n_edges": 190949
+      "n_edges": 191573
     },
     {
       "id": "I48076826",
       "name": "Chiang Mai University",
       "type": "education",
-      "n_edges": 158779
+      "n_edges": 159030
     },
     {
       "id": "I198105771",
       "name": "Kasetsart University",
       "type": "education",
-      "n_edges": 96729
+      "n_edges": 96842
     },
     {
       "id": "I131868736",
       "name": "Prince of Songkla University",
       "type": "education",
-      "n_edges": 90285
+      "n_edges": 90632
     },
     {
       "id": "I179193067",
       "name": "Khon Kaen University",
       "type": "education",
-      "n_edges": 86429
+      "n_edges": 86591
     },
     {
       "id": "I108108428",
       "name": "Thammasat University",
       "type": "education",
-      "n_edges": 69796
+      "n_edges": 70092
     },
     {
       "id": "I1332387789",
       "name": "Siriraj Hospital",
       "type": "healthcare",
-      "n_edges": 48688
+      "n_edges": 48836
     },
     {
       "id": "I1332092204",
@@ -307,73 +307,73 @@
       "id": "I4210123333",
       "name": "Ministry of Education",
       "type": "government",
-      "n_edges": 45528
+      "n_edges": 46342
     },
     {
       "id": "I96916377",
       "name": "Walailak University",
       "type": "education",
-      "n_edges": 44314
+      "n_edges": 44387
     },
     {
       "id": "I82828225",
       "name": "King Mongkut's University of Technology North Bangkok",
       "type": "education",
-      "n_edges": 43734
+      "n_edges": 43798
     },
     {
       "id": "I91538806",
       "name": "King Mongkut's Institute of Technology Ladkrabang",
       "type": "education",
-      "n_edges": 42266
+      "n_edges": 42272
     },
     {
       "id": "I60837268",
       "name": "King Mongkut's University of Technology Thonburi",
       "type": "education",
-      "n_edges": 41435
+      "n_edges": 41515
     },
     {
       "id": "I82475049",
       "name": "Suranaree University of Technology",
       "type": "education",
-      "n_edges": 37984
+      "n_edges": 38060
     },
     {
       "id": "I123096312",
       "name": "Mahasarakham University",
       "type": "education",
-      "n_edges": 34426
+      "n_edges": 34458
     },
     {
       "id": "I86677382",
       "name": "Silpakorn University",
       "type": "education",
-      "n_edges": 33901
+      "n_edges": 33978
     },
     {
       "id": "I4210140007",
       "name": "Ramathibodi Hospital",
       "type": "healthcare",
-      "n_edges": 33638
+      "n_edges": 33914
     },
     {
       "id": "I34002243",
       "name": "Mae Fah Luang University",
       "type": "education",
-      "n_edges": 29200
+      "n_edges": 29273
     },
     {
       "id": "I66200439",
       "name": "Naresuan University",
       "type": "education",
-      "n_edges": 26594
+      "n_edges": 26619
     },
     {
       "id": "I2802209374",
       "name": "King Chulalongkorn Memorial Hospital",
       "type": "healthcare",
-      "n_edges": 25918
+      "n_edges": 25998
     },
     {
       "id": "I4210126604",
@@ -385,37 +385,37 @@
       "id": "I129488602",
       "name": "Burapha University",
       "type": "education",
-      "n_edges": 22394
+      "n_edges": 22430
     },
     {
       "id": "I76920116",
       "name": "Srinakharinwirot University",
       "type": "education",
-      "n_edges": 22175
+      "n_edges": 22223
     },
     {
       "id": "I38538140",
       "name": "Asian Institute of Technology",
       "type": "education",
-      "n_edges": 21139
+      "n_edges": 21146
     },
     {
       "id": "I1285782058",
       "name": "Rajamangala University of Technology Isan",
       "type": "education",
-      "n_edges": 20378
+      "n_edges": 20465
     },
     {
       "id": "I4210090662",
       "name": "University of Phayao",
       "type": "education",
-      "n_edges": 20316
+      "n_edges": 20350
     },
     {
       "id": "I902798049",
       "name": "National Center for Genetic Engineering and Biotechnology",
       "type": "facility",
-      "n_edges": 20152
+      "n_edges": 20169
     },
     {
       "id": "I4210090246",
@@ -433,19 +433,19 @@
       "id": "I4210107674",
       "name": "National Nanotechnology Center",
       "type": "facility",
-      "n_edges": 16436
+      "n_edges": 16462
     },
     {
       "id": "I89226531",
       "name": "Rangsit University",
       "type": "education",
-      "n_edges": 16192
+      "n_edges": 16214
     },
     {
       "id": "I181635417",
       "name": "Shinawatra University",
       "type": "education",
-      "n_edges": 15591
+      "n_edges": 15687
     },
     {
       "id": "I4210153049",
@@ -457,13 +457,13 @@
       "id": "I3132067926",
       "name": "Krirk University",
       "type": "education",
-      "n_edges": 12744
+      "n_edges": 12789
     },
     {
       "id": "I72091625",
       "name": "Ubon Ratchathani University",
       "type": "education",
-      "n_edges": 12602
+      "n_edges": 12663
     },
     {
       "id": "I4210132449",
@@ -475,25 +475,25 @@
       "id": "I1297332423",
       "name": "Thai Red Cross Society",
       "type": "other",
-      "n_edges": 10672
+      "n_edges": 10680
     },
     {
       "id": "I1315836254",
       "name": "Ministry of Public Health",
       "type": "funder",
-      "n_edges": 10386
+      "n_edges": 10422
     },
     {
       "id": "I190734841",
       "name": "Maejo University",
       "type": "education",
-      "n_edges": 10162
+      "n_edges": 10189
     },
     {
       "id": "I4210149736",
       "name": "Food and Drug Administration",
       "type": "government",
-      "n_edges": 9296
+      "n_edges": 9310
     },
     {
       "id": "I4210106686",
@@ -505,37 +505,37 @@
       "id": "I4210159985",
       "name": "Sakon Nakhon Rajabhat University",
       "type": "education",
-      "n_edges": 8581
+      "n_edges": 8605
     },
     {
       "id": "I55913730",
       "name": "Bangkok University",
       "type": "education",
-      "n_edges": 8326
+      "n_edges": 8363
     },
     {
       "id": "I4210087968",
       "name": "Phramongkutklao Hospital",
       "type": "healthcare",
-      "n_edges": 7422
+      "n_edges": 7472
     },
     {
       "id": "I279583474",
       "name": "Navamindradhiraj University",
       "type": "education",
-      "n_edges": 7175
+      "n_edges": 7232
     },
     {
       "id": "I159665162",
       "name": "National Institute of Development Administration",
       "type": "education",
-      "n_edges": 6945
+      "n_edges": 6956
     },
     {
       "id": "I79246082",
       "name": "Thaksin University",
       "type": "education",
-      "n_edges": 6744
+      "n_edges": 6801
     },
     {
       "id": "I85156444",
@@ -544,16 +544,16 @@
       "n_edges": 6684
     },
     {
+      "id": "I4210094798",
+      "name": "Rajamangala University of Technology Krungthep",
+      "type": "education",
+      "n_edges": 6416
+    },
+    {
       "id": "I4210146814",
       "name": "Petromat",
       "type": "nonprofit",
       "n_edges": 6395
-    },
-    {
-      "id": "I4210094798",
-      "name": "Rajamangala University of Technology Krungthep",
-      "type": "education",
-      "n_edges": 6389
     },
     {
       "id": "I39737112",
@@ -565,13 +565,13 @@
       "id": "I4210105946",
       "name": "Suan Sunandha Rajabhat University",
       "type": "education",
-      "n_edges": 6078
+      "n_edges": 6126
     },
     {
       "id": "I73683852",
       "name": "Rajamangala University of Technology Lanna",
       "type": "education",
-      "n_edges": 5725
+      "n_edges": 5774
     },
     {
       "id": "I141509744",
@@ -583,7 +583,7 @@
       "id": "I115748381",
       "name": "Assumption University",
       "type": "education",
-      "n_edges": 5463
+      "n_edges": 5520
     },
     {
       "id": "I2799959951",
@@ -595,7 +595,7 @@
       "id": "I4210160017",
       "name": "Nakhon Si Thammarat Rajabhat University",
       "type": "education",
-      "n_edges": 5060
+      "n_edges": 5071
     },
     {
       "id": "I117277806",
@@ -613,7 +613,7 @@
       "id": "I4210165065",
       "name": "Naresuan University Hospital",
       "type": "healthcare",
-      "n_edges": 4655
+      "n_edges": 4672
     },
     {
       "id": "I14316845",
@@ -622,28 +622,28 @@
       "n_edges": 4636
     },
     {
+      "id": "I4210149622",
+      "name": "Department of Livestock Development",
+      "type": "government",
+      "n_edges": 4514
+    },
+    {
       "id": "I2802083337",
       "name": "Bangkok Hospital",
       "type": "healthcare",
       "n_edges": 4499
     },
     {
-      "id": "I4210149622",
-      "name": "Department of Livestock Development",
-      "type": "government",
-      "n_edges": 4498
-    },
-    {
       "id": "I4210129057",
       "name": "Phuket Rajabhat University",
       "type": "education",
-      "n_edges": 4472
+      "n_edges": 4474
     },
     {
       "id": "I58196637",
       "name": "Ramkhamhaeng University",
       "type": "education",
-      "n_edges": 4382
+      "n_edges": 4410
     },
     {
       "id": "I4210092041",
@@ -655,19 +655,19 @@
       "id": "I73668669",
       "name": "Rajamangala University of Technology Srivijaya",
       "type": "education",
-      "n_edges": 4221
+      "n_edges": 4225
+    },
+    {
+      "id": "I2801262096",
+      "name": "Vajira Hospital",
+      "type": "healthcare",
+      "n_edges": 4142
     },
     {
       "id": "I13590829",
       "name": "Dhurakij Pundit University",
       "type": "education",
       "n_edges": 4102
-    },
-    {
-      "id": "I2801262096",
-      "name": "Vajira Hospital",
-      "type": "healthcare",
-      "n_edges": 4096
     },
     {
       "id": "I4210110022",
@@ -682,16 +682,16 @@
       "n_edges": 4053
     },
     {
+      "id": "I4210131109",
+      "name": "Institute of Dermatology",
+      "type": "education",
+      "n_edges": 4011
+    },
+    {
       "id": "I178764607",
       "name": "Kanchanaburi Rajabhat University",
       "type": "education",
       "n_edges": 3932
-    },
-    {
-      "id": "I4210131109",
-      "name": "Institute of Dermatology",
-      "type": "education",
-      "n_edges": 3927
     },
     {
       "id": "I4210130206",
@@ -718,16 +718,16 @@
       "n_edges": 3796
     },
     {
-      "id": "I4210112079",
-      "name": "Rajavithi Hospital",
-      "type": "healthcare",
-      "n_edges": 3545
-    },
-    {
       "id": "I4210142541",
       "name": "Thai Health Promotion Foundation",
       "type": "government",
-      "n_edges": 3371
+      "n_edges": 3659
+    },
+    {
+      "id": "I4210112079",
+      "name": "Rajavithi Hospital",
+      "type": "healthcare",
+      "n_edges": 3552
     },
     {
       "id": "I4210134384",
@@ -766,16 +766,16 @@
       "n_edges": 2998
     },
     {
+      "id": "I4210135781",
+      "name": "Rajabhat Maha Sarakham University",
+      "type": "education",
+      "n_edges": 2990
+    },
+    {
       "id": "I4210106845",
       "name": "Rajamangala University of Technology Suvarnabhumi",
       "type": "education",
       "n_edges": 2955
-    },
-    {
-      "id": "I4210135781",
-      "name": "Rajabhat Maha Sarakham University",
-      "type": "education",
-      "n_edges": 2940
     },
     {
       "id": "I1315830910",
@@ -793,7 +793,7 @@
       "id": "I3131721959",
       "name": "Bangkokthonburi University",
       "type": "education",
-      "n_edges": 2825
+      "n_edges": 2833
     },
     {
       "id": "I154381313",
@@ -805,7 +805,7 @@
       "id": "I2803065428",
       "name": "Thammasat University Hospital",
       "type": "healthcare",
-      "n_edges": 2633
+      "n_edges": 2699
     },
     {
       "id": "I4210116630",
@@ -814,22 +814,22 @@
       "n_edges": 2619
     },
     {
-      "id": "I3132704155",
-      "name": "Udon Thani Rajabhat University",
-      "type": "education",
-      "n_edges": 2551
+      "id": "I4210112607",
+      "name": "Armed Forces Research Institute of Medical Science",
+      "type": "nonprofit",
+      "n_edges": 2578
     },
     {
       "id": "I4210107506",
       "name": "Maharat Nakhon Ratchasima Hospital",
       "type": "healthcare",
-      "n_edges": 2540
+      "n_edges": 2552
     },
     {
-      "id": "I4210112607",
-      "name": "Armed Forces Research Institute of Medical Science",
-      "type": "nonprofit",
-      "n_edges": 2521
+      "id": "I3132704155",
+      "name": "Udon Thani Rajabhat University",
+      "type": "education",
+      "n_edges": 2551
     },
     {
       "id": "I3142908523",
@@ -877,7 +877,19 @@
       "id": "I4210130885",
       "name": "Police General Hospital",
       "type": "healthcare",
-      "n_edges": 2340
+      "n_edges": 2357
+    },
+    {
+      "id": "I4210107209",
+      "name": "Mae Fah Luang University Hospital",
+      "type": "healthcare",
+      "n_edges": 2285
+    },
+    {
+      "id": "I60697786",
+      "name": "Sukhothai Thammathirat Open University",
+      "type": "education",
+      "n_edges": 2279
     },
     {
       "id": "I4322889",
@@ -886,27 +898,21 @@
       "n_edges": 2275
     },
     {
-      "id": "I60697786",
-      "name": "Sukhothai Thammathirat Open University",
-      "type": "education",
-      "n_edges": 2245
-    },
-    {
       "id": "I129496196",
       "name": "University of the Thai Chamber of Commerce",
       "type": "education",
       "n_edges": 2241
     },
     {
-      "id": "I4210107209",
-      "name": "Mae Fah Luang University Hospital",
-      "type": "healthcare",
-      "n_edges": 2229
-    },
-    {
       "id": "I4210158764",
       "name": "Yala Rajabhat University",
       "type": "education",
+      "n_edges": 2211
+    },
+    {
+      "id": "I2799476192",
+      "name": "Bumrungrad International Hospital",
+      "type": "healthcare",
       "n_edges": 2190
     },
     {
@@ -916,10 +922,10 @@
       "n_edges": 2185
     },
     {
-      "id": "I2799476192",
-      "name": "Bumrungrad International Hospital",
-      "type": "healthcare",
-      "n_edges": 2106
+      "id": "I9340882",
+      "name": "Chiang Mai Rajabhat University",
+      "type": "education",
+      "n_edges": 2076
     },
     {
       "id": "I114432228",
@@ -934,10 +940,10 @@
       "n_edges": 2060
     },
     {
-      "id": "I9340882",
-      "name": "Chiang Mai Rajabhat University",
+      "id": "I338254849",
+      "name": "Princess of Naradhiwas University",
       "type": "education",
-      "n_edges": 2048
+      "n_edges": 1984
     },
     {
       "id": "I4210127461",
@@ -950,12 +956,6 @@
       "name": "Payap University",
       "type": "education",
       "n_edges": 1914
-    },
-    {
-      "id": "I338254849",
-      "name": "Princess of Naradhiwas University",
-      "type": "education",
-      "n_edges": 1901
     },
     {
       "id": "I34956611",
@@ -982,10 +982,22 @@
       "n_edges": 1826
     },
     {
+      "id": "I165232561",
+      "name": "Asian University",
+      "type": "education",
+      "n_edges": 1798
+    },
+    {
       "id": "I4210150275",
       "name": "Chonburi Hospital",
       "type": "healthcare",
       "n_edges": 1792
+    },
+    {
+      "id": "I4210109997",
+      "name": "Boromarajonani College of Nursing",
+      "type": "education",
+      "n_edges": 1773
     },
     {
       "id": "I4210137768",
@@ -994,16 +1006,10 @@
       "n_edges": 1773
     },
     {
-      "id": "I165232561",
-      "name": "Asian University",
+      "id": "I4210097440",
+      "name": "Suan Dusit University",
       "type": "education",
-      "n_edges": 1739
-    },
-    {
-      "id": "I4210109997",
-      "name": "Boromarajonani College of Nursing",
-      "type": "education",
-      "n_edges": 1737
+      "n_edges": 1753
     },
     {
       "id": "I4210108247",
@@ -1016,12 +1022,6 @@
       "name": "Rajabhat Rajanagarindra University",
       "type": "education",
       "n_edges": 1726
-    },
-    {
-      "id": "I4210097440",
-      "name": "Suan Dusit University",
-      "type": "education",
-      "n_edges": 1708
     },
     {
       "id": "I4210096430",
@@ -1042,16 +1042,16 @@
       "n_edges": 1634
     },
     {
+      "id": "I2801204956",
+      "name": "Hatyai Hospital",
+      "type": "healthcare",
+      "n_edges": 1629
+    },
+    {
       "id": "I95579309",
       "name": "Chandrakasem Rajabhat University",
       "type": "education",
       "n_edges": 1597
-    },
-    {
-      "id": "I2801204956",
-      "name": "Hatyai Hospital",
-      "type": "healthcare",
-      "n_edges": 1594
     },
     {
       "id": "I4210137676",
@@ -1135,7 +1135,7 @@
       "id": "I4210087436",
       "name": "Chiang Rai Rajabhat University",
       "type": "education",
-      "n_edges": 1325
+      "n_edges": 1333
     },
     {
       "id": "I4210138454",
@@ -1153,7 +1153,7 @@
       "id": "I4210166966",
       "name": "Ratchaburi Hospital",
       "type": "healthcare",
-      "n_edges": 1300
+      "n_edges": 1302
     },
     {
       "id": "I4210096456",
@@ -1168,6 +1168,12 @@
       "n_edges": 1263
     },
     {
+      "id": "I184614866",
+      "name": "Far Eastern University",
+      "type": "education",
+      "n_edges": 1230
+    },
+    {
       "id": "I4210110805",
       "name": "ChiangRai Prachanukroh Hospital",
       "type": "healthcare",
@@ -1178,12 +1184,6 @@
       "name": "Maharaj Nakorn Chiang Mai Hospital",
       "type": "healthcare",
       "n_edges": 1218
-    },
-    {
-      "id": "I184614866",
-      "name": "Far Eastern University",
-      "type": "education",
-      "n_edges": 1215
     },
     {
       "id": "I39491647",
@@ -1210,16 +1210,22 @@
       "n_edges": 1106
     },
     {
+      "id": "I4210110554",
+      "name": "Songklanagarind Hospital",
+      "type": "healthcare",
+      "n_edges": 1105
+    },
+    {
+      "id": "I4210128712",
+      "name": "Sisaket Rajabhat University",
+      "type": "education",
+      "n_edges": 1096
+    },
+    {
       "id": "I4210096323",
       "name": "Stockholm Environment Institute",
       "type": "nonprofit",
       "n_edges": 1095
-    },
-    {
-      "id": "I4210110554",
-      "name": "Songklanagarind Hospital",
-      "type": "healthcare",
-      "n_edges": 1092
     },
     {
       "id": "I4210111490",
@@ -1234,12 +1240,6 @@
       "n_edges": 1084
     },
     {
-      "id": "I4210128712",
-      "name": "Sisaket Rajabhat University",
-      "type": "education",
-      "n_edges": 1082
-    },
-    {
       "id": "I4210132988",
       "name": "Lampang Hospital",
       "type": "healthcare",
@@ -1249,13 +1249,13 @@
       "id": "I4210086785",
       "name": "Queen Sirikit National Institute of Child Health",
       "type": "healthcare",
-      "n_edges": 1040
+      "n_edges": 1056
     },
     {
       "id": "I4210155403",
       "name": "Zoological Park Organization",
       "type": "archive",
-      "n_edges": 1002
+      "n_edges": 1004
     },
     {
       "id": "I4210160495",
@@ -1285,7 +1285,13 @@
       "id": "I4210141957",
       "name": "Rambhai Barni Rajabhat University",
       "type": "education",
-      "n_edges": 895
+      "n_edges": 923
+    },
+    {
+      "id": "I4210099732",
+      "name": "Asia Pacific International University",
+      "type": "education",
+      "n_edges": 904
     },
     {
       "id": "I2802351605",
@@ -1304,12 +1310,6 @@
       "name": "Sripatum University",
       "type": "education",
       "n_edges": 865
-    },
-    {
-      "id": "I4210099732",
-      "name": "Asia Pacific International University",
-      "type": "education",
-      "n_edges": 847
     },
     {
       "id": "I4210166311",
@@ -1387,7 +1387,7 @@
       "id": "I4210160044",
       "name": "Department of Disaster Prevention and Mitigation",
       "type": "government",
-      "n_edges": 665
+      "n_edges": 667
     },
     {
       "id": "I4210162622",
@@ -1455,43 +1455,43 @@
       "id": "type:education",
       "type": "education",
       "n_institutions": 138,
-      "n_edges": 1718169
+      "n_edges": 1722718
     },
     {
       "id": "type:healthcare",
       "type": "healthcare",
       "n_institutions": 56,
-      "n_edges": 181139
+      "n_edges": 182064
     },
     {
       "id": "type:government",
       "type": "government",
       "n_institutions": 27,
-      "n_edges": 144167
+      "n_edges": 145331
     },
     {
       "id": "type:facility",
       "type": "facility",
       "n_institutions": 16,
-      "n_edges": 106426
+      "n_edges": 106469
     },
     {
       "id": "type:nonprofit",
       "type": "nonprofit",
       "n_institutions": 10,
-      "n_edges": 17632
+      "n_edges": 17689
     },
     {
       "id": "type:other",
       "type": "other",
       "n_institutions": 7,
-      "n_edges": 11117
+      "n_edges": 11125
     },
     {
       "id": "type:funder",
       "type": "funder",
       "n_institutions": 1,
-      "n_edges": 10386
+      "n_edges": 10422
     },
     {
       "id": "type:company",
@@ -1503,7 +1503,7 @@
       "id": "type:archive",
       "type": "archive",
       "n_institutions": 1,
-      "n_edges": 1002
+      "n_edges": 1004
     }
   ],
   "subcategory_views": [
@@ -1511,31 +1511,31 @@
       "id": "subcategory:public",
       "subcategory": "public",
       "n_institutions": 28,
-      "n_edges": 1387744
+      "n_edges": 1391207
     },
     {
       "id": "subcategory:private",
       "subcategory": "private",
       "n_institutions": 7,
-      "n_edges": 77332
+      "n_edges": 77589
     },
     {
       "id": "subcategory:rajamangala",
       "subcategory": "rajamangala",
       "n_institutions": 8,
-      "n_edges": 65647
+      "n_edges": 65814
     },
     {
       "id": "subcategory:rajabhat",
       "subcategory": "rajabhat",
       "n_institutions": 8,
-      "n_edges": 40566
+      "n_edges": 40651
     },
     {
       "id": "subcategory:other",
       "subcategory": "other",
       "n_institutions": 1,
-      "n_edges": 21139
+      "n_edges": 21146
     }
   ],
   "institution_subcategory": {
@@ -1596,56 +1596,56 @@
     {
       "id": "field:Medicine",
       "field": "Medicine",
-      "n_seeds": 7448,
-      "n_edges": 299092
+      "n_seeds": 7497,
+      "n_edges": 300218
     },
     {
       "id": "field:Engineering",
       "field": "Engineering",
-      "n_seeds": 4447,
-      "n_edges": 177201
+      "n_seeds": 4459,
+      "n_edges": 177581
     },
     {
       "id": "field:Agricultural and Biological Sciences",
       "field": "Agricultural and Biological Sciences",
-      "n_seeds": 2417,
-      "n_edges": 125245
+      "n_seeds": 2422,
+      "n_edges": 125397
     },
     {
       "id": "field:Biochemistry, Genetics and Molecular Biology",
       "field": "Biochemistry, Genetics and Molecular Biology",
-      "n_seeds": 2144,
-      "n_edges": 121312
+      "n_seeds": 2154,
+      "n_edges": 122121
     },
     {
       "id": "field:Materials Science",
       "field": "Materials Science",
-      "n_seeds": 1581,
-      "n_edges": 94375
+      "n_seeds": 1583,
+      "n_edges": 94413
     },
     {
       "id": "field:Environmental Science",
       "field": "Environmental Science",
-      "n_seeds": 1822,
-      "n_edges": 92766
+      "n_seeds": 1824,
+      "n_edges": 92814
     },
     {
       "id": "field:Social Sciences",
       "field": "Social Sciences",
-      "n_seeds": 1970,
-      "n_edges": 66210
+      "n_seeds": 1982,
+      "n_edges": 66569
     },
     {
       "id": "field:Computer Science",
       "field": "Computer Science",
-      "n_seeds": 1726,
-      "n_edges": 48275
+      "n_seeds": 1741,
+      "n_edges": 48513
     },
     {
       "id": "field:Business, Management and Accounting",
       "field": "Business, Management and Accounting",
-      "n_seeds": 992,
-      "n_edges": 43706
+      "n_seeds": 999,
+      "n_edges": 43843
     },
     {
       "id": "field:Physics and Astronomy",
@@ -1656,20 +1656,20 @@
     {
       "id": "field:Psychology",
       "field": "Psychology",
-      "n_seeds": 842,
-      "n_edges": 31839
+      "n_seeds": 848,
+      "n_edges": 32055
     },
     {
       "id": "field:Immunology and Microbiology",
       "field": "Immunology and Microbiology",
-      "n_seeds": 606,
-      "n_edges": 30921
+      "n_seeds": 609,
+      "n_edges": 31018
     },
     {
       "id": "field:Chemistry",
       "field": "Chemistry",
-      "n_seeds": 502,
-      "n_edges": 25919
+      "n_seeds": 507,
+      "n_edges": 26357
     },
     {
       "id": "field:Energy",
@@ -1680,20 +1680,20 @@
     {
       "id": "field:Health Professions",
       "field": "Health Professions",
-      "n_seeds": 619,
-      "n_edges": 19654
+      "n_seeds": 626,
+      "n_edges": 19829
     },
     {
       "id": "field:Economics, Econometrics and Finance",
       "field": "Economics, Econometrics and Finance",
-      "n_seeds": 434,
-      "n_edges": 17040
+      "n_seeds": 437,
+      "n_edges": 17127
     },
     {
       "id": "field:Nursing",
       "field": "Nursing",
-      "n_seeds": 320,
-      "n_edges": 16870
+      "n_seeds": 322,
+      "n_edges": 16919
     },
     {
       "id": "field:Neuroscience",
@@ -1708,22 +1708,22 @@
       "n_edges": 14901
     },
     {
+      "id": "field:Dentistry",
+      "field": "Dentistry",
+      "n_seeds": 381,
+      "n_edges": 14668
+    },
+    {
       "id": "field:Earth and Planetary Sciences",
       "field": "Earth and Planetary Sciences",
       "n_seeds": 280,
       "n_edges": 14625
     },
     {
-      "id": "field:Dentistry",
-      "field": "Dentistry",
-      "n_seeds": 380,
-      "n_edges": 14625
-    },
-    {
       "id": "field:Decision Sciences",
       "field": "Decision Sciences",
-      "n_seeds": 346,
-      "n_edges": 11804
+      "n_seeds": 347,
+      "n_edges": 11835
     },
     {
       "id": "field:Arts and Humanities",
@@ -1740,8 +1740,8 @@
     {
       "id": "field:Mathematics",
       "field": "Mathematics",
-      "n_seeds": 234,
-      "n_edges": 6432
+      "n_seeds": 235,
+      "n_edges": 6438
     },
     {
       "id": "field:Veterinary",
@@ -1754,26 +1754,26 @@
     {
       "id": "domain:Physical Sciences",
       "domain": "Physical Sciences",
-      "n_seeds": 11829,
-      "n_edges": 529749
+      "n_seeds": 11866,
+      "n_edges": 530897
     },
     {
       "id": "domain:Health Sciences",
       "domain": "Health Sciences",
-      "n_seeds": 8868,
-      "n_edges": 354448
+      "n_seeds": 8927,
+      "n_edges": 355841
     },
     {
       "id": "domain:Life Sciences",
       "domain": "Life Sciences",
-      "n_seeds": 5735,
-      "n_edges": 307960
+      "n_seeds": 5753,
+      "n_edges": 309018
     },
     {
       "id": "domain:Social Sciences",
       "domain": "Social Sciences",
-      "n_seeds": 4950,
-      "n_edges": 181363
+      "n_seeds": 4979,
+      "n_edges": 182193
     }
   ],
   "has_disciplinary_data": true,
@@ -1946,177 +1946,16 @@
       "matchable_pct": 100.0
     },
     {
-      "key": "bmj_global",
-      "label": "BMJ Global",
+      "key": "acs",
+      "label": "ACS Publications",
       "type": "full_text",
       "subscribed": true,
-      "title_count": 102,
-      "with_issn": 70,
+      "title_count": 77,
+      "with_issn": 43,
       "with_eissn": 77,
-      "with_either": 102,
-      "matchable_pct": 100.0
-    },
-    {
-      "key": "cambridge_journals",
-      "label": "Cambridge Journals",
-      "type": "full_text",
-      "subscribed": true,
-      "title_count": 434,
-      "with_issn": 373,
-      "with_eissn": 434,
-      "with_either": 434,
+      "with_either": 77,
       "matchable_pct": 100.0,
-      "caveat": "Title list covers Cambridge University Press journals. Cambridge also publishes substantial book content not included here."
-    },
-    {
-      "key": "emerald_journals",
-      "label": "Emerald Journals",
-      "type": "full_text",
-      "subscribed": true,
-      "title_count": 666,
-      "with_issn": 623,
-      "with_eissn": 663,
-      "with_either": 666,
-      "matchable_pct": 100.0
-    },
-    {
-      "key": "ieee_xplore",
-      "label": "IEEE Xplore",
-      "type": "full_text",
-      "subscribed": true,
-      "title_count": 2114,
-      "with_issn": 806,
-      "with_eissn": 1899,
-      "with_either": 2114,
-      "matchable_pct": 100.0,
-      "caveat": "Title list covers IEEE journals and magazines only. Conference proceedings (which constitute a large share of IEEE Xplore content, particularly in computer science and engineering) are not included in this coverage analysis."
-    },
-    {
-      "key": "ovid_global",
-      "label": "Ovid Global",
-      "type": "full_text",
-      "subscribed": true,
-      "title_count": 4425,
-      "with_issn": 4179,
-      "with_eissn": 3943,
-      "with_either": 4425,
-      "matchable_pct": 100.0
-    },
-    {
-      "key": "acm",
-      "label": "ACM (periodicals + proceedings)",
-      "type": "full_text",
-      "subscribed": true,
-      "title_count": 174,
-      "with_issn": 126,
-      "with_eissn": 125,
-      "with_either": 174,
-      "matchable_pct": 100.0,
-      "caveat": "Title list covers ACM journals only. A substantial portion of ACM's published research (estimated 50% or more) consists of conference proceedings, which generally lack ISSNs and are not represented in this coverage analysis even though they are accessible via the ACM Digital Library."
-    },
-    {
-      "key": "brill_journals",
-      "label": "Brill Journals",
-      "type": "full_text",
-      "subscribed": true,
-      "title_count": 372,
-      "with_issn": 307,
-      "with_eissn": 372,
-      "with_either": 372,
-      "matchable_pct": 100.0
-    },
-    {
-      "key": "tandf_journals",
-      "label": "Taylor & Francis Journals",
-      "type": "full_text",
-      "subscribed": true,
-      "title_count": 5994,
-      "with_issn": 5500,
-      "with_eissn": 5117,
-      "with_either": 5994,
-      "matchable_pct": 100.0,
-      "caveat": "Title list covers Taylor & Francis journals only. Routledge and other T&F imprints' book content is not represented."
-    },
-    {
-      "key": "duke_journals",
-      "label": "Duke Journals",
-      "type": "full_text",
-      "subscribed": true,
-      "title_count": 63,
-      "with_issn": 59,
-      "with_eissn": 63,
-      "with_either": 63,
-      "matchable_pct": 100.0
-    },
-    {
-      "key": "springer_journals",
-      "label": "Springer Nature Journals",
-      "type": "full_text",
-      "subscribed": true,
-      "title_count": 3555,
-      "with_issn": 2396,
-      "with_eissn": 3552,
-      "with_either": 3555,
-      "matchable_pct": 100.0,
-      "caveat": "Title list covers Springer journals only. Springer also publishes extensive book content (Springer Nature Books, book chapters, reference works) that is not included in this list and therefore not counted in this coverage analysis."
-    },
-    {
-      "key": "jstor",
-      "label": "JSTOR",
-      "type": "full_text",
-      "subscribed": true,
-      "title_count": 2982,
-      "with_issn": 2929,
-      "with_eissn": 2421,
-      "with_either": 2982,
-      "matchable_pct": 100.0,
-      "caveat": "Archival journal collection. JSTOR's strength is in older scholarship in humanities and social sciences; current-year content from many publishers is intentionally excluded."
-    },
-    {
-      "key": "sage_premier",
-      "label": "Sage Premier",
-      "type": "full_text",
-      "subscribed": true,
-      "title_count": 1061,
-      "with_issn": 1061,
-      "with_eissn": 1061,
-      "with_either": 1061,
-      "matchable_pct": 100.0
-    },
-    {
-      "key": "sage_gold_oa",
-      "label": "Sage Gold OA",
-      "type": "open_access",
-      "subscribed": true,
-      "title_count": 217,
-      "with_issn": 217,
-      "with_eissn": 217,
-      "with_either": 217,
-      "matchable_pct": 100.0
-    },
-    {
-      "key": "pubmed",
-      "label": "PubMed (NLM)",
-      "type": "abstract_index",
-      "subscribed": true,
-      "title_count": 35455,
-      "with_issn": 26214,
-      "with_eissn": 19290,
-      "with_either": 32180,
-      "matchable_pct": 90.8,
-      "caveat": "Biomedical and life sciences scope. Coverage percentages for Thai research outside these fields will appear low even when the underlying citations are well-served by other databases."
-    },
-    {
-      "key": "pmc",
-      "label": "PubMed Central (PMC)",
-      "type": "open_access",
-      "subscribed": true,
-      "title_count": 4459,
-      "with_issn": 2546,
-      "with_eissn": 4237,
-      "with_either": 4380,
-      "matchable_pct": 98.2,
-      "caveat": "Biomedical and life sciences scope, restricted to journals with PMC deposit agreements. Coverage percentages for Thai research outside these fields will appear low."
+      "caveat": "Title list covers ACS journals only (the ACS All Publications package). ACS eBooks and the ACS Guide to Scholarly Communication are separate ACS products not included here, though they may be relevant for chemistry researchers."
     }
   ]
 }
