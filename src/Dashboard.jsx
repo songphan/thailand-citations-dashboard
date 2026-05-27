@@ -4,6 +4,7 @@ import {
   Calendar, FileText, Building2, BookOpen, Tag,
   BarChart3, Table as TableIcon, GitBranch,
   FlaskConical, Microscope, Languages,
+  ChevronDown, Maximize2, Minimize2,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -262,27 +263,268 @@ function useDataFiles() {
 // ============================================================
 // LAYOUT PRIMITIVES
 // ============================================================
+
+// CollapseSignal: a small React context that lets a master toggle
+// button at the top of the page broadcast "collapse all" / "expand
+// all" commands to every Card on the dashboard at once. Each Card
+// still owns its own local collapsed state (so individual chevron
+// clicks work independently after a bulk toggle); the signal just
+// nudges everyone to a known state.
+//
+// Implementation: the signal holds two monotonically-increasing
+// counters (collapseAt, expandAt). Cards watch both via useEffect;
+// when either counter increments, the corresponding state change
+// is applied. This avoids stale-closure issues that would arise
+// with a single boolean.
+const CollapseSignalContext = React.createContext({ collapseAt: 0, expandAt: 0 });
+const useCollapseSignal = () => React.useContext(CollapseSignalContext);
+
+const CollapseSignalProvider = ({ children }) => {
+  const [signal, setSignal] = useState({ collapseAt: 0, expandAt: 0 });
+  const collapseAll = () => setSignal((s) => ({ ...s, collapseAt: s.collapseAt + 1 }));
+  const expandAll = () => setSignal((s) => ({ ...s, expandAt: s.expandAt + 1 }));
+  return (
+    <CollapseSignalContext.Provider value={{ ...signal, collapseAll, expandAll }}>
+      {children}
+    </CollapseSignalContext.Provider>
+  );
+};
+
+// Floating control: two small buttons in the page corner that
+// collapse all sections or expand them all. Useful during a
+// presentation to focus on one panel and then quickly restore.
+// Position is fixed so it stays visible while scrolling.
+const CollapseAllControl = () => {
+  const { collapseAll, expandAll } = useCollapseSignal();
+  return (
+    <>
+      {/* Print rules: when the user prints the dashboard, force all
+          collapsed sections back open so the printout is complete,
+          and hide the floating control + per-section chevrons since
+          they're not meaningful on paper. Embedded here rather than
+          in index.css so the dashboard remains self-contained. */}
+      <style>{`
+        @media print {
+          .collapse-all-control,
+          .section-collapse-toggle {
+            display: none !important;
+          }
+          .collapsible-section[data-collapsed="true"] > *:not(:first-child) {
+            display: block !important;
+          }
+        }
+      `}</style>
+      <div
+        style={{
+          position: 'fixed',
+          top: 16,
+          right: 16,
+          zIndex: 100,
+          display: 'flex',
+          gap: 4,
+          background: PALETTE.paper,
+          border: `1px solid ${PALETTE.rule}`,
+          borderRadius: 4,
+          padding: 2,
+          boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+        }}
+        className="collapse-all-control"
+      >
+      <HoverTip content="Collapse all sections" delay={400}>
+        <button
+          type="button"
+          onClick={collapseAll}
+          aria-label="Collapse all sections"
+          style={{
+            width: 28,
+            height: 28,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: PALETTE.muted,
+            borderRadius: 3,
+            padding: 0,
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = PALETTE.cream; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+        >
+          <Minimize2 size={14} strokeWidth={1.8} />
+        </button>
+      </HoverTip>
+      <HoverTip content="Expand all sections" delay={400}>
+        <button
+          type="button"
+          onClick={expandAll}
+          aria-label="Expand all sections"
+          style={{
+            width: 28,
+            height: 28,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: PALETTE.muted,
+            borderRadius: 3,
+            padding: 0,
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = PALETTE.cream; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+        >
+          <Maximize2 size={14} strokeWidth={1.8} />
+        </button>
+      </HoverTip>
+    </div>
+    </>
+  );
+};
+
 // Card is the standard panel wrapper. The optional `filtered` prop
 // adds a thin burgundy left-border accent that signals "this panel
 // reflects the current filter." It pairs with the breadcrumb above:
 // the breadcrumb tells you WHAT the filter is, the accent shows
 // WHICH panels actually respond to it. The accent is only visible
 // when filtered=true, so it disappears entirely on All Thailand.
-const Card = ({ children, className = '', style = {}, filtered = false }) => (
-  <section
-    className={`border ${className}`}
-    style={{
-      background: PALETTE.paper,
-      borderColor: PALETTE.rule,
-      ...(filtered && {
-        borderLeft: `3px solid ${PALETTE.burgundy}`,
-      }),
-      ...style,
-    }}
-  >
-    {children}
-  </section>
-);
+// Card: a bordered section box. By default it's a passive container.
+// Pass `collapsible` to add a presentation-friendly collapse toggle:
+// the section header (first child, expected to be a SectionTitle)
+// stays visible, and everything else is hidden when the user clicks
+// the chevron in the top-right corner.
+//
+// Why per-Card local state instead of a global toggle map: each
+// section's collapsed state is independent and only meaningful while
+// the page is loaded. Reloading the page resets everything to
+// expanded, which is the right default for the next viewer. A global
+// "collapse all" / "expand all" button (CollapseAllControl) is
+// provided separately for fast bulk toggling during a presentation.
+//
+// Print behavior: a `@media print` rule below forces all content
+// visible, so collapsed sections print in full.
+const Card = ({
+  children,
+  className = '',
+  style = {},
+  filtered = false,
+  // Default to collapsible. Sections that should never collapse
+  // (e.g. the headline-stats summary at the top of the page, error
+  // boundaries, modal-style messages) opt out with `collapsible={false}`.
+  collapsible = true,
+}) => {
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Read & write the global collapse signal so a master "Collapse all"
+  // / "Expand all" button can affect every Card at once. The signal
+  // is a counter: any increment to `collapseSignal` or `expandSignal`
+  // forces this Card to that state. Direct user clicks on this Card's
+  // chevron still work independently afterwards.
+  const collapseSignal = useCollapseSignal();
+  useEffect(() => {
+    if (collapseSignal.collapseAt > 0) setCollapsed(true);
+  }, [collapseSignal.collapseAt]);
+  useEffect(() => {
+    if (collapseSignal.expandAt > 0) setCollapsed(false);
+  }, [collapseSignal.expandAt]);
+
+  if (!collapsible) {
+    return (
+      <section
+        className={`border ${className}`}
+        style={{
+          background: PALETTE.paper,
+          borderColor: PALETTE.rule,
+          ...(filtered && {
+            borderLeft: `3px solid ${PALETTE.burgundy}`,
+          }),
+          ...style,
+        }}
+      >
+        {children}
+      </section>
+    );
+  }
+
+  // Collapsible variant. Find the SectionTitle (first child) and
+  // render it always; render the rest conditionally on `collapsed`.
+  // The chevron sits absolutely-positioned in the top-right so it
+  // doesn't disturb the existing SectionTitle layout. Clicking the
+  // chevron toggles collapse. The section header itself is also
+  // clickable as a larger target.
+  const childArray = React.Children.toArray(children);
+  const head = childArray[0];
+  const body = childArray.slice(1);
+
+  return (
+    <section
+      className={`border collapsible-section ${className}`}
+      style={{
+        background: PALETTE.paper,
+        borderColor: PALETTE.rule,
+        position: 'relative',
+        ...(filtered && {
+          borderLeft: `3px solid ${PALETTE.burgundy}`,
+        }),
+        ...style,
+      }}
+      data-collapsed={collapsed ? 'true' : 'false'}
+    >
+      {/* Chevron toggle. Absolutely positioned so it lays over the
+          top-right corner of the card without forcing SectionTitle
+          to know about it. The hit area is generous (32px) so it's
+          easy to click during a presentation. */}
+      <button
+        type="button"
+        onClick={() => setCollapsed((v) => !v)}
+        aria-label={collapsed ? 'Expand section' : 'Collapse section'}
+        aria-expanded={!collapsed}
+        className="section-collapse-toggle"
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: 12,
+          width: 32,
+          height: 32,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          padding: 0,
+          color: PALETTE.muted,
+          borderRadius: 4,
+          zIndex: 2,
+          transition: 'background 0.15s ease',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = PALETTE.cream; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+      >
+        <ChevronDown
+          size={18}
+          strokeWidth={2}
+          style={{
+            transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+            transition: 'transform 0.18s ease',
+          }}
+        />
+      </button>
+      {/* The section header (SectionTitle) is also clickable, since
+          it's a more obvious affordance than the small chevron. */}
+      <div
+        onClick={() => setCollapsed((v) => !v)}
+        style={{ cursor: 'pointer', paddingRight: 40 }}
+        role="button"
+        tabIndex={-1}
+      >
+        {head}
+      </div>
+      {!collapsed && body}
+    </section>
+  );
+};
 
 const SectionTitle = ({ icon: Icon, kicker, title, hint, totalN, totalLabel }) => (
   <header className="mb-3">
@@ -590,7 +832,7 @@ const TopStats = ({ summary, view, viewLabel }) => {
   const vsPct = (thPct) => `TH: ${fmtPct(thPct)}`;
 
   return (
-    <Card className="p-0" filtered={isFiltered}>
+    <Card className="p-0" filtered={isFiltered} collapsible={false}>
       <div
         className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
         style={{ borderColor: PALETTE.rule }}
@@ -7681,7 +7923,7 @@ export default function Dashboard() {
         className="flex min-h-screen items-center justify-center px-6"
         style={{ background: PALETTE.cream, fontFamily: FONT_BODY }}
       >
-        <Card className="p-6 max-w-lg">
+        <Card className="p-6 max-w-lg" collapsible={false}>
           <div
             className="flex items-center gap-2 mb-3"
             style={{ color: PALETTE.burgundy }}
@@ -7718,15 +7960,21 @@ export default function Dashboard() {
     effectiveView.startsWith('field:') || effectiveView.startsWith('domain:');
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: PALETTE.cream,
-        fontFamily: FONT_BODY,
-        color: PALETTE.ink,
-      }}
-    >
-      <Header generatedAt={data.meta?.generated_at} />
+    <CollapseSignalProvider>
+      <div
+        style={{
+          minHeight: '100vh',
+          background: PALETTE.cream,
+          fontFamily: FONT_BODY,
+          color: PALETTE.ink,
+        }}
+      >
+        {/* Floating control: collapse all / expand all sections. Sits
+            fixed in the top-right corner so it's reachable from any
+            scroll position. Useful during a presentation to quickly
+            hide the panels not being discussed. */}
+        <CollapseAllControl />
+        <Header generatedAt={data.meta?.generated_at} />
       <main className="mx-auto max-w-[1400px] px-6 py-8">
         <div className="space-y-6">
           {/* Breadcrumb-style sticky filter bar — promoted to the very
@@ -7929,6 +8177,7 @@ export default function Dashboard() {
         </div>
       </main>
       <Footer />
-    </div>
+      </div>
+    </CollapseSignalProvider>
   );
 }
