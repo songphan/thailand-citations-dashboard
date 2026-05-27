@@ -6485,18 +6485,80 @@ const TopInstitutionsPanel = ({
                   interval={0}
                 />
                 <Tooltip
-                  contentStyle={{
-                    background: PALETTE.paper,
-                    border: `1px solid ${PALETTE.ink}`,
-                    fontFamily: FONT_BODY,
-                    fontSize: 12,
-                    borderRadius: 0,
+                  cursor={{ fill: PALETTE.ink + '10' }}
+                  // Custom content renders Publications + Citations + the
+                  // derived Avg citations / publication on three lines.
+                  // The default Recharts formatter only returns one line
+                  // per dataKey, which makes computing a derived value
+                  // awkward. Pulling the full payload lets us read both
+                  // values from the same row and divide.
+                  //
+                  // Note: avg = edges / seeds is the average number of
+                  // OUTGOING references per publication for this row's
+                  // institution. This is what the dashboard's edges
+                  // count represents (each publication's reference list
+                  // expanded into citation edges). It is NOT this
+                  // institution's "citations received" metric — that's
+                  // a different quantity OpenAlex tracks but we don't.
+                  content={({ active, payload }) => {
+                    if (!active || !payload || payload.length === 0) return null;
+                    // payload is an array of bar entries, each with .payload
+                    // pointing to the chartData row. Both entries reference
+                    // the same row.
+                    const row = payload[0].payload;
+                    const seeds = row.seeds || 0;
+                    const edges = row.edges || 0;
+                    // Avg citations per publication. Guard against zero
+                    // seeds (shouldn't happen for a real institution but
+                    // does for the spacer row).
+                    const avg = seeds > 0 ? edges / seeds : 0;
+                    return (
+                      <div
+                        style={{
+                          background: PALETTE.paper,
+                          border: `1px solid ${PALETTE.ink}`,
+                          fontFamily: FONT_BODY,
+                          fontSize: 12,
+                          padding: '8px 10px',
+                          borderRadius: 0,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        <div style={{
+                          color: PALETTE.ink,
+                          fontWeight: 600,
+                          marginBottom: 4,
+                        }}>
+                          {row.name}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                          <span style={{ color: PALETTE.muted }}>Publications</span>
+                          <span style={{ color: PALETTE.navy, fontFamily: FONT_MONO }}>
+                            {fmtFull(seeds)}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                          <span style={{ color: PALETTE.muted }}>Citations</span>
+                          <span style={{ color: PALETTE.burgundy, fontFamily: FONT_MONO }}>
+                            {fmtFull(edges)}
+                          </span>
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          gap: 16,
+                          marginTop: 4,
+                          paddingTop: 4,
+                          borderTop: `1px solid ${PALETTE.rule}`,
+                        }}>
+                          <span style={{ color: PALETTE.muted }}>Avg. citations / publication</span>
+                          <span style={{ color: PALETTE.charcoal, fontFamily: FONT_MONO }}>
+                            {avg.toFixed(1)}
+                          </span>
+                        </div>
+                      </div>
+                    );
                   }}
-                  labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
-                  formatter={(v, name) => [
-                    fmtFull(v),
-                    name === 'seeds' ? 'Publications' : 'Citations',
-                  ]}
                 />
                 <Bar dataKey="seeds" xAxisId="seeds" cursor="pointer" name="seeds">
                   {chartData.map((d, i) => {
