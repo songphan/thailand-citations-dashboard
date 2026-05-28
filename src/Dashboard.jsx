@@ -205,6 +205,7 @@ function useDataFiles() {
     by_language: null,
     field_sankey: null,
     domain_sankey: null,
+    paywall: null,
   });
 
   useEffect(() => {
@@ -223,6 +224,9 @@ function useDataFiles() {
       'institution_overlap', 'publisher_sankey',
       'by_field', 'by_domain', 'by_language',
       'field_sankey', 'domain_sankey',
+      // Paywall / OA status of cited works. Optional so builds before
+      // the OA backfill still render (panel shows a placeholder).
+      'paywall',
       // Consortium analysis: per-(institution, database) solo/shared
       // benefit counts. Optional so older builds without the section
       // still render. The matching joint-benefit matrices are loaded
@@ -6371,6 +6375,222 @@ const INST_TYPE_COLORS = {
   archive: PALETTE.sage,
 };
 
+// ============================================================
+// PAYWALL / OPEN-ACCESS STATUS OF CITED WORKS
+// ============================================================
+// Renders the share of cited works that are open vs paywalled, using
+// the article-level OA status OpenAlex carries (via Unpaywall),
+// populated on cited_works by the harvest or the enrich_cited_oa.py
+// backfill. Two framings via a toggle:
+//   by citation event (default): each reference counts once — answers
+//     "when Thai authors cite, how often do they reach paywalled work?"
+//   by distinct work: each cited work counts once.
+// Four buckets: open (gold/diamond/hybrid/green), closed (paywalled),
+// bronze (free-to-read but unlicensed — gray zone), unknown (no OA
+// metadata: merged/deleted works or not-yet-backfilled).
+//
+// The panel reads data.paywall[view]. If the file is missing or
+// has_data is false (backfill not yet run), it shows a placeholder
+// explaining the enrichment step, mirroring the disciplinary panels.
+const PAYWALL_BUCKETS = [
+  { key: 'open', label: 'Open access', color: PALETTE.forest,
+    note: 'gold, diamond, hybrid, or green — freely readable' },
+  { key: 'closed', label: 'Paywalled', color: PALETTE.burgundy,
+    note: 'subscription required' },
+  { key: 'bronze', label: 'Bronze', color: PALETTE.gold,
+    note: 'free to read at publisher, but not formally licensed' },
+  { key: 'unknown', label: 'Unknown', color: PALETTE.muted,
+    note: 'no OA metadata in OpenAlex (e.g. merged or deleted records)' },
+];
+
+const PaywallPanel = ({ paywall, view, viewLabel, isFiltered }) => {
+  const [framing, setFraming] = useState('by_event'); // or 'by_work'
+
+  const viewData = paywall && paywall[view] ? paywall[view] : null;
+  const hasData = viewData && viewData.has_data;
+  const stats = hasData ? viewData[framing] : null;
+
+  if (!paywall) {
+    // File not loaded at all (older build). Show placeholder.
+    return (
+      <EnrichmentPlaceholder
+        icon={BookOpen}
+        kicker="Access status"
+        title="Are the cited works open or paywalled?"
+        message="This panel needs cited-works open-access status. Run enrich_cited_oa.py to backfill it, then regenerate paywall.json (refresh_paywall.py or the full export)."
+      />
+    );
+  }
+  if (!hasData) {
+    return (
+      <EnrichmentPlaceholder
+        icon={BookOpen}
+        kicker="Access status"
+        title="Are the cited works open or paywalled?"
+        message="Open-access status has not been populated for cited works yet. Run enrich_cited_oa.py to backfill OpenAlex/Unpaywall OA status, then regenerate this panel with refresh_paywall.py."
+      />
+    );
+  }
+
+  const total = stats.total || 0;
+  const known = total - (stats.unknown || 0);
+  // Segments in display order, filtering out zero buckets so the bar
+  // doesn't render slivers with no width.
+  const segments = PAYWALL_BUCKETS
+    .map((b) => ({ ...b, value: stats[b.key] || 0 }))
+    .filter((b) => b.value > 0);
+
+  const pct = (v) => (total ? (v / total) * 100 : 0);
+
+  return (
+    <Card className="p-5" filtered={isFiltered}>
+      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+        <SectionTitle
+          icon={BookOpen}
+          kicker="Access status"
+          title={
+            isFiltered && viewLabel
+              ? `Open vs paywalled: works cited by ${viewLabel}`
+              : 'Open vs paywalled: works cited by Thai 2025 papers'
+          }
+          totalN={stats.closed}
+          totalLabel={
+            `citations point to paywalled works ` +
+            `(${stats.closed_pct_of_known}% of citations to works with known status` +
+            `${framing === 'by_event' ? '' : ', counting each work once'})`
+          }
+          hint={
+            framing === 'by_event'
+              ? 'Each citation counted once (a heavily-cited paywalled work weighs more). Percentages in the headline exclude the "unknown" slice so missing metadata does not dilute the paywall figure. OpenAlex classifies access at the article level via Unpaywall.'
+              : 'Each distinct cited work counted once, regardless of how many times it is cited. Percentages in the headline exclude the "unknown" slice. OpenAlex classifies access at the article level via Unpaywall.'
+          }
+        />
+        {/* Framing toggle: by citation event vs by distinct work */}
+        <div className="inline-flex" style={{ border: `1px solid ${PALETTE.rule}` }}>
+          {[
+            { key: 'by_event', label: 'By citation' },
+            { key: 'by_work', label: 'By work' },
+          ].map((o, i) => {
+            const active = framing === o.key;
+            return (
+              <button
+                key={o.key}
+                onClick={() => setFraming(o.key)}
+                className="px-2.5 py-1 transition-colors"
+                style={{
+                  fontFamily: FONT_MONO,
+                  fontSize: 10,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  background: active ? PALETTE.ink : 'transparent',
+                  color: active ? PALETTE.paper : PALETTE.muted,
+                  border: 'none',
+                  borderLeft: i > 0 ? `1px solid ${PALETTE.rule}` : 'none',
+                  cursor: active ? 'default' : 'pointer',
+                }}
+                aria-pressed={active}
+              >
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Stacked horizontal bar */}
+      <div
+        style={{
+          display: 'flex',
+          width: '100%',
+          height: 34,
+          border: `1px solid ${PALETTE.rule}`,
+          overflow: 'hidden',
+          marginBottom: 14,
+          marginTop: 4,
+        }}
+      >
+        {segments.map((seg) => {
+          const w = pct(seg.value);
+          return (
+            <HoverTip
+              key={seg.key}
+              content={`${seg.label}: ${fmtFull(seg.value)} (${w.toFixed(1)}%)\n${seg.note}`}
+              delay={150}
+            >
+              <div
+                style={{
+                  width: `${w}%`,
+                  height: 34,
+                  background: seg.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'help',
+                  minWidth: w > 0 ? 2 : 0,
+                }}
+              >
+                {w >= 8 && (
+                  <span style={{
+                    fontFamily: FONT_MONO,
+                    fontSize: 10,
+                    color: seg.key === 'bronze' ? PALETTE.ink : PALETTE.paper,
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    padding: '0 4px',
+                  }}>
+                    {w.toFixed(0)}%
+                  </span>
+                )}
+              </div>
+            </HoverTip>
+          );
+        })}
+      </div>
+
+      {/* Legend with exact counts */}
+      <div className="flex flex-wrap gap-x-5 gap-y-2">
+        {PAYWALL_BUCKETS.map((b) => {
+          const v = stats[b.key] || 0;
+          return (
+            <div key={b.key} className="inline-flex items-center gap-2">
+              <span style={{
+                display: 'inline-block', width: 12, height: 12,
+                background: b.color, flexShrink: 0,
+                border: b.key === 'bronze' ? `1px solid ${PALETTE.rule}` : 'none',
+              }} />
+              <span style={{
+                fontFamily: FONT_BODY, fontSize: 12, color: PALETTE.charcoal,
+              }}>
+                <strong style={{ color: PALETTE.ink }}>{b.label}</strong>{' '}
+                <span style={{ fontFamily: FONT_MONO }}>
+                  {fmtFull(v)} ({pct(v).toFixed(1)}%)
+                </span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footnote: clarify the headline denominator */}
+      <div
+        className="mt-3"
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: 9,
+          letterSpacing: '0.08em',
+          color: PALETTE.muted,
+          textTransform: 'uppercase',
+        }}
+      >
+        Headline paywall share is computed over {fmtFull(known)} citations
+        to works with known access status ({fmtFull(stats.unknown || 0)} unknown
+        excluded). Of all {fmtFull(total)} citations including unknown,
+        {' '}{stats.closed_pct_of_all}% are paywalled.
+      </div>
+    </Card>
+  );
+};
+
 // Color per education subcategory. Used by ColoredYTick and the
 // subcategory pill row when subcategory data is loaded. Public reuses
 // the education color (navy) since it's the modal subcategory and the
@@ -8194,6 +8414,17 @@ export default function Dashboard() {
             summary={data.summary}
             view={effectiveView}
             databaseMeta={data.meta?.databases}
+          />
+
+          {/* Paywall / open-access status of cited works. Sits after
+              coverage since both concern access to cited material:
+              coverage asks "which databases hold the cited works",
+              this asks "are the cited works open or behind a paywall". */}
+          <PaywallPanel
+            paywall={data.paywall}
+            view={effectiveView}
+            viewLabel={viewLabel}
+            isFiltered={effectiveView !== 'all_thailand'}
           />
 
           {/* Institutional citation overlap heatmap. Now sits after the
