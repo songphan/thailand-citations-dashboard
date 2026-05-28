@@ -5482,12 +5482,30 @@ const ByTypePanel = ({ byType, view }) => {
 // badge is placed inline at the start of the label so it reads as a
 // quick visual marker without competing with the bars themselves.
 const PublisherYTick = ({ x, y, payload }) => {
-  const name = payload?.value ?? '';
-  const isOA = isOAOnlyPublisher(name);
+  const rawName = payload?.value ?? '';
+  const isOA = isOAOnlyPublisher(rawName);
+  // Truncate very long publisher names so they fit within the 200px
+  // Y-axis gutter alongside the OA badge. "Multidisciplinary Digital
+  // Publishing Institute" (MDPI's full OpenAlex name) is the main
+  // offender. We reserve ~28px at the far left for the badge, leaving
+  // room for ~30 characters of name. The full name is available on
+  // hover and in the table view.
+  const MAX_CHARS = isOA ? 28 : 32;
+  const name = rawName.length > MAX_CHARS
+    ? rawName.slice(0, MAX_CHARS - 1).trimEnd() + '…'
+    : rawName;
   // The Recharts default tick anchors text at the end (right edge),
-  // since labels sit on the left side of the chart. We render the
-  // text with the same anchor and dy as default; the badge sits to
-  // the left of the text so it doesn't overlap the bars.
+  // since labels sit on the left side of the chart. Text ends at x=0
+  // and extends leftward.
+  //
+  // The OA badge is placed at a FIXED position near the left edge of
+  // the Y-axis gutter, NOT relative to the text length. The earlier
+  // version offset the badge by name.length, which for MDPI's long
+  // name pushed it ~290px left — outside the 200px chart margin, so
+  // the badge rendered off-screen and was invisible. A fixed offset
+  // keeps it reliably visible regardless of name length. The gutter
+  // is 200px wide (margin.left), so -196 sits just inside the edge.
+  const BADGE_X = -196;
   return (
     <g transform={`translate(${x},${y})`}>
       <text
@@ -5502,7 +5520,7 @@ const PublisherYTick = ({ x, y, payload }) => {
         {name}
       </text>
       {isOA && (
-        <g transform={`translate(${-name.length * 5.6 - 30}, -8)`}>
+        <g transform={`translate(${BADGE_X}, -8)`}>
           <rect
             width={20}
             height={12}
