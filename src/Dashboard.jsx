@@ -3678,7 +3678,7 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
           m.papers_with_publisher != null
             ? `publications with a known publisher${
                 m.papers_total
-                  ? ` (${m.paper_coverage_pct}% of ${fmtFull(m.papers_total)} publications in this view)`
+                  ? ` (${m.paper_coverage_pct}% of ${fmtFull(m.papers_total)} publications that have references)`
                   : ''
               }`
             : `citations with publisher metadata on both sides (${m.coverage_pct}% of this view's citations)`
