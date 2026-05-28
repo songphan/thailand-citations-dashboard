@@ -206,6 +206,7 @@ function useDataFiles() {
     field_sankey: null,
     domain_sankey: null,
     paywall: null,
+    journal_rank: null,
   });
 
   useEffect(() => {
@@ -227,6 +228,9 @@ function useDataFiles() {
       // Paywall / OA status of cited works. Optional so builds before
       // the OA backfill still render (panel shows a placeholder).
       'paywall',
+      // SJR journal quartile (Q1-Q4) of cited works. Optional so builds
+      // before the quartiles stage still render (panel placeholder).
+      'journal_rank',
       // Consortium analysis: per-(institution, database) solo/shared
       // benefit counts. Optional so older builds without the section
       // still render. The matching joint-benefit matrices are loaded
@@ -1032,9 +1036,13 @@ const CoverageBar = ({ value, color, thBenchmark }) => {
 //          show instantly. Hide is always instant.
 //   block: if true, wrap with display:block (default false uses
 //          inline-flex). Useful when wrapping a full-width button.
+//   wrapperStyle: extra style merged onto the wrapper span. Use to
+//          give the wrapper an explicit width when it's a flex child
+//          (e.g. stacked-bar segments, where the width:%% must live on
+//          the flex item, not an inner div).
 const HoverTip = ({
   content, children, maxWidth = 320, placement = 'top', delay = 250,
-  block = false, align = 'center',
+  block = false, align = 'center', wrapperStyle = null,
 }) => {
   const [visible, setVisible] = useState(false);
   // Track timer in a ref so we can cancel it on mouseleave
@@ -1086,6 +1094,7 @@ const HoverTip = ({
         display: block ? 'block' : 'inline-flex',
         alignItems: block ? undefined : 'center',
         width: block ? '100%' : undefined,
+        ...(wrapperStyle || {}),
       }}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
@@ -6516,17 +6525,23 @@ const PaywallPanel = ({ paywall, view, viewLabel, isFiltered }) => {
               key={seg.key}
               content={`${seg.label}: ${fmtFull(seg.value)} (${w.toFixed(1)}%)\n${seg.note}`}
               delay={150}
+              wrapperStyle={{
+                width: `${w}%`,
+                minWidth: w > 0 ? 2 : 0,
+                height: 34,
+                display: 'block',
+                flexShrink: 0,
+              }}
             >
               <div
                 style={{
-                  width: `${w}%`,
+                  width: '100%',
                   height: 34,
                   background: seg.color,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'help',
-                  minWidth: w > 0 ? 2 : 0,
                 }}
               >
                 {w >= 8 && (
@@ -6586,6 +6601,213 @@ const PaywallPanel = ({ paywall, view, viewLabel, isFiltered }) => {
         to works with known access status ({fmtFull(stats.unknown || 0)} unknown
         excluded). Of all {fmtFull(total)} citations including unknown,
         {' '}{stats.closed_pct_of_all}% are paywalled.
+      </div>
+    </Card>
+  );
+};
+
+// ============================================================
+// JOURNAL RANK (SJR QUARTILE) OF CITED WORKS
+// ============================================================
+// Shows the SJR best-quartile (Q1-Q4) distribution of the journals
+// that cited works appeared in, from SCImago data joined by ISSN.
+// Answers "do Thai researchers cite higher-ranked journals?" Two
+// framings via toggle (by citation event / by distinct work), six
+// buckets: Q1-Q4 plus Unranked (in SCImago, no quartile) and Not in
+// SJR (no ISSN match: books, preprints, obscure venues, missing
+// metadata). Headline shares are computed over RANKED works (Q1-Q4)
+// so the unmatched buckets don't dilute the quartile picture.
+//
+// Reads data.journal_rank[view]. Placeholder if the file is missing
+// or has_data is false (quartiles stage not yet run).
+const QUARTILE_BUCKETS = [
+  { key: 'Q1', label: 'Q1', color: PALETTE.forest,
+    note: 'top quartile by SJR (highest-ranked journals)' },
+  { key: 'Q2', label: 'Q2', color: PALETTE.teal,
+    note: 'second quartile by SJR' },
+  { key: 'Q3', label: 'Q3', color: PALETTE.gold,
+    note: 'third quartile by SJR' },
+  { key: 'Q4', label: 'Q4', color: PALETTE.burgundy,
+    note: 'bottom quartile by SJR' },
+  { key: 'Unranked', label: 'Unranked', color: '#9c8f7a',
+    note: 'journal is in SCImago but has no assigned quartile' },
+  { key: 'Not in SJR', label: 'Not in SJR', color: PALETTE.muted,
+    note: 'no ISSN match in SCImago: books, preprints, datasets, or works with missing metadata' },
+];
+
+const JournalRankPanel = ({ journalRank, view, viewLabel, isFiltered }) => {
+  const [framing, setFraming] = useState('by_event');
+
+  const viewData = journalRank && journalRank[view] ? journalRank[view] : null;
+  const hasData = viewData && viewData.has_data;
+  const stats = hasData ? viewData[framing] : null;
+
+  if (!journalRank || !hasData) {
+    return (
+      <EnrichmentPlaceholder
+        icon={BarChart3}
+        kicker="Journal rank"
+        title="What SJR quartile are the cited journals?"
+        message="This panel needs SCImago journal quartile data. Place scimagojr_2025.csv in data/, run 'python pipeline.py quartiles', then regenerate journal_rank.json with refresh_journal_rank.py."
+      />
+    );
+  }
+
+  const total = stats.total || 0;
+  const ranked = stats.ranked || 0;
+  const segments = QUARTILE_BUCKETS
+    .map((b) => ({ ...b, value: stats[b.key] || 0 }))
+    .filter((b) => b.value > 0);
+  const pct = (v) => (total ? (v / total) * 100 : 0);
+
+  return (
+    <Card className="p-5" filtered={isFiltered}>
+      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+        <SectionTitle
+          icon={BarChart3}
+          kicker="Journal rank"
+          title={
+            isFiltered && viewLabel
+              ? `SJR quartile of works cited by ${viewLabel}`
+              : 'SJR quartile of works cited by Thai 2025 papers'
+          }
+          totalN={stats.Q1}
+          totalLabel={
+            `citations point to Q1 journals ` +
+            `(${stats.q1_pct_of_ranked}% of citations to SJR-ranked works; ` +
+            `Q1+Q2 = ${stats.q1q2_pct_of_ranked}%)`
+          }
+          hint={
+            framing === 'by_event'
+              ? 'Each citation counted once. Quartile is the journal\'s SJR best quartile (its strongest across subject categories), matched by ISSN to SCImago. Headline percentages are over SJR-ranked works (Q1-Q4), excluding "Unranked" and "Not in SJR" so they do not dilute the quartile picture.'
+              : 'Each distinct cited work counted once. Quartile is the journal\'s SJR best quartile, matched by ISSN to SCImago. Headline percentages are over SJR-ranked works (Q1-Q4).'
+          }
+        />
+        <div className="inline-flex" style={{ border: `1px solid ${PALETTE.rule}` }}>
+          {[
+            { key: 'by_event', label: 'By citation' },
+            { key: 'by_work', label: 'By work' },
+          ].map((o, i) => {
+            const active = framing === o.key;
+            return (
+              <button
+                key={o.key}
+                onClick={() => setFraming(o.key)}
+                className="px-2.5 py-1 transition-colors"
+                style={{
+                  fontFamily: FONT_MONO,
+                  fontSize: 10,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  background: active ? PALETTE.ink : 'transparent',
+                  color: active ? PALETTE.paper : PALETTE.muted,
+                  border: 'none',
+                  borderLeft: i > 0 ? `1px solid ${PALETTE.rule}` : 'none',
+                  cursor: active ? 'default' : 'pointer',
+                }}
+                aria-pressed={active}
+              >
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Stacked horizontal bar */}
+      <div
+        style={{
+          display: 'flex',
+          width: '100%',
+          height: 34,
+          border: `1px solid ${PALETTE.rule}`,
+          overflow: 'hidden',
+          marginBottom: 14,
+          marginTop: 4,
+        }}
+      >
+        {segments.map((seg) => {
+          const w = pct(seg.value);
+          return (
+            <HoverTip
+              key={seg.key}
+              content={`${seg.label}: ${fmtFull(seg.value)} (${w.toFixed(1)}%)\n${seg.note}`}
+              delay={150}
+              wrapperStyle={{
+                width: `${w}%`,
+                minWidth: w > 0 ? 2 : 0,
+                height: 34,
+                display: 'block',
+                flexShrink: 0,
+              }}
+            >
+              <div
+                style={{
+                  width: '100%',
+                  height: 34,
+                  background: seg.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'help',
+                }}
+              >
+                {w >= 7 && (
+                  <span style={{
+                    fontFamily: FONT_MONO,
+                    fontSize: 10,
+                    color: seg.key === 'Q3' ? PALETTE.ink : PALETTE.paper,
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    padding: '0 4px',
+                  }}>
+                    {w.toFixed(0)}%
+                  </span>
+                )}
+              </div>
+            </HoverTip>
+          );
+        })}
+      </div>
+
+      {/* Legend with exact counts */}
+      <div className="flex flex-wrap gap-x-5 gap-y-2">
+        {QUARTILE_BUCKETS.map((b) => {
+          const v = stats[b.key] || 0;
+          return (
+            <div key={b.key} className="inline-flex items-center gap-2">
+              <span style={{
+                display: 'inline-block', width: 12, height: 12,
+                background: b.color, flexShrink: 0,
+                border: b.key === 'Q3' ? `1px solid ${PALETTE.rule}` : 'none',
+              }} />
+              <span style={{
+                fontFamily: FONT_BODY, fontSize: 12, color: PALETTE.charcoal,
+              }}>
+                <strong style={{ color: PALETTE.ink }}>{b.label}</strong>{' '}
+                <span style={{ fontFamily: FONT_MONO }}>
+                  {fmtFull(v)} ({pct(v).toFixed(1)}%)
+                </span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div
+        className="mt-3"
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: 9,
+          letterSpacing: '0.08em',
+          color: PALETTE.muted,
+          textTransform: 'uppercase',
+        }}
+      >
+        Headline quartile shares are computed over {fmtFull(ranked)} citations
+        to SJR-ranked works (Q1-Q4). Of all {fmtFull(total)} citations,
+        {' '}{((ranked / (total || 1)) * 100).toFixed(1)}% are to ranked
+        journals; the rest are unranked or not indexed in SCImago.
       </div>
     </Card>
   );
@@ -8422,6 +8644,16 @@ export default function Dashboard() {
               this asks "are the cited works open or behind a paywall". */}
           <PaywallPanel
             paywall={data.paywall}
+            view={effectiveView}
+            viewLabel={viewLabel}
+            isFiltered={effectiveView !== 'all_thailand'}
+          />
+
+          {/* Journal rank (SJR quartile) of cited works. Sits after the
+              paywall panel: both characterize the cited corpus — access
+              status and journal prestige. */}
+          <JournalRankPanel
+            journalRank={data.journal_rank}
             view={effectiveView}
             viewLabel={viewLabel}
             isFiltered={effectiveView !== 'all_thailand'}
