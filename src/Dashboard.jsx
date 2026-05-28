@@ -512,11 +512,22 @@ const Card = ({
         />
       </button>
       {/* The section header (SectionTitle) is also clickable, since
-          it's a more obvious affordance than the small chevron. */}
+          it's a more obvious affordance than the small chevron.
+          BUT some headers also contain interactive controls (the
+          chart/table toggle, sort pills, info icons). A click on
+          those should do their own thing, not collapse the card. We
+          detect that by checking whether the click landed on (or
+          inside) an interactive element and bail out if so. Only
+          bare clicks on the title text / empty header area toggle. */}
       <div
-        onClick={() => setCollapsed((v) => !v)}
+        onClick={(e) => {
+          const interactive = e.target.closest(
+            'button, a, input, select, textarea, [role="button"], [data-no-collapse]'
+          );
+          if (interactive && interactive !== e.currentTarget) return;
+          setCollapsed((v) => !v);
+        }}
         style={{ cursor: 'pointer', paddingRight: 40 }}
-        role="button"
         tabIndex={-1}
       >
         {head}
