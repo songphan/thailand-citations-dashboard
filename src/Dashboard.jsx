@@ -3593,21 +3593,12 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
         rows.push({ otherIdx: sIdx, value: l.value });
       }
     }
-    // Sum of the band values touching this anchor. NOTE: under the
-    // paper-pairs model this sum DOUBLE-COUNTS papers, because one
-    // paper that cites several publishers appears in several bands.
-    // So we do NOT use this sum as the share denominator. We keep it
-    // only to report the total flow volume.
-    const bandSum = rows.reduce((s, r) => s + r.value, 0);
-
-    // The correct denominator for "what fraction of the anchor's
-    // papers cite publisher X" is the anchor's TRUE distinct-paper
-    // total, which the pipeline computed with a dedicated
-    // COUNT(DISTINCT citing_id) query and stored as node.total.
-    // Because a paper can cite multiple publishers, these shares can
-    // (and usually do) sum to MORE than 100% — that's correct and
-    // expected, not a bug. The label in the panel explains this.
-    const anchorTotal = node.total || bandSum || 1;
+    // Sum of the band values touching this anchor. With citation
+    // events (the current unit), each edge belongs to exactly one
+    // pair, so the bands partition cleanly and this sum equals the
+    // anchor's true total edge count. Share = each band as a fraction
+    // of that total, summing to ~100%.
+    const total = rows.reduce((s, r) => s + r.value, 0);
 
     const enriched = rows.map((r) => {
       const other = nodes[r.otherIdx];
@@ -3616,19 +3607,14 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
         otherName: other?.name ?? '(unknown)',
         otherIsOther: other?.name === 'Other publishers',
         value: r.value,
-        // Share = fraction of the ANCHOR's distinct papers that have
-        // this publisher relationship. Capped display handled in the
-        // render; raw value can approach but not exceed 100% per row
-        // (a single pair can't have more papers than the anchor has).
-        pct_of_node: anchorTotal ? (r.value / anchorTotal) * 100 : 0,
+        pct_of_node: total ? (r.value / total) * 100 : 0,
       };
     });
     enriched.sort((a, b) => b.value - a.value);
     return {
       anchor: node,
       anchorIsSeedSide: isSeedSide,
-      total: anchorTotal,       // anchor's true distinct-paper count
-      bandSum,                  // sum of bands (double-counts; for reference)
+      total,
       rows: enriched,
     };
   }, [data, hasData, selectedNode]);
@@ -3644,7 +3630,7 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
           icon={GitBranch}
           kicker="Publisher flow"
           title="Publishers of Thai 2025 papers and the publishers they cite"
-          hint="A Sankey diagram showing how publications by Thai 2025 publishers relate to the publishers they cite."
+          hint="A Sankey diagram showing how citations flow from publishers of Thai 2025 papers to publishers of cited works."
         />
         <div
           className="p-6 text-center"
@@ -3693,20 +3679,12 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
             ? `Publishers of 2025 papers by ${viewLabel} and the publishers they cite`
             : 'Publishers of Thai 2025 papers and the publishers they cite'
         }
-        totalN={m.papers_with_publisher != null ? m.papers_with_publisher : m.total_edges_with_both_publishers}
-        totalLabel={
-          m.papers_with_publisher != null
-            ? `publications with a known publisher${
-                m.papers_total
-                  ? ` (${m.paper_coverage_pct}% of ${fmtFull(m.papers_total)} publications that have references)`
-                  : ''
-              }`
-            : `citations with publisher metadata on both sides (${m.coverage_pct}% of this view's citations)`
-        }
+        totalN={m.total_edges_with_both_publishers}
+        totalLabel={`citations with publisher metadata on both sides (${m.coverage_pct}% of this view's citations)`}
         hint={
           (isFiltered
-            ? `For the publications in the current filter, each strand is a flow from one seed publisher (left, navy) to one cited publisher (right, burgundy). Strand thickness is the NUMBER OF PUBLICATIONS that have that publisher relationship: a paper counts once toward a strand no matter how many times it cites that publisher. The top ${Math.max(0, (m.n_seed_publishers_shown || 1) - 1)} publishers on each side ARE COMPUTED PER VIEW so they reflect this institution's or sector's actual top journals — not the country-wide list. Everything outside the top is rolled into "Other publishers". Click any publisher label to see its detailed flow breakdown.`
-            : `Each strand is a flow from one seed publisher (left, navy) to one cited publisher (right, burgundy). Strand thickness is the NUMBER OF PUBLICATIONS that have that publisher relationship: a single paper counts once toward a strand regardless of how many works it cites from that publisher (so a review article citing 40 Elsevier papers adds 1, not 40). Top ${Math.max(0, (m.n_seed_publishers_shown || 1) - 1)} publishers on each side are shown by name; the rest are aggregated into "Other publishers" buckets. Click any publisher label to see its detailed flow breakdown. Hover a strand for exact counts.`)
+            ? `For the publications in the current filter, each strand is a flow from one seed publisher (left, navy) to one cited publisher (right, burgundy); thickness is proportional to the number of citation events. The top ${Math.max(0, (m.n_seed_publishers_shown || 1) - 1)} publishers on each side ARE COMPUTED PER VIEW so they reflect this institution's or sector's actual top journals — not the country-wide list. Everything outside the top is rolled into "Other publishers". Click any publisher label to see its detailed flow breakdown.`
+            : `Each strand is a flow from one seed publisher (left, navy) to one cited publisher (right, burgundy); thickness is proportional to the number of citation events between them (each reference counts once, so a review article citing 40 works contributes 40). Top ${Math.max(0, (m.n_seed_publishers_shown || 1) - 1)} publishers on each side are shown by name; the rest are aggregated into "Other publishers" buckets. Click any publisher label to see its detailed flow breakdown. Hover a strand for exact counts.`)
         }
       />
 
@@ -3811,10 +3789,7 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
               labelStyle={{ color: PALETTE.ink, fontWeight: 600 }}
               formatter={(value, name, props) => {
                 // The default formatter shows {source: idx, target: idx, value};
-                // we prefer human names with the publication count. The
-                // publisher Sankey's unit is distinct papers, so label
-                // accordingly (the discipline Sankey below keeps its own
-                // edge-count formatter).
+                // we prefer human names with the citation-event count.
                 const p = props.payload || {};
                 if (p.source !== undefined && p.target !== undefined) {
                   const srcName = sankeyData.nodes[p.source.index ?? p.source]?.name
@@ -3822,7 +3797,7 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
                   const dstName = sankeyData.nodes[p.target.index ?? p.target]?.name
                     ?? sankeyData.nodes[p.target]?.name ?? '?';
                   return [
-                    `${fmtFull(value)} publications`,
+                    `${fmtFull(value)} citations`,
                     `${srcName} → ${dstName}`,
                   ];
                 }
@@ -3855,8 +3830,8 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
             }}
           >
             {detail.anchorIsSeedSide
-              ? 'Seed publisher · how its papers cite'
-              : 'Cited publisher · who cites it'}
+              ? 'Seed publisher · outgoing citations'
+              : 'Cited publisher · incoming citations'}
           </div>
           <div className="mb-3" style={{ lineHeight: 1.5 }}>
             <strong style={{
@@ -3866,14 +3841,15 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
               {detail.anchor.name}
             </strong>{' '}
             {detail.anchorIsSeedSide
-              ? 'published'
-              : 'is cited by'}{' '}
+              ? 'Thai 2025 papers contribute'
+              : 'is on the receiving end of'}{' '}
             <strong style={{ color: PALETTE.ink, fontFamily: FONT_MONO }}>
               {fmtFull(detail.total)}
             </strong>{' '}
+            citations.{' '}
             {detail.anchorIsSeedSide
-              ? 'Thai 2025 papers (with a known publisher and at least one publisher-known citation). The breakdown below shows what share of those papers cite each publisher. A paper can cite several publishers, so the shares overlap and sum to more than 100%.'
-              : 'distinct Thai 2025 papers. The breakdown below shows what share of those citing papers were published by each seed publisher. A paper has one publisher, so these shares do not overlap.'}
+              ? 'The breakdown below shows where those citations land.'
+              : 'The breakdown below shows where those citations come from.'}
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table className="w-full" style={{ borderCollapse: 'collapse' }}>
@@ -3891,7 +3867,7 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
                     {detail.anchorIsSeedSide ? 'Cited publisher' : 'Seed publisher'}
                   </th>
                   <th style={{ ...cellHead, width: 120, textAlign: 'right' }}>
-                    Publications
+                    Citations
                   </th>
                   <th style={{ ...cellHead, width: 90, textAlign: 'right' }}>
                     Share
@@ -3951,10 +3927,7 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
               textTransform: 'uppercase',
             }}
           >
-            Share is computed against {detail.anchor.name}'s {fmtFull(detail.total)} distinct papers.
-            {detail.anchorIsSeedSide
-              ? ' Shares overlap (a paper cites multiple publishers) and may sum to more than 100%.'
-              : ' Shares partition by seed publisher and sum to about 100%.'}
+            Share is computed against {detail.anchor.name}'s {fmtFull(detail.total)} {detail.anchorIsSeedSide ? 'outgoing' : 'incoming'} citations.
           </div>
         </div>
       )}
@@ -3971,7 +3944,7 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
           }}
         >
           Note · {m.n_links_dropped} small flows below the visibility threshold
-          ({fmtFull(m.edges_dropped)} {m.unit === 'papers' ? 'publication-flows' : 'edges'}) were omitted to keep the diagram readable.
+          ({fmtFull(m.edges_dropped)} edges, {((m.edges_dropped / (m.total_edges_with_both_publishers || 1)) * 100).toFixed(2)}% of total) were omitted to keep the diagram readable.
         </div>
       )}
     </Card>
