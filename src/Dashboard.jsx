@@ -3593,7 +3593,22 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
         rows.push({ otherIdx: sIdx, value: l.value });
       }
     }
-    const total = rows.reduce((s, r) => s + r.value, 0);
+    // Sum of the band values touching this anchor. NOTE: under the
+    // paper-pairs model this sum DOUBLE-COUNTS papers, because one
+    // paper that cites several publishers appears in several bands.
+    // So we do NOT use this sum as the share denominator. We keep it
+    // only to report the total flow volume.
+    const bandSum = rows.reduce((s, r) => s + r.value, 0);
+
+    // The correct denominator for "what fraction of the anchor's
+    // papers cite publisher X" is the anchor's TRUE distinct-paper
+    // total, which the pipeline computed with a dedicated
+    // COUNT(DISTINCT citing_id) query and stored as node.total.
+    // Because a paper can cite multiple publishers, these shares can
+    // (and usually do) sum to MORE than 100% — that's correct and
+    // expected, not a bug. The label in the panel explains this.
+    const anchorTotal = node.total || bandSum || 1;
+
     const enriched = rows.map((r) => {
       const other = nodes[r.otherIdx];
       return {
@@ -3601,14 +3616,19 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
         otherName: other?.name ?? '(unknown)',
         otherIsOther: other?.name === 'Other publishers',
         value: r.value,
-        pct_of_node: total ? (r.value / total) * 100 : 0,
+        // Share = fraction of the ANCHOR's distinct papers that have
+        // this publisher relationship. Capped display handled in the
+        // render; raw value can approach but not exceed 100% per row
+        // (a single pair can't have more papers than the anchor has).
+        pct_of_node: anchorTotal ? (r.value / anchorTotal) * 100 : 0,
       };
     });
     enriched.sort((a, b) => b.value - a.value);
     return {
       anchor: node,
       anchorIsSeedSide: isSeedSide,
-      total,
+      total: anchorTotal,       // anchor's true distinct-paper count
+      bandSum,                  // sum of bands (double-counts; for reference)
       rows: enriched,
     };
   }, [data, hasData, selectedNode]);
@@ -3835,8 +3855,8 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
             }}
           >
             {detail.anchorIsSeedSide
-              ? 'Seed publisher · publications by cited publisher'
-              : 'Cited publisher · publications by seed publisher'}
+              ? 'Seed publisher · how its papers cite'
+              : 'Cited publisher · who cites it'}
           </div>
           <div className="mb-3" style={{ lineHeight: 1.5 }}>
             <strong style={{
@@ -3846,14 +3866,14 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
               {detail.anchor.name}
             </strong>{' '}
             {detail.anchorIsSeedSide
-              ? 'accounts for'
+              ? 'published'
               : 'is cited by'}{' '}
             <strong style={{ color: PALETTE.ink, fontFamily: FONT_MONO }}>
               {fmtFull(detail.total)}
             </strong>{' '}
             {detail.anchorIsSeedSide
-              ? 'publication-to-cited-publisher flows. The breakdown below shows which cited publishers those publications reference.'
-              : 'publication-to-cited-publisher flows. The breakdown below shows which seed publishers those publications come from.'}
+              ? 'Thai 2025 papers (with a known publisher and at least one publisher-known citation). The breakdown below shows what share of those papers cite each publisher. A paper can cite several publishers, so the shares overlap and sum to more than 100%.'
+              : 'distinct Thai 2025 papers. The breakdown below shows what share of those citing papers were published by each seed publisher. A paper has one publisher, so these shares do not overlap.'}
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table className="w-full" style={{ borderCollapse: 'collapse' }}>
@@ -3931,7 +3951,10 @@ const PublisherSankey = ({ publisherSankey, view, viewLabel, isFiltered }) => {
               textTransform: 'uppercase',
             }}
           >
-            Share is computed against {detail.anchor.name}'s {fmtFull(detail.total)} {detail.anchorIsSeedSide ? 'outgoing' : 'incoming'} publication-flows.
+            Share is computed against {detail.anchor.name}'s {fmtFull(detail.total)} distinct papers.
+            {detail.anchorIsSeedSide
+              ? ' Shares overlap (a paper cites multiple publishers) and may sum to more than 100%.'
+              : ' Shares partition by seed publisher and sum to about 100%.'}
           </div>
         </div>
       )}
