@@ -1015,7 +1015,7 @@ const CoverageBar = ({ value, color, thBenchmark }) => {
 //          inline-flex). Useful when wrapping a full-width button.
 const HoverTip = ({
   content, children, maxWidth = 320, placement = 'top', delay = 250,
-  block = false,
+  block = false, align = 'center',
 }) => {
   const [visible, setVisible] = useState(false);
   // Track timer in a ref so we can cancel it on mouseleave
@@ -1040,6 +1040,26 @@ const HoverTip = ({
   };
 
   const above = placement === 'top';
+
+  // Horizontal anchoring of the tooltip box relative to the trigger.
+  //   align='center' (default): centered on the trigger. Good for
+  //     wide containers, but if the trigger sits near the left/right
+  //     edge of its card, a wide box overflows the edge.
+  //   align='left': the box's LEFT edge aligns with the trigger and
+  //     it extends rightward. Use when the trigger is near the left
+  //     margin (e.g. a warning icon at the start of a table row), so
+  //     the box stays inside the card.
+  //   align='right': box's RIGHT edge aligns with the trigger,
+  //     extends leftward. For triggers near the right margin.
+  let horizontal;
+  if (align === 'left') {
+    horizontal = { left: 0, transform: 'none' };
+  } else if (align === 'right') {
+    horizontal = { right: 0, transform: 'none' };
+  } else {
+    horizontal = { left: '50%', transform: 'translateX(-50%)' };
+  }
+
   return (
     <span
       style={{
@@ -1059,8 +1079,7 @@ const HoverTip = ({
           style={{
             position: 'absolute',
             [above ? 'bottom' : 'top']: 'calc(100% + 6px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            ...horizontal,
             background: PALETTE.ink,
             color: PALETTE.paper,
             padding: '8px 10px',
@@ -1158,7 +1177,7 @@ const DatabaseLabel = ({ label, dbMeta }) => {
   }, [label, dbMeta]);
 
   return (
-    <HoverTip content={tooltip} maxWidth={360}>
+    <HoverTip content={tooltip} maxWidth={360} align="left">
       <span
         style={{
           display: 'inline-flex',
@@ -1754,7 +1773,7 @@ const OverlapHeatmap = ({ overlap, meta, summary }) => {
                       cursor: 'help',
                     }}
                   >
-                    <HoverTip content={tooltipFor(dbKeys[i], rowLabel)} maxWidth={340}>
+                    <HoverTip content={tooltipFor(dbKeys[i], rowLabel)} maxWidth={340} align="left">
                       <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
