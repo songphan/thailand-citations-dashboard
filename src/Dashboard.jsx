@@ -870,7 +870,11 @@ const TopStats = ({ summary, view, viewLabel }) => {
           <StatBlock
             label="Avg citations / paper"
             value={fmtDecimal(s.avg_per_paper)}
-            sublabel="across all cited types"
+            sublabel={
+              s.avg_per_paper_all != null && s.n_seeds_with_refs != null
+                ? `over ${fmtFull(s.n_seeds_with_refs)} papers with references · ${fmtDecimal(s.avg_per_paper_all)} if all papers counted`
+                : 'across all cited types'
+            }
             benchmark={isFiltered ? vsAvg(t.avg_per_paper) : null}
             accent={PALETTE.gold}
           />
